@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="CamQR/CamQR.csproj" />
+  <Project Path="Web/Web.Client/Web.Client.csproj" />
+  <Project Path="Web/Web/Web.csproj" />
+</Solution>
