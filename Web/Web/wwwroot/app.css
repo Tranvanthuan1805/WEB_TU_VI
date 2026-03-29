@@ -1,15 +1,29 @@
+:root {
+    --tuvi-primary: #FFB347;
+    --tuvi-primary-dark: #FFA500;
+    --tuvi-highlight: #FFD700;
+    --tuvi-text: #333333;
+    --tuvi-bg-light: #FFF8E7;
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-color: var(--tuvi-bg-light);
 }
 
 a, .btn-link {
-    color: #006bb7;
+    color: var(--tuvi-primary-dark);
 }
 
 .btn-primary {
     color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+    background-color: var(--tuvi-primary);
+    border-color: var(--tuvi-primary-dark);
+}
+
+.btn-primary:hover {
+    background-color: var(--tuvi-primary-dark);
+    border-color: var(--tuvi-primary);
 }
 
 .btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
@@ -57,4 +71,96 @@ h1:focus {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
+}
+
+.tuvi-header {
+    background: linear-gradient(135deg, var(--tuvi-primary) 0%, var(--tuvi-primary-dark) 100%);
+    color: white;
+    padding: 1.5rem 0;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.tuvi-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(255, 179, 71, 0.15);
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+}
+
+.tuvi-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(255, 179, 71, 0.25);
+}
+
+.tuvi-card-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    background-color: var(--tuvi-bg-light);
+}
+
+.tuvi-card-body {
+    padding: 1rem;
+}
+
+.tuvi-card-title {
+    color: var(--tuvi-primary-dark);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.tuvi-badge {
+    background-color: var(--tuvi-highlight);
+    color: var(--tuvi-text);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.tuvi-stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 12px rgba(255, 179, 71, 0.15);
+    border-top: 4px solid var(--tuvi-primary);
+}
+
+.tuvi-stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--tuvi-primary-dark);
+}
+
+.tuvi-stat-label {
+    color: #666;
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.tuvi-form-label {
+    color: var(--tuvi-text);
+    font-weight: 500;
+}
+
+.tuvi-nav-link {
+    color: var(--tuvi-primary-dark) !important;
+}
+
+.tuvi-nav-link.active {
+    background-color: var(--tuvi-primary) !important;
+    color: white !important;
+}
+
+@media (max-width: 767.98px) {
+    .tuvi-card-img {
+        height: 140px;
+    }
+    
+    .tuvi-stat-value {
+        font-size: 1.5rem;
+    }
 }

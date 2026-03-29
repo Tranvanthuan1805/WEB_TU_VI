@@ -1,0 +1,143 @@
+@page "/admin"
+@rendermode InteractiveServer
+
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Web.Components.Account;
+@using Web.Data
+
+@attribute [Authorize(Roles = RoleName.Administrator)]
+
+<PageTitle>Quản Trị - Tử Vi Portal</PageTitle>
+
+<div class="container py-4">
+
+    <AuthorizeView>
+        <Authorized>
+            <div class="d-flex justify-content-end mb-3">
+                <form method="post" action="/Account/Logout">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="returnUrl" value="Account/Login" />
+                    <button type="submit" class="btn btn-outline-danger">
+                        Đăng Xuất
+                    </button>
+                </form>
+            </div>
+        </Authorized>
+    </AuthorizeView>
+
+        <ul class="nav nav-tabs mb-4" id="adminTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(activeTab == "stats" ? "active" : "")"
+                        type="button"
+                        @onclick='() => activeTab = "stats"'>
+                    Thống Kê
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(activeTab == "create" ? "active" : "")"
+                        type="button"
+                        @onclick='() => activeTab = "create"'>
+                    Tạo Bài Viết
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="adminTabContent">
+            @if (activeTab == "stats")
+            {
+                <div class="tab-pane fade show active">
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="tuvi-stat-card">
+                                <div class="tuvi-stat-value">@todayRevenue.ToString("N0") đ</div>
+                                <div class="tuvi-stat-label">Hôm Nay</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="tuvi-stat-card">
+                                <div class="tuvi-stat-value">@monthRevenue.ToString("N0") đ</div>
+                                <div class="tuvi-stat-label">Tháng Này</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="tuvi-stat-card">
+                                <div class="tuvi-stat-value">@yearRevenue.ToString("N0") đ</div>
+                                <div class="tuvi-stat-label">Năm Nay</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (activeTab == "create")
+            {
+                <div class="tab-pane fade show active">
+                    <div class="tuvi-card p-4">
+                        <h5 class="tuvi-card-title mb-3">Tạo Bài Viết Mới</h5>
+
+                        <EditForm Model="@articleModel" FormName="createArticleForm" OnValidSubmit="@HandleCreateArticle">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="mb-3">
+                                <label class="form-label tuvi-form-label">Tiêu đề</label>
+                                <InputText @bind-Value="articleModel.Title" class="form-control" placeholder="Nhập tiêu đề bài viết" />
+                                <ValidationMessage For="@(() => articleModel.Title)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label tuvi-form-label">Nội dung</label>
+                                <InputTextArea @bind-Value="articleModel.Content" class="form-control" rows="6" placeholder="Nhập nội dung bài viết" />
+                                <ValidationMessage For="@(() => articleModel.Content)" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label tuvi-form-label">Ảnh bìa</label>
+                                <InputFile OnChange="HandleFileSelected" class="form-control" accept="image/*" />
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Xuất Bản</button>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            }
+        </div>
+
+</div>
+
+@code {
+    private string activeTab = "stats";
+    private long todayRevenue = 2500000;
+    private long monthRevenue = 45000000;
+    private long yearRevenue = 320000000;
+
+    private ArticleModel articleModel = new();
+
+    private void HandleCreateArticle()
+    {
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        articleModel.CoverImage = e.File;
+    }
+
+    private class ArticleModel
+    {
+        [Required(ErrorMessage = "Vui lòng nhập tiêu đề")]
+        public string Title { get; set; } = "";
+
+        [Required(ErrorMessage = "Vui lòng nhập nội dung")]
+        public string Content { get; set; } = "";
+
+        public IBrowserFile? CoverImage { get; set; }
+    }
+
+
+}
