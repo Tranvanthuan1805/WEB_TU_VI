@@ -1,30 +1,54 @@
-﻿@implements IDisposable
+@implements IDisposable
 @inject NavigationManager NavigationManager
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Web</a>
+@rendermode InteractiveAuto
+
+<header class="w-full top-0 sticky z-50 bg-surface shadow-xl shadow-black/40">
+    <div class="flex justify-between items-center px-8 py-4 max-w-screen-2xl mx-auto">
+        <NavLink class="text-2xl font-headline italic text-yellow-400" href="" Match="NavLinkMatch.All">Lá Số Tử Vi</NavLink>
+        
+        <!-- Desktop menu -->
+        <nav class="hidden md:flex gap-8 items-center">
+            <NavLink class="text-yellow-400 hover:border-b-2 hover:border-yellow-400 transition-colors font-bold text-lg tracking-tight" href="" Match="NavLinkMatch.All">Trang chủ</NavLink>
+            <NavLink class="text-yellow-400 hover:border-b-2 hover:border-yellow-400 transition-colors font-bold text-lg tracking-tight" href="#">Bài viết</NavLink>
+        </nav>
+        
+        <!-- Mobile hamburger button -->
+        <button type="button" class="block md:hidden p-2" @onclick="ToggleMenu">
+            <span class="material-symbols-outlined text-yellow-400">menu</span>
+        </button>
     </div>
-</div>
-
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
-
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="nav flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
-            </NavLink>
+    
+    <!-- Mobile menu dropdown -->
+    @if (isMenuOpen)
+    {
+        <div class="md:hidden bg-surface shadow-xl border-t border-yellow-900/20 p-4">
+            <nav class="flex flex-col gap-4 items-center">
+                <NavLink class="text-yellow-400 hover:border-b-2 hover:border-yellow-400 transition-colors font-bold text-lg tracking-tight" href="" Match="NavLinkMatch.All" @onclick="CloseMenu">Trang chủ</NavLink>
+                <NavLink class="text-yellow-400 hover:border-b-2 hover:border-yellow-400 transition-colors font-bold text-lg tracking-tight" href="#" @onclick="CloseMenu">Bài viết</NavLink>
+            </nav>
         </div>
+    }
+</header>
 
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="admin">
-                <span class="bi bi-gear-nav-menu" aria-hidden="true"></span> Admin
-            </NavLink>
-        </div>
-    </nav>
-</div>
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    }
+</style>
 
 @code {
+    private bool isMenuOpen = false;
+    
+    private void ToggleMenu()
+    {
+        isMenuOpen = !isMenuOpen;
+    }
+    
+    private void CloseMenu()
+    {
+        isMenuOpen = false;
+    }
+
     private string? currentUrl;
     protected override void OnInitialized()
     {
@@ -35,6 +59,7 @@
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
         currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        isMenuOpen = false;
         StateHasChanged();
     }
 
@@ -42,5 +67,4 @@
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
-
 }

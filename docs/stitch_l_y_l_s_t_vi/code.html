@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Lấy Lá Số Tử Vi | The Celestial Manuscript</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,300;0,400;0,700;1,300;1,400&amp;family=Manrope:wght@300;400;600;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-fixed-dim": "#ffb4a8",
+              "on-secondary": "#690000",
+              "secondary": "#ffb4a8",
+              "primary-container": "#ffd700",
+              "background": "#131313",
+              "outline-variant": "#4d4732",
+              "on-secondary-container": "#ff9a8a",
+              "on-primary-container": "#705e00",
+              "primary-fixed": "#ffe16d",
+              "tertiary-container": "#ffcfc2",
+              "inverse-primary": "#705d00",
+              "error-container": "#93000a",
+              "surface-tint": "#e9c400",
+              "surface": "#131313",
+              "surface-container-high": "#2a2a2a",
+              "surface-bright": "#393939",
+              "tertiary-fixed-dim": "#ffb5a0",
+              "surface-container-low": "#1c1b1b",
+              "on-surface": "#e5e2e1",
+              "surface-container-highest": "#353534",
+              "primary-fixed-dim": "#e9c400",
+              "surface-container": "#201f1f",
+              "on-secondary-fixed-variant": "#920703",
+              "outline": "#999077",
+              "surface-dim": "#131313",
+              "tertiary": "#fff4f1",
+              "on-primary-fixed-variant": "#544600",
+              "on-surface-variant": "#d0c6ab",
+              "inverse-surface": "#e5e2e1",
+              "on-primary": "#3a3000",
+              "error": "#ffb4ab",
+              "on-background": "#e5e2e1",
+              "tertiary-fixed": "#ffdbd1",
+              "primary": "#fff6df",
+              "inverse-on-surface": "#313030",
+              "secondary-fixed": "#ffdad4",
+              "secondary-container": "#920703",
+              "surface-container-lowest": "#0e0e0e",
+              "on-primary-fixed": "#221b00",
+              "surface-variant": "#353534",
+              "on-tertiary-fixed": "#3b0900",
+              "on-tertiary": "#601400",
+              "on-tertiary-container": "#b22e00",
+              "on-secondary-fixed": "#410000",
+              "on-tertiary-fixed-variant": "#872000",
+              "on-error-container": "#ffdad6",
+              "on-error": "#690005"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(53, 53, 52, 0.7);
+            backdrop-filter: blur(20px);
+        }
+        .manuscript-glow {
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar -->
+<header class="w-full top-0 sticky z-50 bg-[#131313] dark:bg-[#131313] shadow-xl shadow-black/40">
+<nav class="flex justify-between items-center px-8 py-4 max-w-screen-2xl mx-auto">
+<div class="text-2xl font-serif italic text-yellow-400 dark:text-yellow-400">The Celestial Manuscript</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-gray-400 hover:text-yellow-200 transition-colors font-serif text-lg tracking-tight font-light" href="#">Home</a>
+<a class="text-yellow-400 border-b-2 border-yellow-400 pb-1 font-bold font-serif text-lg tracking-tight" href="#">Generate Horoscope</a>
+<a class="text-gray-400 hover:text-yellow-200 transition-colors font-serif text-lg tracking-tight font-light" href="#">Feng Shui</a>
+<a class="text-gray-400 hover:text-yellow-200 transition-colors font-serif text-lg tracking-tight font-light" href="#">News</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-on-surface-variant hover:text-primary-container transition-colors">search</button>
+<button class="bg-primary-container text-on-primary-container px-6 py-2 rounded-sm font-label font-bold text-sm hover:scale-95 duration-150 transition-all">Sign In</button>
+</div>
+</nav>
+</header>
+<main class="max-w-screen-2xl mx-auto px-8 py-16 grid grid-cols-1 lg:grid-cols-12 gap-16">
+<!-- Left: Contextual Sidebar (Explanations) -->
+<aside class="lg:col-span-3 order-2 lg:order-1">
+<div class="sticky top-32 space-y-12">
+<div>
+<span class="label-sm uppercase tracking-widest text-primary-container opacity-60 font-label text-[10px] mb-4 block">Kiến Thức Tử Vi</span>
+<h3 class="font-headline text-2xl text-primary mb-6 italic">Giải Mã Thuật Ngữ</h3>
+<div class="space-y-8">
+<div class="group">
+<h4 class="text-primary-container font-headline text-lg mb-2">Cung (Palaces)</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed font-light">12 cung địa bàn đại diện cho 12 phương diện của cuộc đời như Mệnh, Phụ, Phúc, Điền, Quan...</p>
+</div>
+<div class="group">
+<h4 class="text-primary-container font-headline text-lg mb-2">Sao (Stars)</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed font-light">Hệ thống Chính tinh và Phụ tinh tương tác lẫn nhau, tạo nên các cách cục tốt xấu trong lá số.</p>
+</div>
+<div class="group">
+<h4 class="text-primary-container font-headline text-lg mb-2">Hạn (Periods)</h4>
+<p class="text-on-surface-variant text-sm leading-relaxed font-light">Đại vận 10 năm và tiểu vận hàng năm giúp dự đoán các biến cố và thời cơ trong cuộc sống.</p>
+</div>
+</div>
+</div>
+<div class="p-6 bg-surface-container-low border border-outline-variant/20 rounded-sm">
+<span class="material-symbols-outlined text-primary-container mb-4" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+<p class="text-sm italic text-on-surface-variant">"Mệnh tốt không bằng Thân tốt, Thân tốt không bằng Hạn tốt."</p>
+</div>
+</div>
+</aside>
+<!-- Center: Main Generation Form -->
+<section class="lg:col-span-6 order-1 lg:order-2 space-y-16">
+<header class="max-w-xl">
+<h1 class="font-headline text-5xl md:text-6xl text-primary leading-tight mb-6 -tracking-wider italic">Lập Lá Số Tử Vi</h1>
+<p class="text-on-surface-variant font-body text-lg font-light leading-relaxed">Khám phá bản đồ định mệnh của bạn thông qua thuật toán cổ truyền kết hợp trí tuệ số. Hãy nhập chính xác thông tin để khai mở Manuscript.</p>
+</header>
+<form class="space-y-10 manuscript-glow">
+<!-- Name Input -->
+<div class="relative group">
+<label class="block text-[10px] uppercase tracking-[0.2em] text-outline mb-2 transition-colors group-focus-within:text-primary-container">Họ và tên</label>
+<input class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 focus:border-primary-container text-xl font-headline tracking-wide placeholder:text-surface-container-highest transition-all" placeholder="VÍ DỤ: NGUYỄN VĂN A" type="text"/>
+</div>
+<!-- Date and Calendar Toggle -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+<div class="relative group">
+<label class="block text-[10px] uppercase tracking-[0.2em] text-outline mb-2 group-focus-within:text-primary-container">Ngày tháng năm sinh</label>
+<input class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 focus:border-primary-container text-lg font-body transition-all" type="date"/>
+</div>
+<div class="relative">
+<label class="block text-[10px] uppercase tracking-[0.2em] text-outline mb-4">Loại lịch</label>
+<div class="flex p-1 bg-surface-container-lowest border border-outline-variant/30 w-full rounded-sm">
+<button class="flex-1 py-2 text-xs font-bold uppercase tracking-widest bg-primary-container text-on-primary-container shadow-sm" type="button">Dương Lịch</button>
+<button class="flex-1 py-2 text-xs font-bold uppercase tracking-widest text-on-surface-variant hover:text-primary-container transition-colors" type="button">Âm Lịch</button>
+</div>
+</div>
+</div>
+<!-- Time and Gender -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+<div class="relative group">
+<label class="block text-[10px] uppercase tracking-[0.2em] text-outline mb-2 group-focus-within:text-primary-container">Giờ sinh</label>
+<select class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 focus:border-primary-container text-lg font-body transition-all appearance-none">
+<option class="bg-surface">Tý (23h - 01h)</option>
+<option class="bg-surface">Sửu (01h - 03h)</option>
+<option class="bg-surface">Dần (03h - 05h)</option>
+<option class="bg-surface">Mão (05h - 07h)</option>
+<option class="bg-surface">Thìn (07h - 09h)</option>
+<option class="bg-surface">Tỵ (09h - 11h)</option>
+<option class="bg-surface">Ngọ (11h - 13h)</option>
+<option class="bg-surface">Mùi (13h - 15h)</option>
+<option class="bg-surface">Thân (15h - 17h)</option>
+<option class="bg-surface">Dậu (17h - 19h)</option>
+<option class="bg-surface">Tuất (19h - 21h)</option>
+<option class="bg-surface">Hợi (21h - 23h)</option>
+</select>
+</div>
+<div class="relative">
+<label class="block text-[10px] uppercase tracking-[0.2em] text-outline mb-4">Giới tính</label>
+<div class="flex gap-6">
+<label class="flex items-center gap-3 cursor-pointer group">
+<input checked="" class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" name="gender" type="radio"/>
+<span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Nam</span>
+</label>
+<label class="flex items-center gap-3 cursor-pointer group">
+<input class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" name="gender" type="radio"/>
+<span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Nữ</span>
+</label>
+</div>
+</div>
+</div>
+<div class="pt-8">
+<button class="group relative w-full py-5 bg-gradient-to-r from-primary-container to-[#e9c400] text-on-primary-container font-label font-extrabold uppercase tracking-[0.3em] text-sm overflow-hidden hover:opacity-90 transition-all active:scale-[0.98]" type="button">
+<span class="relative z-10 flex items-center justify-center gap-3">
+                            An Lá Số Ngay
+                            <span class="material-symbols-outlined text-lg">flare</span>
+</span>
+</button>
+</div>
+</form>
+<!-- Bagua Placeholder Section -->
+<div class="mt-20 border-t border-outline-variant/10 pt-20">
+<div class="relative aspect-square w-full max-w-2xl mx-auto flex items-center justify-center p-8 bg-surface-container-lowest rounded-full border border-primary-container/10 group overflow-hidden">
+<!-- Rotating Decorative Element -->
+<div class="absolute inset-0 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
+<img class="w-full h-full object-cover" data-alt="intricate circular bagua diagram with traditional vietnamese lotus and cloud motifs in gold lines on black background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_F64g2DvaLGkjxU3JDZpj_xWzrs1NjdhXdmWPFDslW5v26X08CRPQVNhPC0nP0fwOSWsfk23mSXzceJz73jb5PpXNkcAivg7hGtw2ffqjp8vwwaaC-W7dXfxywNV3Hzbyd4MhsHM3bFNI9ZRLkyOB2fU9S6hk3WCIOilYe0_GlGoM1gv50fEBJbMobEMhZ-oOuNmS-SiR__8MSfNPh3pOxPAt9kQcYaNrq-G3jc82EM_E9MfP8-7nnUamcuUn05-J3CrdW0fWsa4"/>
+</div>
+<div class="text-center z-10 p-12 glass-panel border border-primary-container/20 rounded-xl max-w-sm">
+<span class="material-symbols-outlined text-5xl text-primary-container mb-6 block" style="font-variation-settings: 'FILL' 0, 'wght' 100;">temple_hindu</span>
+<h3 class="font-headline text-2xl text-primary mb-4 italic">Bản Đồ Mệnh Cách</h3>
+<p class="text-on-surface-variant font-light text-sm leading-relaxed mb-8">Lá số của bạn sẽ được hiển thị tại đây với đầy đủ 12 cung và hệ thống sao chiếu mệnh sau khi nhấn nút an lá số.</p>
+<div class="flex justify-center gap-4 opacity-40">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Right: Decorative / Social Proof -->
+<aside class="lg:col-span-3 order-3 hidden xl:block">
+<div class="space-y-12">
+<div class="relative rounded-sm overflow-hidden aspect-[3/4]">
+<img class="w-full h-full object-cover grayscale brightness-50" data-alt="ethereal portrait of a serene person surrounded by golden stardust and celestial charts in a moody dark setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAm4UysmCrrtwbRhfFYYTqcrMv4VHb4TAgR4mIz_bBGFJY-GVLrg_dGtlH5HkOBJfnO5zwLxOn14ne2os0hYVk7fUSGEw1kJbJuXmcDH5c4XY3L8h8UKUr2v-8glPqWIpgCUQ6o7-e0_Rerm4W_qmf5Fru3ZqMsyqP6DpwsiKgYGlZle9wdJMgxZ9EXStQwhQB_dx0cEGGIsHcSQOkYkgdQRKm7b0mIkfbseXXwsWDh_o-vbhY8aIAKnW2kp_WWrxhOXP_EFhvYz4E"/>
+<div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6">
+<p class="text-xs font-serif italic text-primary-container opacity-80 mb-2">Đặc Quyền Hội Viên</p>
+<h4 class="text-lg font-headline text-white leading-tight">Phân tích chuyên sâu từ các chuyên gia hàng đầu</h4>
+</div>
+</div>
+<div class="space-y-6">
+<h5 class="font-label text-[10px] uppercase tracking-widest text-outline">Bài viết liên quan</h5>
+<div class="space-y-4">
+<a class="block group" href="#">
+<p class="text-sm font-headline group-hover:text-primary-container transition-colors mb-1">Cách xác định cung Mệnh và Thân</p>
+<span class="text-[10px] text-on-secondary-container">5 phút đọc</span>
+</a>
+<a class="block group border-t border-outline-variant/10 pt-4" href="#">
+<p class="text-sm font-headline group-hover:text-primary-container transition-colors mb-1">Ý nghĩa vòng Tràng Sinh trong Tử Vi</p>
+<span class="text-[10px] text-on-secondary-container">8 phút đọc</span>
+</a>
+</div>
+</div>
+</div>
+</aside>
+</main>
+<!-- Footer -->
+<footer class="w-full mt-20 bg-[#0a0a0a] dark:bg-[#0a0a0a] border-t border-yellow-900/20">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12 px-12 py-16 max-w-7xl mx-auto">
+<div class="space-y-6">
+<div class="font-serif text-xl text-yellow-500">The Celestial Manuscript</div>
+<p class="font-sans text-sm tracking-wide text-gray-500">© 2024 The Celestial Manuscript. Spiritual insights for the modern soul.</p>
+</div>
+<div class="grid grid-cols-2 gap-8">
+<div class="flex flex-col gap-4">
+<a class="text-gray-600 hover:text-yellow-600 font-sans text-sm tracking-wide" href="#">Contact Us</a>
+<a class="text-gray-600 hover:text-yellow-600 font-sans text-sm tracking-wide" href="#">Privacy Policy</a>
+</div>
+<div class="flex flex-col gap-4">
+<a class="text-gray-600 hover:text-yellow-600 font-sans text-sm tracking-wide" href="#">Terms of Service</a>
+<a class="text-gray-600 hover:text-yellow-600 font-sans text-sm tracking-wide" href="#">Disclaimer</a>
+</div>
+</div>
+<div class="space-y-4">
+<p class="font-sans text-sm tracking-wide text-gray-500">Subscribe to our celestial updates.</p>
+<div class="flex border-b border-yellow-900/30">
+<input class="bg-transparent border-none py-2 text-sm focus:ring-0 w-full" placeholder="Your email address" type="email"/>
+<button class="text-yellow-500 material-symbols-outlined">arrow_forward</button>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

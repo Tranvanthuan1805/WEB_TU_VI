@@ -1,14 +1,12 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
 
-<div class="page">
-    @* <div class="sidebar">
-        <NavMenu />
-    </div> *@
-
-    <main>
-        <article class="content px-4">
+<div class="page bg-background min-h-screen flex flex-col">
+    <main class="flex-1">
+        <NavMenu></NavMenu>
+        <article class="content">
             @Body
         </article>
+        <Footer></Footer>
     </main>
 </div>
 
@@ -17,3 +15,9 @@
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    }
+</style>
