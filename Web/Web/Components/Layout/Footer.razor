@@ -1,6 +1,3 @@
-@implements IDisposable
-@inject NavigationManager NavigationManager
-@rendermode InteractiveAuto
 
 <footer class="w-full mt-20 bg-surface-container-lowest border-t border-yellow-900/20">
     <div class="grid grid-cols-1 md:grid-cols-3 gap-12 px-12 py-16 max-w-7xl mx-auto">
@@ -23,22 +20,4 @@
 
 @code {
 
-
-    private string? currentUrl;
-    protected override void OnInitialized()
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
-        NavigationManager.LocationChanged += OnLocationChanged;
-    }
-
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
-    {
-        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
-        StateHasChanged();
-    }
-
-    public void Dispose()
-    {
-        NavigationManager.LocationChanged -= OnLocationChanged;
-    }
 }

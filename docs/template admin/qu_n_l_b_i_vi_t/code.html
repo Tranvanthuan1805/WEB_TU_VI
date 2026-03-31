@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Article Management | Precision Admin</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary": "#505f76",
+              "on-secondary-fixed-variant": "#38485d",
+              "surface-bright": "#f7f9fb",
+              "tertiary-fixed-dim": "#ffb691",
+              "primary-fixed": "#dce1ff",
+              "on-error": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "surface-container-low": "#f2f4f6",
+              "on-tertiary-fixed-variant": "#773205",
+              "secondary-fixed": "#d3e4fe",
+              "secondary-fixed-dim": "#b7c8e1",
+              "surface-container-highest": "#e0e3e5",
+              "on-surface": "#191c1e",
+              "error-container": "#ffdad6",
+              "outline": "#757682",
+              "inverse-surface": "#2d3133",
+              "on-tertiary-container": "#f39461",
+              "surface": "#f7f9fb",
+              "on-primary-container": "#90a8ff",
+              "primary-fixed-dim": "#b6c4ff",
+              "tertiary-container": "#6e2c00",
+              "on-secondary-container": "#54647a",
+              "surface-dim": "#d8dadc",
+              "primary": "#00236f",
+              "outline-variant": "#c5c5d3",
+              "background": "#f7f9fb",
+              "primary-container": "#1e3a8a",
+              "tertiary-fixed": "#ffdbcb",
+              "surface-container-high": "#e6e8ea",
+              "inverse-on-surface": "#eff1f3",
+              "on-primary-fixed-variant": "#264191",
+              "on-secondary": "#ffffff",
+              "on-primary": "#ffffff",
+              "surface-tint": "#4059aa",
+              "surface-container": "#eceef0",
+              "on-secondary-fixed": "#0b1c30",
+              "on-tertiary-fixed": "#341100",
+              "on-background": "#191c1e",
+              "secondary-container": "#d0e1fb",
+              "on-error-container": "#93000a",
+              "on-tertiary": "#ffffff",
+              "error": "#ba1a1a",
+              "surface-variant": "#e0e3e5",
+              "tertiary": "#4b1c00",
+              "on-primary-fixed": "#00164e",
+              "on-surface-variant": "#444651",
+              "inverse-primary": "#b6c4ff"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+        .no-line { border: none !important; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- SideNavBar Shell -->
+<aside class="h-screen w-64 fixed left-0 top-0 bg-[#eceef0] dark:bg-slate-900 font-['Inter'] antialiased text-sm tracking-tight no-line transition-colors duration-300 flex flex-col py-8 z-[60]">
+<div class="px-6 mb-10 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white" data-icon="architecture">architecture</span>
+</div>
+<div>
+<h1 class="text-xl font-bold text-[#191c1e] dark:text-white tracking-tighter">Precision Admin</h1>
+<p class="text-[10px] uppercase tracking-widest text-secondary font-bold">Management Suite</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<!-- Dashboard (Inactive) -->
+<a class="text-[#505f76] dark:text-slate-400 hover:text-[#191c1e] dark:hover:text-white px-6 py-3 flex items-center gap-3 transition-all hover:bg-[#e6e8ea] dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- Articles (Active) -->
+<a class="relative text-[#00236f] dark:text-blue-400 font-semibold before:content-[''] before:absolute before:left-0 before:w-1 before:h-8 before:bg-[#00236f] before:rounded-r-full px-6 py-3 flex items-center gap-3 transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span>Articles</span>
+</a>
+<!-- Configuration (Inactive) -->
+<a class="text-[#505f76] dark:text-slate-400 hover:text-[#191c1e] dark:hover:text-white px-6 py-3 flex items-center gap-3 transition-all hover:bg-[#e6e8ea] dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined" data-icon="settings_input_component">settings_input_component</span>
+<span>Configuration</span>
+</a>
+<!-- Users (Inactive) -->
+<a class="text-[#505f76] dark:text-slate-400 hover:text-[#191c1e] dark:hover:text-white px-6 py-3 flex items-center gap-3 transition-all hover:bg-[#e6e8ea] dark:hover:bg-slate-800" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Users</span>
+</a>
+<!-- Settings (Inactive) -->
+<a class="text-[#505f76] dark:text-slate-400 hover:text-[#191c1e] dark:hover:text-white px-6 py-3 flex items-center gap-3 transition-all hover:bg-[#e6e8ea] dark:hover:bg-slate-800 mt-auto" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+</aside>
+<!-- TopNavBar Shell -->
+<header class="fixed top-0 right-0 left-64 h-16 z-50 bg-[#ffffff]/85 dark:bg-slate-950/85 backdrop-blur-md border-b border-[#c5c5d3]/15 shadow-[0px_20px_40px_rgba(0,35,111,0.06)] flex justify-between items-center px-8 w-full font-['Inter'] text-sm font-medium">
+<div class="flex items-center gap-4 w-1/3">
+<div class="relative w-full max-w-sm">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-secondary text-lg" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-lg py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/10 transition-all outline-none" placeholder="Search workspace..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<button class="p-2 text-secondary hover:bg-[#f2f4f6] dark:hover:bg-slate-800 rounded-lg transition-all duration-300 ease-in-out relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-white"></span>
+</button>
+<div class="flex items-center gap-3 pl-4 border-l border-outline-variant/20">
+<div class="text-right">
+<p class="text-xs font-bold text-on-surface">Alex Thompson</p>
+<p class="text-[10px] text-secondary">Editor-in-Chief</p>
+</div>
+<img class="w-8 h-8 rounded-full object-cover" data-alt="Close-up portrait of a professional male editor in a modern studio setting with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuNEJWN56ghoPYh9nQnQKqRpba1WSrw11-DYl0p67A-03IPYKaLr_lxKACXLOib-QJv5i0xwbbbBgW_ULhKbgQpXh3xMir_kTAgtHZe8UdJV4Y3veCe10hWrvzvhRtXIo62ZB6PDR48Mi6FFh54G_p4gTvKTln3ETs6-lyIURMbSozvPo8iRaBHTs7N2c2mlKFVtD7VW0Rln3ilCD9r5ltRuDe4M-izaVhWXOZoOY51DoUIHYgiwulZbsShI_a6tqddgh6HhJJMAFL"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-64 pt-24 pb-12 px-8 min-h-screen flex flex-col">
+<!-- Header Section -->
+<section class="mb-10 flex justify-between items-end">
+<div>
+<h2 class="text-4xl font-extrabold tracking-tighter text-on-surface mb-2">Article Management</h2>
+<p class="text-secondary body-md">Review, edit, and organize your architectural publications.</p>
+</div>
+<button class="bg-primary-container text-white px-6 py-3 rounded-lg font-semibold flex items-center gap-2 hover:bg-primary transition-all duration-300 active:scale-[0.98]">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+<span>Add New Article</span>
+</button>
+</section>
+<!-- Stats Grid (Bento Style) -->
+<section class="grid grid-cols-12 gap-6 mb-8">
+<div class="col-span-12 lg:col-span-4 bg-white p-7 rounded-xl flex flex-col justify-between h-40">
+<div class="flex justify-between items-start">
+<span class="text-secondary label-md uppercase tracking-widest font-bold">Total Published</span>
+<span class="material-symbols-outlined text-primary" data-icon="check_circle">check_circle</span>
+</div>
+<div>
+<span class="text-3xl font-extrabold text-on-surface">1,284</span>
+<p class="text-xs text-secondary mt-1 flex items-center gap-1">
+<span class="text-emerald-600 font-bold">+12%</span> vs last month
+                    </p>
+</div>
+</div>
+<div class="col-span-12 lg:col-span-4 bg-white p-7 rounded-xl flex flex-col justify-between h-40">
+<div class="flex justify-between items-start">
+<span class="text-secondary label-md uppercase tracking-widest font-bold">Drafts Pending</span>
+<span class="material-symbols-outlined text-tertiary-container" data-icon="pending">pending</span>
+</div>
+<div>
+<span class="text-3xl font-extrabold text-on-surface">42</span>
+<p class="text-xs text-secondary mt-1">Requires editorial review</p>
+</div>
+</div>
+<div class="col-span-12 lg:col-span-4 bg-white p-7 rounded-xl flex flex-col justify-between h-40 overflow-hidden relative">
+<div class="z-10 relative">
+<span class="text-secondary label-md uppercase tracking-widest font-bold">Readership Trend</span>
+</div>
+<div class="z-10 relative">
+<span class="text-3xl font-extrabold text-on-surface">4.2M</span>
+<p class="text-xs text-secondary mt-1">Global monthly impressions</p>
+</div>
+<!-- Abstract Decorative Graph Background -->
+<div class="absolute bottom-0 left-0 w-full h-1/2 opacity-10 bg-gradient-to-t from-primary to-transparent"></div>
+</div>
+</section>
+<!-- Table Container Card -->
+<section class="bg-white rounded-xl shadow-[0px_20px_40px_rgba(0,35,111,0.03)] flex-1 flex flex-col">
+<!-- Table Controls -->
+<div class="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+<div class="flex items-center gap-4 flex-1">
+<div class="relative flex-1 max-w-md group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline group-focus-within:text-primary transition-colors" data-icon="search">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant/15 rounded-lg py-2.5 pl-10 pr-4 text-sm focus:ring-2 focus:ring-primary/5 focus:border-primary transition-all outline-none" placeholder="Search by title or author..." type="text"/>
+</div>
+<div class="relative">
+<select class="appearance-none bg-surface-container-low border border-outline-variant/15 rounded-lg py-2.5 pl-4 pr-10 text-sm focus:ring-2 focus:ring-primary/5 focus:border-primary outline-none text-on-surface-variant font-medium">
+<option>All Categories</option>
+<option>Urbanism</option>
+<option>Interiors</option>
+<option>Sustainability</option>
+<option>Theory</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none" data-icon="expand_more">expand_more</span>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="p-2.5 text-secondary hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="filter_list">filter_list</span>
+</button>
+<button class="p-2.5 text-secondary hover:bg-surface-container-low rounded-lg transition-colors">
+<span class="material-symbols-outlined" data-icon="download">download</span>
+</button>
+</div>
+</div>
+<!-- Data Table -->
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-6 py-4 label-sm uppercase tracking-widest text-secondary font-bold">Article Title</th>
+<th class="px-6 py-4 label-sm uppercase tracking-widest text-secondary font-bold">Category</th>
+<th class="px-6 py-4 label-sm uppercase tracking-widest text-secondary font-bold">Author</th>
+<th class="px-6 py-4 label-sm uppercase tracking-widest text-secondary font-bold">Status</th>
+<th class="px-6 py-4 label-sm uppercase tracking-widest text-secondary font-bold">Publish Date</th>
+<th class="px-6 py-4 label-sm uppercase tracking-widest text-secondary font-bold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-high transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<img class="w-12 h-12 rounded-lg object-cover grayscale group-hover:grayscale-0 transition-all" data-alt="Modern architectural glass building reflecting a clear blue sky with sharp geometric lines" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjGAi4bbivpXsQ98JYkqIjUS-bPDaniy91_k0CMI4u_xD_s2LJqZzePALbWz7nCA9d5uEflCsfj0cmqIgSJF3CwIIkjMqRQCjDpRmad7hZPrcxGW8dFfzTf55_oj1CDaR-xLYKDC4lEEm1348Mytgoi-5FqynUB0AxzjXtsIbTZ2251YacEn_K95ZTjXMe96PHulKppEWSg3zJOAeowgCYZ3yQJbr5jrUGX1nN5kJu1KgPDakuItpP8Ew8iTIRjJ1WdGddhq3s6IOz"/>
+<span class="font-semibold text-on-surface body-md block max-w-xs truncate">The Brutalist Revival: Concrete Aesthetics in 2024</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm font-medium text-secondary">Theory</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary-container text-[10px] text-white flex items-center justify-center font-bold">JM</div>
+<span class="text-sm text-on-surface">Julian Marc</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-full">Published</span>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm text-secondary">Oct 24, 2023</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex justify-end gap-1">
+<button class="p-2 text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="hover:bg-surface-container-high transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<img class="w-12 h-12 rounded-lg object-cover grayscale group-hover:grayscale-0 transition-all" data-alt="Interior of a luxury minimalist living room with high ceilings, large windows, and warm wooden accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCSpbOntXGItOCSV0xLD0SnbYb9hJ_XapJ3XpqAEGBwcPLK7cJBDWkedmMesHvcO0Y26uE_xcT19tkya4mpYW5ICYod88XO8DKDLY6iA3JR-0S-Ja9z5V2mzl2VQ_vMYW_M7mYHVL8kTbiDonlUdIPGkAR0tnNk21inWo6Jya6yfbsTg6MsGakeMzuj97lAvqXqXoDvPJTHZaVzdvVbZPfH91Tmb_5fbXjhiGsDjf1ITw7COAL1EWV8mMlcwbrIvB1xA4qudg-T4TdX"/>
+<span class="font-semibold text-on-surface body-md block max-w-xs truncate">Sustainable Living: Vertical Gardens in Kyoto</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm font-medium text-secondary">Sustainability</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary text-[10px] text-white flex items-center justify-center font-bold">SK</div>
+<span class="text-sm text-on-surface">Sana Kim</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-wider rounded-full">Draft</span>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm text-secondary">—</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex justify-end gap-1">
+<button class="p-2 text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-high transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<img class="w-12 h-12 rounded-lg object-cover grayscale group-hover:grayscale-0 transition-all" data-alt="A brightly lit modern open-plan office space with ergonomic furniture and industrial design elements" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBf7jZ2TeCOaD5zRP5KxiQaoqUktNTcD4AXnN6Pi71ib3V0ufxxvy3fvbcsMu5sBlZBwYvbT4FMNq5wyxL2moqJe8tp4R1cR_ktmp0JEqdEpCLFuSdYG_zCgtqBtjOuUkf_A3GKNFVmj98i5SljjDc0EyDdZSTdmd8nVdXX7ZAfANJYNCh54UMrRYnHciQqrj3W3ov9ZFuwmMUS9Wb8-GcYZbZ55MNXqJ8uIonxoefqeBdBg_O6sobcJ32RdT9X2IEnWNlDpaCFJcn"/>
+<span class="font-semibold text-on-surface body-md block max-w-xs truncate">The Future of Remote Workspace Design</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm font-medium text-secondary">Interiors</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary text-[10px] text-white flex items-center justify-center font-bold">RA</div>
+<span class="text-sm text-on-surface">Robert Ames</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-full">Published</span>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm text-secondary">Oct 12, 2023</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex justify-end gap-1">
+<button class="p-2 text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="hover:bg-surface-container-high transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<img class="w-12 h-12 rounded-lg object-cover grayscale group-hover:grayscale-0 transition-all" data-alt="Atmospheric shot of a futuristic city skyline at dusk with glowing neon lights and high-speed transit lines" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUisnz0TQG_kQ05fSNcIIIYZkI8KfttfJs5MjrbkB0spAN-K95Je7A665tv1DIuicoBDKpZY3jEqwpRBIxjktICc23YOhFYRn5ek-7poeV8Oid7C14_JVxz6KIaEgL6IU-AtjxknAcZAxgnEV4g0umTeSew256Q_7n-OpTyj8hFbFdUSo9K0lhPJJMRj6hDTMdP3KZcbiKM-rotkPPpvghPgU4yj-Snfcuw-iT_dauHorHT5OBQvhO6fSI9N5hR0wtJACaOAq8oUoE"/>
+<span class="font-semibold text-on-surface body-md block max-w-xs truncate">Smart Cities: Integrating AI into Urban Planning</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm font-medium text-secondary">Urbanism</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-tertiary-container text-[10px] text-white flex items-center justify-center font-bold">EH</div>
+<span class="text-sm text-on-surface">Elena Hayes</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-full">Published</span>
+</td>
+<td class="px-6 py-5">
+<span class="text-sm text-secondary">Oct 05, 2023</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex justify-end gap-1">
+<button class="p-2 text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="visibility">visibility</span>
+</button>
+<button class="p-2 text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="edit">edit</span>
+</button>
+<button class="p-2 text-secondary hover:text-error hover:bg-error/5 rounded-lg transition-all">
+<span class="material-symbols-outlined text-[20px]" data-icon="delete">delete</span>
+</button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Pagination -->
+<div class="p-6 mt-auto flex items-center justify-between border-t border-outline-variant/10">
+<span class="text-xs font-medium text-secondary uppercase tracking-widest">Showing 1-10 of 1,326 articles</span>
+<div class="flex gap-1">
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-outline-variant/20 text-secondary hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg bg-primary text-white font-bold text-xs">1</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-outline-variant/20 text-secondary hover:bg-surface-container-low transition-colors font-bold text-xs">2</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-outline-variant/20 text-secondary hover:bg-surface-container-low transition-colors font-bold text-xs">3</button>
+<span class="px-2 self-center text-secondary">...</span>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-outline-variant/20 text-secondary hover:bg-surface-container-low transition-colors font-bold text-xs">133</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-lg border border-outline-variant/20 text-secondary hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Footer Shell -->
+<footer class="w-full py-6 mt-12 flex justify-between items-center px-8 font-['Inter'] text-[0.75rem] uppercase tracking-widest font-medium border-t border-[#c5c5d3]/15 text-[#505f76] dark:text-slate-500">
+<div>
+                © 2024 Precision Architect v1.0.2
+            </div>
+<div class="flex gap-8">
+<a class="hover:text-[#00236f] transition-colors" href="#">Documentation</a>
+<a class="hover:text-[#00236f] transition-colors" href="#">Support</a>
+<a class="hover:text-[#00236f] transition-colors" href="#">Privacy</a>
+</div>
+</footer>
+</main>
+</body></html>

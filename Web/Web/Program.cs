@@ -89,7 +89,7 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
-    .AddAdditionalAssemblies(typeof(Web.Client._Imports).Assembly);
+    .AddAdditionalAssemblies(typeof(Web.Client.Components._Imports).Assembly);
 
 app.MapAdditionalIdentityEndpoints();
 
