@@ -1,43 +1,20 @@
 @inherits LayoutComponentBase
 
-<div class="admin-layout" data-theme="admin">
-    <header class="admin-header">
-        <div class="admin-header-search">
-            <span class="material-symbols-outlined">search</span>
-            <input type="text" placeholder="Search Workspace..." />
-        </div>
-
-        <div class="admin-header-actions">
-            <div class="admin-header-notifications">
-                <span class="material-symbols-outlined">notifications</span>
-                <span class="notification-badge"></span>
-            </div>
-
-            <div class="admin-header-divider"></div>
-
-            <div class="admin-header-user">
-                <div class="admin-header-user-text">
-                    <p>Admin User</p>
-                    <span>System Administrator</span>
-                </div>
-                <img src="https://lh3.googleusercontent.com/aida-public/AB6AXuAq380yTOQnHFNG-oJjchS8dFT4NJj3sB2LcOhDskL4BDQEWrDMQ9ZyDVIvl1_fgyJ934Xiz_mB0pZ3ik-16pnfRHHUlzNCE91HShANqEoeVfBylSqLSl5lkvikJwrUWX7_NpFZ8RfWzoQqIjqm-bkBMx9BB8rV7ZG1g0M1qmx_j6ShfUhHKZJAEqJUyVTmdK7EjrJlAhzzLlpLUF5JdEOfQfvnC5LN1glxyaFp8_8sByJsQuohbPanwr-2bLmYFuJP3rGkHU1YtHgc" alt="User" />
-            </div>
-        </div>
-    </header>
+    <div class="bg-background flex flex-col md:flex-row overflow-hidden" data-theme="admin">
         <AdminNavMenu></AdminNavMenu>
-
-    <main class="admin-main">
-        <article>
-            @Body
-        </article>
-    </main>
-</div>
+        <main class="flex-1">
+            <article class="p-4 overflow-auto h-screen">
+                    @Body
+            </article>
+        </main>
+    </div>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
+
 
 <style>
     .material-symbols-outlined {
@@ -47,5 +24,4 @@
 </style>
 
 @code {
-
 }
