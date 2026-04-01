@@ -7,9 +7,9 @@
     <base href="/" />
     <ResourcePreloader />
     @* <link rel="stylesheet" href="@Assets["lib/bootstrap/dist/css/bootstrap.min.css"]" /> *@
-    <link rel="stylesheet" href="@Assets["js/assets/styles.css"]" />
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="stylesheet" href="@Assets["Web.styles.css"]" />
+    <link rel="stylesheet" href="@Assets["js/assets/styles.css"]" />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Manrope:wght@300;400;600;800&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <ImportMap />
@@ -21,7 +21,9 @@
     <Routes />
     <ReconnectModal />
     @* <script src="@Assets["lib/bootstrap/dist/js/bootstrap.bundle.min.js"]"></script> *@
-    <script src="@Assets["js/assets/main.js"]"></script>
+    <script src="@Assets["js/assets/main.js"]" type="module"></script>
+    <script src="@Assets["lib/chart.js/chart.min.js"]"></script>
+    <script src="@Assets["lib/tinymce/tinymce.min.js"]"></script>
     <script src="@Assets["_framework/blazor.web.js"]"></script>
     <script src="@Assets["Components/Account/Shared/PasskeySubmit.razor.js"]" type="module"></script>
 </body>

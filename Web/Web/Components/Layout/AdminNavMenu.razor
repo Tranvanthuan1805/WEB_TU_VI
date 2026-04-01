@@ -1,0 +1,53 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">BlazorApp1</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="nav flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="counter">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Counter
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="weather">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Weather
+            </NavLink>
+        </div>
+    </nav>
+</div>
+
+@* 
+<nav class="admin-nav">
+    <NavLink href="/admin" class="admin-nav-item" Match="NavLinkMatch.All">
+        <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+        <span>Dashboard</span>
+    </NavLink>
+    <NavLink href="/admin/manager" class="admin-nav-item">
+        <span class="material-symbols-outlined">description</span>
+        <span>Articles</span>
+    </NavLink>
+    <NavLink href="/admin/config" class="admin-nav-item">
+        <span class="material-symbols-outlined">settings_input_component</span>
+        <span>Configuration</span>
+    </NavLink>
+    <NavLink href="/admin/users" class="admin-nav-item">
+        <span class="material-symbols-outlined">group</span>
+        <span>Users</span>
+    </NavLink>
+    <NavLink href="/admin/settings" class="admin-nav-item">
+        <span class="material-symbols-outlined">settings</span>
+        <span>Settings</span>
+    </NavLink>
+</nav> *@

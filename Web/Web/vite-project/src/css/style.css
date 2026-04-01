@@ -1,6 +1,7 @@
 @config "../../tailwind.config.js";
 @import "tailwindcss";
 
+
 /* ==========================================================================
    CSS Priority Order (Lowest → Highest)
 
@@ -15,7 +16,7 @@
    ========================================================================== */
 
 /* 1. Base Tailwind - imported first for lowest priority */
-
+@import "./theme.css";
 
 @layer base {
   * {

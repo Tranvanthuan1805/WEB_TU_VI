@@ -1,0 +1,533 @@
+.admin-dashboard {
+    /* Colors will resolve from [data-theme="admin"] in theme.css */
+}
+
+.dashboard-header {
+    margin-bottom: 2.5rem;
+}
+
+.dashboard-header h2 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: var(--on-surface);
+    margin: 0 0 0.5rem 0;
+    letter-spacing: -0.02em;
+}
+
+.dashboard-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dashboard-header-meta span:first-child {
+    font-size: 0.875rem;
+    color: var(--secondary);
+}
+
+.live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    background-color: rgba(0, 35, 111, 0.05);
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+}
+
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stat-card {
+    background-color: var(--surface-container-lowest);
+    border-radius: 0.75rem;
+    padding: 1.75rem;
+    box-shadow: 0 2px 4px rgba(0, 35, 111, 0.02);
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: scale(1.01);
+}
+
+.stat-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+}
+
+.stat-icon {
+    color: var(--primary);
+    padding: 0.5rem;
+    background-color: rgba(0, 35, 111, 0.05);
+    border-radius: 0.5rem;
+    font-size: 1.25rem;
+}
+
+.stat-trend {
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+}
+
+.stat-trend.positive {
+    color: #059669;
+    background-color: #ecfdf5;
+}
+
+.stat-trend.negative {
+    background-color: #fff7ed;
+    color: #c2410c;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--secondary);
+    font-weight: 500;
+    margin: 0 0 0.25rem 0;
+}
+
+.stat-value {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: var(--on-surface);
+    margin: 0;
+}
+
+.dashboard-main-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2.5rem;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-main-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-section {
+    background-color: var(--surface-container-lowest);
+    border-radius: 0.75rem;
+    padding: 2rem;
+    box-shadow: 0 20px 40px rgba(0, 35, 111, 0.04);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.section-header div h4 {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--on-surface);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.section-header div p {
+    font-size: 0.875rem;
+    color: var(--secondary);
+    margin: 0.25rem 0 0 0;
+}
+
+.chart-toggle {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.toggle-btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 0.25rem;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toggle-btn.active {
+    background-color: var(--primary-container);
+    color: var(--on-primary);
+}
+
+.toggle-btn:not(.active) {
+    background-color: var(--surface-container);
+    color: var(--secondary);
+}
+
+.toggle-btn:not(.active):hover {
+    background-color: var(--surface-container-high);
+}
+
+.chart-container {
+    height: 20rem;
+    margin-top: 1rem;
+}
+
+.chart-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+    padding: 0 0.5rem;
+}
+
+.chart-labels span {
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: var(--secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.notification-panel {
+    background-color: var(--primary-container);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    color: var(--on-primary);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0, 35, 111, 0.2);
+}
+
+.notification-content {
+    position: relative;
+    z-index: 10;
+}
+
+.notification-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.notification-header .material-symbols-outlined {
+    color: var(--on-primary-container);
+    font-size: 1.25rem;
+}
+
+.notification-header h4 {
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.notification-content p {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+.dismiss-btn {
+    width: 100%;
+    padding: 0.625rem;
+    border-radius: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: var(--on-primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.dismiss-btn:hover {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.notification-panel::after {
+    content: '';
+    position: absolute;
+    right: -1rem;
+    bottom: -1rem;
+    width: 6rem;
+    height: 6rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border-radius: 50%;
+    filter: blur(1rem);
+}
+
+.activity-panel {
+    background-color: var(--surface-container-lowest);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    box-shadow: 0 20px 40px rgba(0, 35, 111, 0.04);
+}
+
+.activity-panel .section-header {
+    margin-bottom: 1.5rem;
+}
+
+.activity-panel .section-header h4 {
+    font-size: 1rem;
+}
+
+.activity-panel .section-header .material-symbols-outlined {
+    color: var(--secondary);
+    font-size: 1.25rem;
+    cursor: pointer;
+}
+
+.activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.activity-item {
+    display: flex;
+    gap: 1rem;
+}
+
+.activity-dot {
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    margin-top: 0.375rem;
+    flex-shrink: 0;
+}
+
+.activity-dot.primary {
+    background-color: var(--primary);
+}
+
+.activity-dot.secondary {
+    background-color: var(--outline-variant);
+}
+
+.activity-dot.tertiary {
+    background-color: var(--tertiary-container);
+}
+
+.activity-content p {
+    font-size: 0.875rem;
+    color: var(--on-surface);
+    margin: 0;
+    line-height: 1.4;
+}
+
+.activity-content .highlight {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.activity-time {
+    font-size: 0.625rem;
+    color: var(--secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.view-all-btn {
+    width: 100%;
+    margin-top: 2rem;
+    padding: 0.75rem;
+    border: 1px solid rgba(0, 35, 111, 0.1);
+    border-radius: 0.5rem;
+    background-color: transparent;
+    color: var(--primary);
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.view-all-btn:hover {
+    background-color: rgba(0, 35, 111, 0.05);
+}
+
+.users-table-section {
+    background-color: var(--surface-container-lowest);
+    border-radius: 0.75rem;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0, 35, 111, 0.04);
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid rgba(197, 197, 211, 0.15);
+}
+
+.table-header h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--on-surface);
+    margin: 0;
+}
+
+.manage-link {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--primary);
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+}
+
+.manage-link:hover {
+    text-decoration: underline;
+}
+
+.manage-link .material-symbols-outlined {
+    font-size: 1rem;
+}
+
+.users-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.users-table thead {
+    background-color: var(--surface-container-low);
+}
+
+.users-table th {
+    padding: 0.75rem 2rem;
+    text-align: left;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    color: var(--secondary);
+}
+
+.users-table td {
+    padding: 1rem 2rem;
+    border-top: 1px solid rgba(197, 197, 211, 0.1);
+}
+
+.users-table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+.users-table tbody tr:hover {
+    background-color: var(--surface-container-high);
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-cell img {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.25rem;
+    object-fit: cover;
+}
+
+.user-cell .user-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--on-surface);
+    margin: 0;
+}
+
+.user-cell .user-email {
+    font-size: 0.625rem;
+    color: var(--secondary);
+}
+
+.role-cell {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--secondary);
+}
+
+.status-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.status-badge.active {
+    background-color: #ecfdf5;
+    color: #059669;
+}
+
+.status-badge.idle {
+    background-color: rgba(197, 197, 211, 0.1);
+    color: var(--secondary);
+}
+
+.activity-cell {
+    font-size: 0.875rem;
+    color: var(--secondary);
+}
+
+.action-btn {
+    padding: 0.5rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.action-btn .material-symbols-outlined {
+    color: var(--outline-variant);
+    font-size: 1.25rem;
+}
+
+.action-btn:hover {
+    background-color: var(--surface-container-low);
+}
+
+.action-btn:hover .material-symbols-outlined {
+    color: var(--primary);
+}

@@ -1,5 +1,284 @@
-﻿<h3>Manager</h3>
+@page "/admin/manager"
+
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components
+@using Web.Data
+
+@attribute [Authorize(Roles = RoleName.Administrator)]
+
+<PageTitle>Article Management - Precision Admin</PageTitle>
+
+<div class="article-manager">
+    <div class="page-header">
+        <div>
+            <h2>Article Management</h2>
+            <p>Review, edit, and organize your architectural publications.</p>
+        </div>
+        <button class="add-article-btn" @onclick="ShowCreateForm">
+            <span class="material-symbols-outlined">add</span>
+            <span>Add New Article</span>
+        </button>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Total Published</span>
+                <span class="material-symbols-outlined stat-mini-icon">check_circle</span>
+            </div>
+            <span class="stat-mini-value">@publishedCount</span>
+            <span class="stat-mini-trend positive">+12% vs last month</span>
+        </div>
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Drafts Pending</span>
+                <span class="material-symbols-outlined stat-mini-icon warning">pending</span>
+            </div>
+            <span class="stat-mini-value">@draftCount</span>
+            <span class="stat-mini-trend">Requires editorial review</span>
+        </div>
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Readership Trend</span>
+                <span class="material-symbols-outlined stat-mini-icon">trending_up</span>
+            </div>
+            <span class="stat-mini-value">4.2M</span>
+            <span class="stat-mini-trend">Global monthly impressions</span>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-controls">
+            <div class="search-filter">
+                <div class="search-input">
+                    <span class="material-symbols-outlined">search</span>
+                    <input type="text" placeholder="Search by title or author..." @bind="searchQuery" @oninput="OnSearchChanged" />
+                </div>
+                <div class="category-dropdown">
+                    <select @bind="selectedCategory">
+                        <option value="">All Categories</option>
+                        <option value="Urbanism">Urbanism</option>
+                        <option value="Interiors">Interiors</option>
+                        <option value="Sustainability">Sustainability</option>
+                        <option value="Theory">Theory</option>
+                    </select>
+                    <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+                </div>
+            </div>
+            <div class="table-actions">
+                <button class="action-icon-btn">
+                    <span class="material-symbols-outlined">filter_list</span>
+                </button>
+                <button class="action-icon-btn">
+                    <span class="material-symbols-outlined">download</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Article Title</th>
+                        <th>Category</th>
+                        <th>Author</th>
+                        <th>Status</th>
+                        <th>Publish Date</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var article in filteredArticles)
+                    {
+                        <tr>
+                            <td>
+                                <div class="article-title-cell">
+                                    <img src="@article.Thumbnail" alt="" class="article-thumb" />
+                                    <span class="article-title">@article.Title</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="category-tag">@article.Category</span>
+                            </td>
+                            <td>
+                                <div class="author-cell">
+                                    <div class="author-avatar" style="background-color: @article.AvatarColor">@article.AuthorInitials</div>
+                                    <span>@article.Author</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-tag @article.Status.ToLower()">@article.Status</span>
+                            </td>
+                            <td>
+                                <span class="date-text">@(article.PublishDate?.ToString("MMM dd, yyyy") ?? "—")</span>
+                            </td>
+                            <td>
+                                <div class="row-actions">
+                                    <button class="row-action-btn" title="View" @onclick="() => ViewArticle(article)">
+                                        <span class="material-symbols-outlined">visibility</span>
+                                    </button>
+                                    <button class="row-action-btn" title="Edit" @onclick="() => EditArticle(article)">
+                                        <span class="material-symbols-outlined">edit</span>
+                                    </button>
+                                    <button class="row-action-btn danger" title="Delete" @onclick="() => DeleteArticle(article)">
+                                        <span class="material-symbols-outlined">delete</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-footer">
+            <span class="showing-text">Showing @startItem-@endItem of @totalArticles articles</span>
+            <div class="pagination">
+                <button class="page-btn" disabled="@(_currentPage == 1)" @onclick="() => GoToPage(_currentPage - 1)">
+                    <span class="material-symbols-outlined">chevron_left</span>
+                </button>
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <button class="page-btn @(_currentPage == i ? "active" : "")" @onclick="() => GoToPage(i)">@i</button>
+                }
+                @if (totalPages > 5)
+                {
+                    <span class="page-ellipsis">...</span>
+                    <button class="page-btn" @onclick="() => GoToPage(totalPages)">@totalPages</button>
+                }
+                <button class="page-btn" disabled="@(_currentPage == totalPages)" @onclick="() => GoToPage(_currentPage + 1)">
+                    <span class="material-symbols-outlined">chevron_right</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_showEditor)
+{
+    <div class="editor-modal-overlay" @onclick="CloseEditor">
+        <div class="editor-modal" @onclick:stopPropagation="true">
+            <div class="editor-header">
+                <h3>@(_editingArticle == null ? "Add New Article" : "Edit Article")</h3>
+                <button class="close-btn" @onclick="CloseEditor">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="editor-body">
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" class="form-input" @bind="_articleTitle" placeholder="Enter article title..." />
+                </div>
+                <div class="form-group">
+                    <label>Content</label>
+                    <textarea id="tinymce-editor" class="tinymce-admin"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select class="form-input" @bind="_articleCategory">
+                        <option value="Urbanism">Urbanism</option>
+                        <option value="Interiors">Interiors</option>
+                        <option value="Sustainability">Sustainability</option>
+                        <option value="Theory">Theory</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Cover Image</label>
+                    <div class="file-upload-area">
+                        <span class="material-symbols-outlined">cloud_upload</span>
+                        <span>Click or drag to upload</span>
+                        <span class="file-hint">SVG, PNG, or WEBP (Max 2MB)</span>
+                    </div>
+                </div>
+            </div>
+            <div class="editor-footer">
+                <button class="btn-secondary" @onclick="CloseEditor">Cancel</button>
+                <button class="btn-primary" @onclick="SaveArticle">Save Article</button>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
+    private string searchQuery = "";
+    private string selectedCategory = "";
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private bool _showEditor = false;
+    private string _articleTitle = "";
+    private string _articleCategory = "Theory";
+    private ArticleItem? _editingArticle;
 
+    private int publishedCount = 1284;
+    private int draftCount = 42;
+    private int totalArticles = 1326;
+    private int totalPages => (int)Math.Ceiling((double)totalArticles / _pageSize);
+    private int startItem => (_currentPage - 1) * _pageSize + 1;
+    private int endItem => Math.Min(_currentPage * _pageSize, totalArticles);
+
+    private List<ArticleItem> articles = new()
+    {
+        new ArticleItem { Id = 1, Title = "The Brutalist Revival: Concrete Aesthetics in 2024", Category = "Theory", Author = "Julian Marc", AuthorInitials = "JM", AvatarColor = "#1e3a8a", Status = "Published", PublishDate = DateTime.Parse("2024-10-24"), Thumbnail = "https://lh3.googleusercontent.com/aida-public/AB6AXuBjGAi4bbivpXsQ98JYkqIjUS-bPDaniy91_k0CMI4u_xD_s2LJqZzePALbWz7nCA9d5uEflCsfj0cmqIgSJF3CwIIkjMqRQCjDpRmad7hZPrcxGW8dFfzTf55_oj1CDaR-xLYKDC4lEEm1348Mytgoi-5FqynUB0AxzjXtsIbTZ2251YacEn_K95ZTjXMe96PHulKppEWSg3zJOAeowgCYZ3yQJbr5jrUGX1nN5kJu1KgPDakuItpP8Ew8iTIRjJ1WdGddhq3s6IOz" },
+        new ArticleItem { Id = 2, Title = "Sustainable Living: Vertical Gardens in Kyoto", Category = "Sustainability", Author = "Sana Kim", AuthorInitials = "SK", AvatarColor = "#505f76", Status = "Draft", PublishDate = null, Thumbnail = "https://lh3.googleusercontent.com/aida-public/AB6AXuCSpbOntXGItOCSV0xLD0SnbYb9hJ_XapJ3XpqAEGBwcPLK7cJBDWkedmMesHvcO0Y26uE_xcT19tkya4mpYW5ICYod88XO8DKDLY6iA3JR-0S-Ja9z5V2mzl2VQ_vMYW_M7mYHVL8kTbiDonlUdIPGkAR0tnNk21inWo6Jya6yfbsTg6MsGakeMzuj97lAvqXqXoDvPJTHZaVzdvVbZPfH91Tmb_5fbXjhiGsDjf1ITw7COAL1EWV8mMlcwbrIvB1xA4qudg-T4TdX" },
+        new ArticleItem { Id = 3, Title = "The Future of Remote Workspace Design", Category = "Interiors", Author = "Robert Ames", AuthorInitials = "RA", AvatarColor = "#00236f", Status = "Published", PublishDate = DateTime.Parse("2024-10-12"), Thumbnail = "https://lh3.googleusercontent.com/aida-public/AB6AXuBBf7jZ2TeCOaD5zRP5KxiQaoqUktNTcD4AXnN6Pi71ib3V0ufxxvy3fvbcsMu5sBlZBwYvbT4FMNq5wyxL2moqJe8tp4R1cR_ktmp0JEqdEpCLFuSdYG_zCgtqBtjOuUkf_A3GKNFVmj98i5SljjDc0EyDdZSTdmd8nVdXX7ZAfANJYNCh54UMrRYnHciQqrj3W3ov9ZFuwmMUS9Wb8-GcYZbZ55MNXqJ8uIonxoefqeBdBg_O6sobcJ32RdT9X2IEnWNlDpaCFJcn" },
+        new ArticleItem { Id = 4, Title = "Smart Cities: Integrating AI into Urban Planning", Category = "Urbanism", Author = "Elena Hayes", AuthorInitials = "EH", AvatarColor = "#6e2c00", Status = "Published", PublishDate = DateTime.Parse("2024-10-05"), Thumbnail = "https://lh3.googleusercontent.com/aida-public/AB6AXuAUisnz0TQG_kQ05fSNcIIIYZkI8KfttfJs5MjrbkB0spAN-K95Je7A665tv1DIuicoBDKpZY3jEqwpRBIxjktICc23YOhFYRn5ek-7poeV8Oid7C14_JVxz6KIaEgL6IU-AtjxknAcZAxgnEV4g0umTeSew256Q_7n-OpTyj8hFbFdUSo9K0lhPJJMRj6hDTMdP3KZcbiKM-rotkPPpvghPgU4yj-Snfcuw-iT_dauHorHT5OBQvhO6fSI9N5hR0wtJACaOAq8oUoE" }
+    };
+
+    private List<ArticleItem> filteredArticles => articles.Where(a =>
+        (string.IsNullOrEmpty(searchQuery) || a.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) || a.Author.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) &&
+        (string.IsNullOrEmpty(selectedCategory) || a.Category == selectedCategory)
+    ).ToList();
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? "";
+        _currentPage = 1;
+    }
+
+    private void OnCategoryChanged(ChangeEventArgs e)
+    {
+        selectedCategory = e.Value?.ToString() ?? "";
+        _currentPage = 1;
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page >= 1 && page <= totalPages)
+        {
+            _currentPage = page;
+        }
+    }
+
+    private void ShowCreateForm()
+    {
+        _editingArticle = null;
+        _articleTitle = "";
+        _articleCategory = "Theory";
+        _showEditor = true;
+    }
+
+    private void ViewArticle(ArticleItem article) { }
+    private void EditArticle(ArticleItem article)
+    {
+        _editingArticle = article;
+        _articleTitle = article.Title;
+        _articleCategory = article.Category;
+        _showEditor = true;
+    }
+    private void DeleteArticle(ArticleItem article) { }
+    private void CloseEditor() => _showEditor = false;
+    private void SaveArticle() => CloseEditor();
+
+    private class ArticleItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string Author { get; set; } = "";
+        public string AuthorInitials { get; set; } = "";
+        public string AvatarColor { get; set; } = "";
+        public string Status { get; set; } = "";
+        public DateTime? PublishDate { get; set; }
+        public string Thumbnail { get; set; } = "";
+    }
 }
