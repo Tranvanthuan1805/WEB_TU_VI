@@ -381,3 +381,56 @@
     background-color: var(--primary);
     transform: scale(0.98);
 }
+
+.seed-description {
+    font-size: 0.875rem;
+    color: var(--on-surface-variant);
+    margin: 0 0 1rem 0;
+    line-height: 1.5;
+}
+
+.seed-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.btn-seed-create,
+.btn-seed-delete {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-seed-create {
+    background-color: var(--primary);
+    color: var(--on-primary);
+}
+
+.btn-seed-create:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: scale(0.98);
+}
+
+.btn-seed-delete {
+    background-color: var(--error);
+    color: var(--on-error);
+}
+
+.btn-seed-delete:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: scale(0.98);
+}
+
+.btn-seed-create:disabled,
+.btn-seed-delete:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

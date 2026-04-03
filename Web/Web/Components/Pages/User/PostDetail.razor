@@ -1,0 +1,130 @@
+@page "/bai-viet/{slug}"
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+<PageTitle>@(_post?.Title ?? "Không tìm thấy") | Bài Viết</PageTitle>
+
+<div class="max-w-3xl mx-auto px-8 py-16">
+    @if (_notFound)
+    {
+        <div class="text-center py-20">
+            <span class="material-symbols-outlined text-6xl text-outline mb-6">article</span>
+            <h1 class="font-headline text-3xl text-primary mb-4">Không Tìm Thấy Bài Viết</h1>
+            <p class="text-on-surface-variant mb-8">Bài viết bạn đang tìm kiếm không tồn tại hoặc chưa được xuất bản.</p>
+            <NavLink href="/bai-viet" class="inline-flex items-center gap-2 px-6 py-3 bg-primary-container text-on-primary-container rounded-lg hover:opacity-90 transition-opacity">
+                <span class="material-symbols-outlined">arrow_back</span>
+                Quay lại danh sách bài viết
+            </NavLink>
+        </div>
+    }
+    else if (_post != null)
+    {
+        <!-- Back link -->
+        <NavLink href="/bai-viet" class="inline-flex items-center gap-1 text-sm text-outline hover:text-primary-container transition-colors mb-8">
+            <span class="material-symbols-outlined text-sm">arrow_back</span>
+            Quay lại danh sách
+        </NavLink>
+        
+        <!-- Article header -->
+        <header class="mb-10 pb-8 border-b border-outline-variant/20">
+            <h1 class="font-headline text-3xl md:text-4xl text-primary leading-tight mb-4">@_post.Title</h1>
+            <div class="flex items-center gap-4 text-sm text-outline">
+                <span class="material-symbols-outlined text-sm">calendar_today</span>
+                <span>Cập nhật: @_post.DateUpdated.ToString("dd/MM/yyyy")</span>
+            </div>
+        </header>
+        
+        <!-- Article content -->
+        <article class="prose-content">
+            @((MarkupString)_post.Content)
+        </article>
+    }
+    else if (_post == null)
+    {
+        <div class="text-center py-20 text-on-surface-variant">
+            <span class="material-symbols-outlined text-6xl mb-6">article</span>
+            <p>Đang tải bài viết...</p>
+        </div>
+    }
+</div>
+
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    }
+    
+    /* Prose-like styling for rendered HTML content */
+    .prose-content {
+        color: var(--on-surface);
+        line-height: 1.8;
+    }
+    .prose-content :deep(h1),
+    .prose-content :deep(h2),
+    .prose-content :deep(h3) {
+        color: var(--primary);
+        font-family: var(--font-headline, inherit);
+        margin-top: 1.5em;
+        margin-bottom: 0.5em;
+    }
+    .prose-content :deep(h1) { font-size: 1.75rem; }
+    .prose-content :deep(h2) { font-size: 1.5rem; }
+    .prose-content :deep(h3) { font-size: 1.25rem; }
+    .prose-content :deep(p) {
+        margin-bottom: 1em;
+    }
+    .prose-content :deep(a) {
+        color: var(--primary-container);
+        text-decoration: underline;
+    }
+    .prose-content :deep(a:hover) {
+        color: var(--primary);
+    }
+    .prose-content :deep(ul),
+    .prose-content :deep(ol) {
+        margin-bottom: 1em;
+        padding-left: 1.5em;
+    }
+    .prose-content :deep(li) {
+        margin-bottom: 0.5em;
+    }
+    .prose-content :deep(blockquote) {
+        border-left: 3px solid var(--primary-container);
+        padding-left: 1em;
+        margin: 1em 0;
+        color: var(--on-surface-variant);
+        font-style: italic;
+    }
+    .prose-content :deep(img) {
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+        margin: 1em 0;
+    }
+    .prose-content :deep(strong) {
+        color: var(--primary);
+    }
+    .prose-content :deep(em) {
+        font-style: italic;
+        color: var(--on-surface-variant);
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Slug { get; set; } = "";
+    
+    private Post? _post;
+    private bool _notFound;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        _post = await context.Posts
+            .FirstOrDefaultAsync(p => p.Slug == Slug && p.Published);
+        
+        if (_post == null)
+        {
+            _notFound = true;
+        }
+    }
+}

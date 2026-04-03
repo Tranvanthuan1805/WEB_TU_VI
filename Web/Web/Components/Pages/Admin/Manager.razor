@@ -1,49 +1,50 @@
 @page "/admin/manager"
-
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components
-@using Web.Data
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@using Web.Utilities
+@using TinyMCE.Blazor
 
 @attribute [Authorize(Roles = RoleName.Administrator)]
+@inject NavigationManager Navigation
+@inject ToastService ToastService
+@inject ConfirmDialogService ConfirmDialogService
+@inject IJSRuntime JS
 
-<PageTitle>Article Management - Precision Admin</PageTitle>
+<PageTitle>Quản lý bài viết</PageTitle>
 
-<div class="article-manager">
+<div class="article-manager" data-theme="admin">
     <div class="page-header">
         <div>
-            <h2>Article Management</h2>
-            <p>Review, edit, and organize your architectural publications.</p>
+            <h2>Quản lý bài viết</h2>
+            <p>Xem, tạo, chỉnh sửa và xóa bài viết.</p>
         </div>
         <button class="add-article-btn" @onclick="ShowCreateForm">
             <span class="material-symbols-outlined">add</span>
-            <span>Add New Article</span>
+            <span>Thêm bài viết</span>
         </button>
     </div>
 
     <div class="stats-row">
         <div class="stat-mini">
             <div class="stat-mini-header">
-                <span class="stat-mini-label">Total Published</span>
+                <span class="stat-mini-label">Đã xuất bản</span>
                 <span class="material-symbols-outlined stat-mini-icon">check_circle</span>
             </div>
-            <span class="stat-mini-value">@publishedCount</span>
-            <span class="stat-mini-trend positive">+12% vs last month</span>
+            <span class="stat-mini-value">@_publishedCount</span>
         </div>
         <div class="stat-mini">
             <div class="stat-mini-header">
-                <span class="stat-mini-label">Drafts Pending</span>
+                <span class="stat-mini-label">Nháp</span>
                 <span class="material-symbols-outlined stat-mini-icon warning">pending</span>
             </div>
-            <span class="stat-mini-value">@draftCount</span>
-            <span class="stat-mini-trend">Requires editorial review</span>
+            <span class="stat-mini-value">@_draftCount</span>
         </div>
         <div class="stat-mini">
             <div class="stat-mini-header">
-                <span class="stat-mini-label">Readership Trend</span>
-                <span class="material-symbols-outlined stat-mini-icon">trending_up</span>
+                <span class="stat-mini-label">Tổng số</span>
+                <span class="material-symbols-outlined stat-mini-icon">article</span>
             </div>
-            <span class="stat-mini-value">4.2M</span>
-            <span class="stat-mini-trend">Global monthly impressions</span>
+            <span class="stat-mini-value">@_totalCount</span>
         </div>
     </div>
 
@@ -52,26 +53,16 @@
             <div class="search-filter">
                 <div class="search-input">
                     <span class="material-symbols-outlined">search</span>
-                    <input type="text" placeholder="Search by title or author..." @bind="searchQuery" @oninput="OnSearchChanged" />
+                    <input type="text" placeholder="Tìm kiếm theo tiêu đề..." @bind="searchQuery" @oninput="OnSearchChanged" />
                 </div>
                 <div class="category-dropdown">
-                    <select @bind="selectedCategory">
-                        <option value="">All Categories</option>
-                        <option value="Urbanism">Urbanism</option>
-                        <option value="Interiors">Interiors</option>
-                        <option value="Sustainability">Sustainability</option>
-                        <option value="Theory">Theory</option>
+                    <select @bind="_statusFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tất cả trạng thái</option>
+                        <option value="published">Đã xuất bản</option>
+                        <option value="draft">Nháp</option>
                     </select>
                     <span class="material-symbols-outlined dropdown-icon">expand_more</span>
                 </div>
-            </div>
-            <div class="table-actions">
-                <button class="action-icon-btn">
-                    <span class="material-symbols-outlined">filter_list</span>
-                </button>
-                <button class="action-icon-btn">
-                    <span class="material-symbols-outlined">download</span>
-                </button>
             </div>
         </div>
 
@@ -79,206 +70,1162 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Article Title</th>
-                        <th>Category</th>
-                        <th>Author</th>
-                        <th>Status</th>
-                        <th>Publish Date</th>
-                        <th class="text-right">Actions</th>
+                        <th @onclick="() => ToggleSort(nameof(Post.Title))" class="sortable">
+                            Tiêu đề
+                            @GetSortIcon(nameof(Post.Title))
+                        </th>
+                        <th>Trạng thái</th>
+                        <th @onclick="() => ToggleSort(nameof(Post.DateCreated))" class="sortable">
+                            Ngày tạo
+                            @GetSortIcon(nameof(Post.DateCreated))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Post.DateUpdated))" class="sortable">
+                            Ngày cập nhật
+                            @GetSortIcon(nameof(Post.DateUpdated))
+                        </th>
+                        <th class="text-right">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var article in filteredArticles)
+                    @if(_pagedPosts == null)
                     {
                         <tr>
-                            <td>
-                                <div class="article-title-cell">
-                                    <img src="@article.Thumbnail" alt="" class="article-thumb" />
-                                    <span class="article-title">@article.Title</span>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="category-tag">@article.Category</span>
-                            </td>
-                            <td>
-                                <div class="author-cell">
-                                    <div class="author-avatar" style="background-color: @article.AvatarColor">@article.AuthorInitials</div>
-                                    <span>@article.Author</span>
-                                </div>
-                            </td>
-                            <td>
-                                <span class="status-tag @article.Status.ToLower()">@article.Status</span>
-                            </td>
-                            <td>
-                                <span class="date-text">@(article.PublishDate?.ToString("MMM dd, yyyy") ?? "—")</span>
-                            </td>
-                            <td>
-                                <div class="row-actions">
-                                    <button class="row-action-btn" title="View" @onclick="() => ViewArticle(article)">
-                                        <span class="material-symbols-outlined">visibility</span>
-                                    </button>
-                                    <button class="row-action-btn" title="Edit" @onclick="() => EditArticle(article)">
-                                        <span class="material-symbols-outlined">edit</span>
-                                    </button>
-                                    <button class="row-action-btn danger" title="Delete" @onclick="() => DeleteArticle(article)">
-                                        <span class="material-symbols-outlined">delete</span>
-                                    </button>
-                                </div>
+                            <td colspan="5" class="text-center py-8 text-on-surface-variant">
+                                Đang tải...
                             </td>
                         </tr>
                     }
+                    else
+                    {
+                        foreach (var post in _pagedPosts)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="article-title-cell">
+                                        <span class="article-title">@post.Title</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="status-tag @(post.Published ? "published" : "draft")">@(post.Published ? "Xuất bản" : "Nháp")</span>
+                                </td>
+                                <td>
+                                    <span class="date-text">@post.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
+                                </td>
+                                <td>
+                                    <span class="date-text">@post.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
+                                </td>
+                                <td>
+                                    <div class="row-actions">
+                                        <button class="row-action-btn" title="Sửa" @onclick="() => EditPost(post)">
+                                            <span class="material-symbols-outlined">edit</span>
+                                        </button>
+                                        <button class="row-action-btn danger" title="Xóa" @onclick="() => DeletePost(post)">
+                                            <span class="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        if (!_pagedPosts.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-8 text-on-surface-variant">
+                                    Không có bài viết nào.
+                                </td>
+                            </tr>
+                        }
+                    }                    
                 </tbody>
             </table>
         </div>
 
-        <div class="table-footer">
-            <span class="showing-text">Showing @startItem-@endItem of @totalArticles articles</span>
-            <div class="pagination">
-                <button class="page-btn" disabled="@(_currentPage == 1)" @onclick="() => GoToPage(_currentPage - 1)">
-                    <span class="material-symbols-outlined">chevron_left</span>
-                </button>
-                @for (int i = 1; i <= totalPages; i++)
-                {
-                    <button class="page-btn @(_currentPage == i ? "active" : "")" @onclick="() => GoToPage(i)">@i</button>
-                }
-                @if (totalPages > 5)
-                {
-                    <span class="page-ellipsis">...</span>
-                    <button class="page-btn" @onclick="() => GoToPage(totalPages)">@totalPages</button>
-                }
-                <button class="page-btn" disabled="@(_currentPage == totalPages)" @onclick="() => GoToPage(_currentPage + 1)">
-                    <span class="material-symbols-outlined">chevron_right</span>
-                </button>
+        @if (_totalPages > 1)
+        {
+            <div class="table-footer w-full overflow-auto">
+                <div class="page-size-control">
+                    <label class="text-xs text-on-surface-variant">Số dòng:</label>
+                    <input type="number"
+                           class="page-size-input"
+                           min="1"
+                           @bind="_pageSize"
+                           @bind:after="UpdatePagedPosts" />
+                </div>
+                <span class="showing-text">Hiển thị @startItem-@endItem của @_totalFiltered bài viết</span>
+                <div class="pagination">
+                    <button class="page-btn" disabled="@(_currentPage == 1)" @onclick="() => GoToPage(_currentPage - 1)">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </button>
+                    @foreach (var item in GetVisiblePages())
+                    {
+                        if (item is int pageNum)
+                        {
+                            <button class="page-btn @(_currentPage == pageNum ? "active" : "")" @onclick="() => GoToPage(pageNum)">@pageNum</button>
+                        }
+                        else
+                        {
+                            <span class="page-ellipsis">...</span>
+                        }
+                    }
+                    <button class="page-btn" disabled="@(_currentPage == _totalPages)" @onclick="() => GoToPage(_currentPage + 1)">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </button>
+                </div>
+                <div class="page-jump">
+                    <label class="text-xs text-on-surface-variant">Tới trang:</label>
+                    <input type="number"
+                           class="page-jump-input"
+                           min="1" max="@_totalPages"
+                           @bind="_jumpToPage"
+                           @bind:after="JumpToPage" />
+                </div>
             </div>
-        </div>
+        }
     </div>
 </div>
 
 @if (_showEditor)
 {
     <div class="editor-modal-overlay" @onclick="CloseEditor">
-        <div class="editor-modal" @onclick:stopPropagation="true">
+        <div class="editor-modal overflow-auto" @onclick:stopPropagation="true">
             <div class="editor-header">
-                <h3>@(_editingArticle == null ? "Add New Article" : "Edit Article")</h3>
+                <h3>@(_isEditing ? "Chỉnh sửa bài viết" : "Thêm bài viết mới")</h3>
                 <button class="close-btn" @onclick="CloseEditor">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <div class="editor-body">
-                <div class="form-group">
-                    <label>Title</label>
-                    <input type="text" class="form-input" @bind="_articleTitle" placeholder="Enter article title..." />
-                </div>
-                <div class="form-group">
-                    <label>Content</label>
-                    <textarea id="tinymce-editor" class="tinymce-admin"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Category</label>
-                    <select class="form-input" @bind="_articleCategory">
-                        <option value="Urbanism">Urbanism</option>
-                        <option value="Interiors">Interiors</option>
-                        <option value="Sustainability">Sustainability</option>
-                        <option value="Theory">Theory</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Cover Image</label>
-                    <div class="file-upload-area">
-                        <span class="material-symbols-outlined">cloud_upload</span>
-                        <span>Click or drag to upload</span>
-                        <span class="file-hint">SVG, PNG, or WEBP (Max 2MB)</span>
+            <EditForm Model="_editModel" OnValidSubmit="SavePost">
+                <DataAnnotationsValidator />              
+                <div class="editor-body">
+                    <div class="form-group">
+                        <ValidationSummary class="text-error" role="alert" />
+                    </div>
+                    <div class="form-group">
+                        <label>Tiêu đề <span class="required">*</span></label>
+                        <InputText class="form-input" @bind-Value="_editModel.Title" placeholder="Nhập tiêu đề..." />
+                        <ValidationMessage For="@(() => _editModel.Title)" />
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Slug</label>
+                            <InputText class="form-input" @bind-Value="_editModel.Slug" placeholder="Tự động tạo từ tiêu đề" />
+                            <span class="form-hint">Để trống để tự động tạo</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Mô tả ngắn</label>
+                            <InputText class="form-input" @bind-Value="_editModel.Description" placeholder="Tự động tạo từ nội dung" />
+                            <span class="form-hint">Để trống để tự động tạo</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Nội dung <span class="required">*</span></label>
+                        <Editor class="form-input"
+                            LicenseKey="gpl"
+                            ScriptSrc="@Assets["lib/tinymce/tinymce.min.js"]"
+                            @bind-Value="_editModel.Content"
+                            Field="@(() => _editModel.Content)"
+                            Conf="@_tinymceConfig"
+                        />
+                        <ValidationMessage For="@(() => _editModel.Content)" />
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <InputCheckbox @bind-Value="_editModel.Published" />
+                            Xuất bản
+                        </label>
                     </div>
                 </div>
-            </div>
-            <div class="editor-footer">
-                <button class="btn-secondary" @onclick="CloseEditor">Cancel</button>
-                <button class="btn-primary" @onclick="SaveArticle">Save Article</button>
-            </div>
+                <div class="editor-footer">
+                    <button type="button" class="btn-secondary" @onclick="CloseEditor">Hủy</button>
+                    <button type="submit" class="btn-primary">@(_isEditing ? "Cập nhật" : "Tạo mới")</button>
+                </div>
+            </EditForm>
         </div>
     </div>
 }
 
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        vertical-align: middle;
+    }
+
+    .article-manager[data-theme="admin"] {
+        --primary: #1E3A8A;
+        --primary-container: #1E3A8A;
+        --on-primary: #ffffff;
+        --surface: #F8FAFC;
+        --surface-container: #e2e8f0;
+        --surface-container-low: #f1f5f9;
+        --surface-container-high: #cbd5e1;
+        --on-surface: #1e293b;
+        --on-surface-variant: #475569;
+        --outline: #64748B;
+        --outline-variant: #cbd5e1;
+        --error-container: #dc2626;
+        --on-error-container: #ffffff;
+        --secondary-container: #e2e8f0;
+        --on-secondary-container: #475569;
+        --tertiary-container: #6E2C00;
+        --on-tertiary-container: #ffffff;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header h2 {
+        color: var(--on-surface);
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin: 0 0 0.25rem;
+    }
+
+    .page-header p {
+        color: var(--on-surface-variant);
+        font-size: 0.875rem;
+        margin: 0;
+    }
+
+    .add-article-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        background: var(--primary);
+        color: var(--on-primary);
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .add-article-btn:hover {
+        opacity: 0.9;
+    }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-mini {
+        background: var(--surface-container-low);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+
+    .stat-mini-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-mini-label {
+        font-size: 0.75rem;
+        color: var(--on-surface-variant);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .stat-mini-icon {
+        color: var(--primary);
+        font-size: 1.25rem;
+    }
+
+    .stat-mini-icon.warning {
+        color: #f59e0b;
+    }
+
+    .stat-mini-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--on-surface);
+    }
+
+    .stat-mini-trend {
+        font-size: 0.75rem;
+        color: var(--on-surface-variant);
+    }
+
+    .table-container {
+        background: var(--surface-container-low);
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+
+    .table-controls {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--outline-variant);
+    }
+
+    .search-filter {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .search-input {
+        position: relative;
+        flex: 1;
+    }
+
+    .search-input .material-symbols-outlined {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--on-surface-variant);
+        font-size: 1.25rem;
+    }
+
+    .search-input input {
+        width: 100%;
+        padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.5rem;
+        background: var(--surface);
+        color: var(--on-surface);
+        font-size: 0.875rem;
+    }
+
+    .search-input input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.1);
+    }
+
+    .category-dropdown {
+        position: relative;
+        min-width: 180px;
+    }
+
+    .category-dropdown select {
+        width: 100%;
+        padding: 0.5rem 2rem 0.5rem 0.75rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.5rem;
+        background: var(--surface);
+        color: var(--on-surface);
+        font-size: 0.875rem;
+        appearance: none;
+        cursor: pointer;
+    }
+
+    .dropdown-icon {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: var(--on-surface-variant);
+    }
+
+    .data-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table th {
+        padding: 0.75rem 1rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--on-surface-variant);
+        background: var(--surface-container);
+        border-bottom: 1px solid var(--outline-variant);
+    }
+
+    .data-table th.sortable {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .data-table th.sortable:hover {
+        background: var(--surface-container-high);
+    }
+
+    .data-table td {
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--outline-variant);
+        font-size: 0.875rem;
+        color: var(--on-surface);
+    }
+
+    .data-table tbody tr:hover {
+        background: var(--surface-container);
+    }
+
+    .article-title-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .article-thumb {
+        width: 40px;
+        height: 40px;
+        border-radius: 0.375rem;
+        object-fit: cover;
+    }
+
+    .article-title {
+        font-weight: 500;
+        color: var(--on-surface);
+    }
+
+    .status-tag {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .status-tag.published {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-tag.draft {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+    }
+
+    .date-text {
+        color: var(--on-surface-variant);
+        font-size: 0.8125rem;
+    }
+
+    .row-actions {
+        display: flex;
+        gap: 0.25rem;
+        justify-content: flex-end;
+    }
+
+    .row-action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border: none;
+        border-radius: 0.375rem;
+        background: transparent;
+        color: var(--on-surface-variant);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .row-action-btn:hover {
+        background: var(--surface-container);
+    }
+
+    .row-action-btn.danger:hover {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .table-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: var(--surface-container);
+    }
+
+    .showing-text {
+        font-size: 0.8125rem;
+        color: var(--on-surface-variant);
+    }
+
+    .pagination {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .page-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface-variant);
+        font-size: 0.8125rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .page-btn:hover:not(:disabled):not(.active) {
+        background: var(--surface-container-high);
+    }
+
+    .page-btn.active {
+        background: var(--primary);
+        color: var(--on-primary);
+        border-color: var(--primary);
+    }
+
+    .page-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    .page-ellipsis {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        color: var(--on-surface-variant);
+        font-size: 0.8125rem;
+    }
+
+    .page-size-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .page-size-input {
+        width: 3.5rem;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface);
+        text-align: center;
+        font-size: 0.8125rem;
+    }
+
+    .page-jump {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .page-jump-input {
+        width: 3.5rem;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface);
+        text-align: center;
+        font-size: 0.8125rem;
+    }
+
+    .editor-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+    }
+
+    .editor-modal {
+        background: var(--surface-container-low);
+        border-radius: 0.75rem;
+        width: 90%;
+        max-width: 700px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--outline-variant);
+    }
+
+    .editor-header h3 {
+        margin: 0;
+        color: var(--on-surface);
+        font-size: 1.125rem;
+    }
+
+    .close-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border: none;
+        border-radius: 0.375rem;
+        background: transparent;
+        color: var(--on-surface-variant);
+        cursor: pointer;
+    }
+
+    .close-btn:hover {
+        background: var(--surface-container);
+    }
+
+    .editor-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--on-surface);
+        margin-bottom: 0.375rem;
+    }
+
+    .form-input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface);
+        font-size: 0.875rem;
+    }
+
+    .form-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.1);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .form-hint {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--on-surface-variant);
+        margin-top: 0.25rem;
+    }
+
+    .checkbox-label {
+        display: flex !important;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+    .required {
+        color: #dc2626;
+    }
+
+    .editor-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--outline-variant);
+    }
+
+    .btn-primary {
+        padding: 0.5rem 1.5rem;
+        background: var(--primary);
+        color: var(--on-primary);
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+    .btn-primary:hover {
+        opacity: 0.9;
+    }
+
+    .btn-secondary {
+        padding: 0.5rem 1.5rem;
+        background: transparent;
+        color: var(--on-surface-variant);
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+    .btn-secondary:hover {
+        background: var(--surface-container);
+    }
+
+    .validation-message {
+        color: #dc2626;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+</style>
+
 @code {
     private string searchQuery = "";
-    private string selectedCategory = "";
+    private string _statusFilter = "";
     private int _currentPage = 1;
     private int _pageSize = 10;
+    private int _jumpToPage = 1;
     private bool _showEditor = false;
-    private string _articleTitle = "";
-    private string _articleCategory = "Theory";
-    private ArticleItem? _editingArticle;
+    private bool _isEditing = false;
+    private int? _editingPostId;
 
-    private int publishedCount = 1284;
-    private int draftCount = 42;
-    private int totalArticles = 1326;
-    private int totalPages => (int)Math.Ceiling((double)totalArticles / _pageSize);
-    private int startItem => (_currentPage - 1) * _pageSize + 1;
-    private int endItem => Math.Min(_currentPage * _pageSize, totalArticles);
+    private int _publishedCount;
+    private int _draftCount;
+    private int _totalCount;
 
-    private List<ArticleItem> articles = new()
+    private string _sortField = nameof(Post.DateUpdated);
+    private bool _sortDescending = true;
+
+    private List<Post> _allPosts ;
+    private List<Post> _filteredPosts ;
+    private List<Post> _pagedPosts ;
+
+    [SupplyParameterFromForm]
+    private Post _editModel { get; set; }
+
+    protected override async Task OnInitializedAsync()
     {
-        new ArticleItem { Id = 1, Title = "The Brutalist Revival: Concrete Aesthetics in 2024", Category = "Theory", Author = "Julian Marc", AuthorInitials = "JM", AvatarColor = "#1e3a8a", Status = "Published", PublishDate = DateTime.Parse("2024-10-24"), Thumbnail = "https://lh3.googleusercontent.com/aida-public/AB6AXuBjGAi4bbivpXsQ98JYkqIjUS-bPDaniy91_k0CMI4u_xD_s2LJqZzePALbWz7nCA9d5uEflCsfj0cmqIgSJF3CwIIkjMqRQCjDpRmad7hZPrcxGW8dFfzTf55_oj1CDaR-xLYKDC4lEEm1348Mytgoi-5FqynUB0AxzjXtsIbTZ2251YacEn_K95ZTjXMe96PHulKppEWSg3zJOAeowgCYZ3yQJbr5jrUGX1nN5kJu1KgPDakuItpP8Ew8iTIRjJ1WdGddhq3s6IOz" },
-        new ArticleItem { Id = 2, Title = "Sustainable Living: Vertical Gardens in Kyoto", Category = "Sustainability", Author = "Sana Kim", AuthorInitials = "SK", AvatarColor = "#505f76", Status = "Draft", PublishDate = null, Thumbnail = "https://lh3.googleusercontent.com/aida-public/AB6AXuCSpbOntXGItOCSV0xLD0SnbYb9hJ_XapJ3XpqAEGBwcPLK7cJBDWkedmMesHvcO0Y26uE_xcT19tkya4mpYW5ICYod88XO8DKDLY6iA3JR-0S-Ja9z5V2mzl2VQ_vMYW_M7mYHVL8kTbiDonlUdIPGkAR0tnNk21inWo6Jya6yfbsTg6MsGakeMzuj97lAvqXqXoDvPJTHZaVzdvVbZPfH91Tmb_5fbXjhiGsDjf1ITw7COAL1EWV8mMlcwbrIvB1xA4qudg-T4TdX" },
-        new ArticleItem { Id = 3, Title = "The Future of Remote Workspace Design", Category = "Interiors", Author = "Robert Ames", AuthorInitials = "RA", AvatarColor = "#00236f", Status = "Published", PublishDate = DateTime.Parse("2024-10-12"), Thumbnail = "https://lh3.googleusercontent.com/aida-public/AB6AXuBBf7jZ2TeCOaD5zRP5KxiQaoqUktNTcD4AXnN6Pi71ib3V0ufxxvy3fvbcsMu5sBlZBwYvbT4FMNq5wyxL2moqJe8tp4R1cR_ktmp0JEqdEpCLFuSdYG_zCgtqBtjOuUkf_A3GKNFVmj98i5SljjDc0EyDdZSTdmd8nVdXX7ZAfANJYNCh54UMrRYnHciQqrj3W3ov9ZFuwmMUS9Wb8-GcYZbZ55MNXqJ8uIonxoefqeBdBg_O6sobcJ32RdT9X2IEnWNlDpaCFJcn" },
-        new ArticleItem { Id = 4, Title = "Smart Cities: Integrating AI into Urban Planning", Category = "Urbanism", Author = "Elena Hayes", AuthorInitials = "EH", AvatarColor = "#6e2c00", Status = "Published", PublishDate = DateTime.Parse("2024-10-05"), Thumbnail = "https://lh3.googleusercontent.com/aida-public/AB6AXuAUisnz0TQG_kQ05fSNcIIIYZkI8KfttfJs5MjrbkB0spAN-K95Je7A665tv1DIuicoBDKpZY3jEqwpRBIxjktICc23YOhFYRn5ek-7poeV8Oid7C14_JVxz6KIaEgL6IU-AtjxknAcZAxgnEV4g0umTeSew256Q_7n-OpTyj8hFbFdUSo9K0lhPJJMRj6hDTMdP3KZcbiKM-rotkPPpvghPgU4yj-Snfcuw-iT_dauHorHT5OBQvhO6fSI9N5hR0wtJACaOAq8oUoE" }
-    };
+        await LoadPosts();
+    }
 
-    private List<ArticleItem> filteredArticles => articles.Where(a =>
-        (string.IsNullOrEmpty(searchQuery) || a.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) || a.Author.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)) &&
-        (string.IsNullOrEmpty(selectedCategory) || a.Category == selectedCategory)
-    ).ToList();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+        }
+    }
+
+    private async Task LoadPosts()
+    {
+        using var context = DbFactory.CreateDbContext();
+        _allPosts = await context.Posts
+            .OrderByDescending(p => p.DateUpdated)
+            .ToListAsync();
+        ApplyFilters();
+    }
+
+    private void UpdateCounts()
+    {
+        _publishedCount = _allPosts.Count(p => p.Published);
+        _draftCount = _allPosts.Count(p => !p.Published);
+        _totalCount = _allPosts.Count;
+        _totalPages = (int)Math.Ceiling((double)_filteredPosts.Count / _pageSize);
+        _totalFiltered = _filteredPosts.Count;
+        startItem = _filteredPosts.Count == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
+        endItem = Math.Min(_currentPage * _pageSize, _filteredPosts.Count);
+        _jumpToPage = _currentPage;
+    }
+
+    private void ApplyFilters()
+    {
+        _filteredPosts = _allPosts.AsEnumerable()
+            .Where(p => string.IsNullOrEmpty(searchQuery) || p.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+            .Where(p => (string.IsNullOrWhiteSpace(_statusFilter))
+            || (_statusFilter == "published" && p.Published)
+            || (_statusFilter == "draft" && !p.Published) )
+        .ToList();
+
+        _filteredPosts = _sortField switch
+        {
+            nameof(Post.Title) => _sortDescending
+                ? _filteredPosts.OrderByDescending(p => p.Title).ToList()
+                : _filteredPosts.OrderBy(p => p.Title).ToList(),
+            nameof(Post.DateCreated) => _sortDescending
+                ? _filteredPosts.OrderByDescending(p => p.DateCreated).ToList()
+                : _filteredPosts.OrderBy(p => p.DateCreated).ToList(),
+            _ => _sortDescending
+                ? _filteredPosts.OrderByDescending(p => p.DateUpdated).ToList()
+                : _filteredPosts.OrderBy(p => p.DateUpdated).ToList()
+        };
+        _currentPage = 1;
+        UpdatePagedPosts();
+    }
+
+    private void UpdatePagedPosts()
+    {
+        if (_pageSize < 1)
+        {
+            _pageSize = 1;
+            return;
+        }
+
+        _pagedPosts = _filteredPosts
+            .Skip((_currentPage - 1) * _pageSize)
+            .Take(_pageSize)
+            .ToList();
+        UpdateCounts();
+        StateHasChanged();
+    }
+
+    private int _totalPages;
+    private int _totalFiltered;
+    private int startItem;
+    private int endItem;
 
     private void OnSearchChanged(ChangeEventArgs e)
     {
         searchQuery = e.Value?.ToString() ?? "";
-        _currentPage = 1;
+        ApplyFilters();
     }
 
-    private void OnCategoryChanged(ChangeEventArgs e)
+    private void OnFilterChanged()
     {
-        selectedCategory = e.Value?.ToString() ?? "";
-        _currentPage = 1;
+        ApplyFilters();
     }
 
-    private void GoToPage(int page)
+    private void OnPageSizeChanged()
     {
-        if (page >= 1 && page <= totalPages)
+        _pageSize = Math.Clamp(_pageSize, 10, 20);
+        UpdatePagedPosts();
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page >= 1 && page <= _totalPages)
         {
             _currentPage = page;
+            UpdatePagedPosts();
+            await JS.InvokeVoidAsync("scrollTo", 0, 0);
         }
+    }
+
+    private async Task JumpToPage()
+    {
+        if (_jumpToPage < 1)
+            _jumpToPage = 1;
+        else if (_jumpToPage > _totalPages)
+            _jumpToPage = _totalPages;
+        await GoToPage(_jumpToPage);
+    }
+
+    private void ToggleSort(string field)
+    {
+        if (_sortField == field)
+        {
+            _sortDescending = !_sortDescending;
+        }
+        else
+        {
+            _sortField = field;
+            _sortDescending = true;
+        }
+        ApplyFilters();
+    }
+
+    private string GetSortIcon(string field)
+    {
+        if (_sortField != field) return "";
+        return _sortDescending ? " ↓" : " ↑";
     }
 
     private void ShowCreateForm()
     {
-        _editingArticle = null;
-        _articleTitle = "";
-        _articleCategory = "Theory";
+        _isEditing = false;
+        _editingPostId = null;
+        _editModel = new Post();
         _showEditor = true;
     }
 
-    private void ViewArticle(ArticleItem article) { }
-    private void EditArticle(ArticleItem article)
+    private void EditPost(Post post)
     {
-        _editingArticle = article;
-        _articleTitle = article.Title;
-        _articleCategory = article.Category;
+        _isEditing = true;
+        _editingPostId = post.PostId;
+        _editModel = new Post
+        {
+            Title = post.Title,
+            Slug = post.Slug,
+            Description = post.Description,
+            Content = post.Content,
+            Published = post.Published
+        };
         _showEditor = true;
     }
-    private void DeleteArticle(ArticleItem article) { }
-    private void CloseEditor() => _showEditor = false;
-    private void SaveArticle() => CloseEditor();
 
-    private class ArticleItem
+    private async Task CloseEditor()
     {
-        public int Id { get; set; }
-        public string Title { get; set; } = "";
-        public string Category { get; set; } = "";
-        public string Author { get; set; } = "";
-        public string AuthorInitials { get; set; } = "";
-        public string AvatarColor { get; set; } = "";
-        public string Status { get; set; } = "";
-        public DateTime? PublishDate { get; set; }
-        public string Thumbnail { get; set; } = "";
+        if (_showEditor && HasUnsavedChanges())
+        {
+            var confirmed = await ConfirmDialogService.ShowAsync(
+                "Hủy thay đổi?",
+                "Các thay đổi chưa lưu sẽ bị mất.",
+                "Hủy thay đổi",
+                isDanger: false);
+            if (!confirmed) return;
+        }
+        _showEditor = false;
+    }
+
+    private bool HasUnsavedChanges()
+    {
+        return !string.IsNullOrEmpty(_editModel.Title) ||
+               !string.IsNullOrEmpty(_editModel.Content) ||
+               !string.IsNullOrEmpty(_editModel.Slug);
+    }
+
+    private async Task SavePost()
+    {
+        try
+        {
+            if (_isEditing)
+            {
+                var confirmed = await ConfirmDialogService.ShowAsync(
+                    "Xác nhận cập nhật",
+                    "Bạn có chắc muốn cập nhật bài viết này?",
+                    "Cập nhật",
+                    isDanger: false);
+                if (!confirmed) return;
+            }
+
+            var now = DateTime.UtcNow;
+
+            if (string.IsNullOrEmpty(_editModel.Slug))
+            {
+                _editModel.Slug = AppUtilities.GenerateSlug(_editModel.Title);
+            }
+
+            if (string.IsNullOrEmpty(_editModel.Description))
+            {
+                var plainText = System.Text.RegularExpressions.Regex.Replace(_editModel.Content, "<[^>]+>", "");
+                _editModel.Description = plainText.Length > 300
+                    ? plainText.Substring(0, 300) + "..."
+                    : plainText;
+            }
+
+            if (_isEditing && _editingPostId.HasValue)
+            {
+                using var context = DbFactory.CreateDbContext();
+                var post = await context.Posts.FindAsync(_editingPostId.Value);
+                if (post == null)
+                {
+                    ToastService.Show("error", "Không tìm thấy bài viết!");
+                    return;
+                }
+
+                post.Title = _editModel.Title;
+                post.Slug = _editModel.Slug;
+                post.Description = _editModel.Description;
+                post.Content = _editModel.Content;
+                post.Published = _editModel.Published;
+                post.DateUpdated = now;
+
+                context.Posts.Update(post);
+                await context.SaveChangesAsync();
+                ToastService.Show("success", "Đã cập nhật bài viết!");
+            }
+            else
+            {
+                var post = new Post
+                {
+                    Title = _editModel.Title,
+                    Slug = _editModel.Slug,
+                    Description = _editModel.Description,
+                    Content = _editModel.Content,
+                    Published = _editModel.Published,
+                    DateCreated = now,
+                    DateUpdated = now
+                };
+                using var context = DbFactory.CreateDbContext();
+                context.Posts.Add(post);
+                await context.SaveChangesAsync();
+                ToastService.Show("success", "Đã tạo bài viết mới!");
+            }
+
+            _showEditor = false;
+            await LoadPosts();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi: {ex.Message}");
+        }
+    }
+
+    private async Task DeletePost(Post post)
+    {
+        var confirmed = await ConfirmDialogService.ShowAsync(
+            "Xác nhận xóa",
+            $"Bạn có chắc muốn xóa bài viết \"{post.Title}\"?",
+            "Xóa",
+            isDanger: true);
+
+        if (!confirmed) return;
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            context.Posts.Remove(post);
+            await context.SaveChangesAsync();
+            ToastService.Show("success", "Đã xóa bài viết!");
+            await LoadPosts();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi xóa: {ex.Message}");
+        }
+    }
+
+    private Dictionary<string, object> _tinymceConfig => new()
+    {
+
+// Full bộ plugin free/open-source đáng dùng
+    {
+        "plugins",
+        "accordion advlist anchor autolink autoresize autosave charmap code codesample " +
+        "directionality emoticons fullscreen help image importcss insertdatetime link " +
+        "lists media nonbreaking pagebreak preview quickbars save searchreplace table " +
+        "visualblocks visualchars wordcount"
+    },
+
+    // Menu đầy đủ cho editor
+    { "menubar", "file edit view insert format tools table help" },
+
+    // Toolbar đầy đủ nhưng vẫn dễ dùng
+    {
+        "toolbar",
+        "undo redo restoredraft | blocks fontfamily fontsize | " +
+        "bold italic underline strikethrough forecolor backcolor | " +
+        "alignleft aligncenter alignright alignjustify | " +
+        "bullist numlist outdent indent | " +
+        "accordion | link anchor image media table | " +
+        "charmap emoticons codesample blockquote hr pagebreak nonbreaking | " +
+        "ltr rtl | searchreplace visualblocks visualchars | " +
+        "preview code fullscreen | insertdatetime | save help"
+    },
+
+    { "toolbar_sticky", true },
+    { "height", 400  },
+
+    // Tự co giãn chiều cao editor
+    { "autoresize_bottom_margin", 16 },
+    { "autoresize_overflow_padding", 8 },
+
+    // Quick toolbars
+    { "quickbars_selection_toolbar", "bold italic underline | blocks | forecolor backcolor | quicklink blockquote" },
+    { "quickbars_insert_toolbar", "quickimage quicktable | hr pagebreak" },
+
+    // Image upload
+    { "automatic_uploads", true },
+    { "images_upload_url", $"{Navigation.BaseUri.TrimEnd('/')}/api/tinymce/upload-image" },
+    { "file_picker_types", "file image media" },
+    { "images_upload_credentials", true },
+
+    // Image options
+    { "image_advtab", true },
+    { "image_caption", true },
+    { "image_title", true },
+    { "image_description", true },
+    { "image_dimensions", true },
+
+    // Link options
+    { "link_default_target", "_blank" },
+    { "link_assume_external_targets", true },
+
+    // Table options
+    { "table_default_attributes", new Dictionary<string, string> { { "border", "1" } } },
+    { "table_default_styles", new Dictionary<string, string> { { "border-collapse", "collapse" }, { "width", "100%" } } },
+
+    // Autosave
+    { "autosave_ask_before_unload", true },
+    { "autosave_interval", "30s" },
+    { "autosave_prefix", "tinymce-autosave-{path}{query}-{id}-" },
+    { "autosave_restore_when_empty", true },
+    { "autosave_retention", "2m" },
+
+    // Paste / URL / nội dung
+    { "paste_data_images", true },
+    { "branding", false },
+
+    // Context menu
+    { "contextmenu", "undo redo | inserttable | cell row column deletetable | link image table" },
+
+    // Thanh trạng thái
+    { "statusbar", true },
+
+    // Save button callback
+    {
+        "save_onsavecallback",
+        "function () { console.log('Save clicked'); }"
+    },
+
+    // Content style để figure/caption/table nhìn đẹp hơn
+    {
+        "content_style",
+        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px } " +
+        "figure.image { display:inline-block; margin: 0 2px 0 1px; } " +
+        "figure.image img { margin:8px 8px 0 8px; } " +
+        "figure.image figcaption { text-align:center; margin:6px 8px 6px 8px; color:#666; } " +
+        "table { border-collapse: collapse; width:100%; } " +
+        "table td, table th { border:1px solid #ccc; padding:8px; }"
+    },
+    // promotion
+    { "promotion", false }
+
+    };
+
+    private IEnumerable<object> GetVisiblePages()
+    {
+        if (_totalPages <= 9)
+        {
+            for (int i = 1; i <= _totalPages; i++)
+                yield return i;
+            yield break;
+        }
+
+        int windowStart = Math.Max(1, _currentPage - 1);
+        int windowEnd = Math.Min(_totalPages, windowStart + 2);
+        if (windowEnd - windowStart < 2)
+            windowStart = Math.Max(1, windowEnd - 2);
+
+        bool showStartEllipsis = windowStart > 3;
+        bool showEndEllipsis = windowEnd < _totalPages - 2;
+
+        // First 3 pages
+        int firstEnd = Math.Min(3, _totalPages);
+        for (int i = 1; i <= firstEnd; i++)
+            yield return i;
+
+        if (showStartEllipsis)
+            yield return "...";
+
+        // Middle 3 pages
+        for (int i = windowStart; i <= windowEnd; i++)
+        {
+            if (i > firstEnd && i < _totalPages - 2)
+                yield return i;
+        }
+
+        if (showEndEllipsis)
+            yield return "...";
+
+        // Last 3 pages
+        int lastStart = Math.Max(_totalPages - 2, firstEnd + 1);
+        for (int i = lastStart; i <= _totalPages; i++)
+            yield return i;
     }
 }

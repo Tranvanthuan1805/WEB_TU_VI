@@ -1,4 +1,5 @@
-﻿@rendermode InteractiveAuto
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@rendermode InteractiveAuto
 
 <div class="admin-sidebar md:w-50 p-4">
     <div>
@@ -16,17 +17,39 @@
             </NavLink>
             <NavLink href="/admin/manager" class="hover:text-primary">
                 <span class="material-symbols-outlined">description</span>
-                <span>Articles</span>
+                <span>Bài viết</span>
+            </NavLink>
+            <NavLink href="/admin/file-explorer" class="hover:text-primary">
+                <span class="material-symbols-outlined">folder</span>
+                <span>Quản lý file</span>
             </NavLink>
             <NavLink href="/admin/config" class="hover:text-primary">
-                <span class="material-symbols-outlined">settings_input_component</span>
-                <span>Configuration</span>
+                <span class="material-symbols-outlined">
+                    settings
+                </span>
+                <span>Thiết lập</span>
             </NavLink>
+            <AuthorizeView>
+                <Authorized>
+                    <div class="d-flex justify-content-end mb-3">
+                        <form method="post" action="/Account/Logout">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="returnUrl" value="Account/Login" />
+                            <button type="submit" class="hover:text-error">
+                                <span class="material-symbols-outlined">
+                                    logout
+                                </span>
+                                <span>Đăng xuất</span>
+                            </button>
+                        </form>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
         </nav>
     </div>
 
-@if (isMenuOpen)
-{  
+    @if (isMenuOpen)
+    {
         <nav class="admin-nav flex flex-col justify-center items-center md:hidden">
             <NavLink href="/admin" class="hover:text-primary" Match="NavLinkMatch.All" @onclick="CloseMenu">
                 <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
@@ -34,14 +57,36 @@
             </NavLink>
             <NavLink href="/admin/manager" class="hover:text-primary" @onclick="CloseMenu">
                 <span class="material-symbols-outlined">description</span>
-                <span>Articles</span>
+                <span>Bài viết</span>
+            </NavLink>
+            <NavLink href="/admin/file-explorer" class="hover:text-primary" @onclick="CloseMenu">
+                <span class="material-symbols-outlined">folder</span>
+                <span>Quản lý file</span>
             </NavLink>
             <NavLink href="/admin/config" class="hover:text-primary" @onclick="CloseMenu">
-                <span class="material-symbols-outlined">settings_input_component</span>
-                <span>Configuration</span>
+                <span class="material-symbols-outlined">
+                    settings
+                </span>
+                <span>Thiết lập</span>
             </NavLink>
+            <AuthorizeView>
+                <Authorized>
+                    <div class="d-flex justify-content-end mb-3">
+                        <form method="post" action="/Account/Logout">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="returnUrl" value="Account/Login" />
+                            <button type="submit" class="btn btn-outline-danger">
+                                <span class="material-symbols-outlined">
+                                    logout
+                                </span>
+                                <span>Đăng xuất</span>
+                            </button>
+                        </form>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
         </nav>
-}
+    }
 </div>
 
 <style>

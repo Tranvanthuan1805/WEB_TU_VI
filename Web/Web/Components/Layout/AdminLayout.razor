@@ -1,20 +1,22 @@
 @inherits LayoutComponentBase
+@using Web.Components.Shared
 
-    <div class="bg-background flex flex-col md:flex-row overflow-hidden" data-theme="admin">
-        <AdminNavMenu></AdminNavMenu>
-        <main class="flex-1">
-            <article class="p-4 overflow-auto h-screen">
-                    @Body
-            </article>
-        </main>
-    </div>
+<div class="bg-background flex flex-col md:flex-row overflow-hidden" data-theme="admin">
+    <AdminNavMenu></AdminNavMenu>
+    <main class="flex-1">
+        <article class="p-4 overflow-auto h-screen">
+            @Body
+        </article>
+    </main>
+    <Toast @rendermode="InteractiveServer" />
+    <ConfirmDialog @rendermode="InteractiveServer" />
+</div>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
     <span class="dismiss">🗙</span>
 </div>
-
 
 <style>
     .material-symbols-outlined {

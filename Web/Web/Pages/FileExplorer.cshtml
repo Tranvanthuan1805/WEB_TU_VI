@@ -1,0 +1,38 @@
+@page "/admin/file-explorer"
+@model Web.Pages.FileExplorerModel
+@using HGO.ASPNetCore.FileManager
+@using HGO.ASPNetCore.FileManager.ViewComponentsModel
+@{
+    ViewData["Title"] = "Quản lý File";
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quản lý File</title>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    @this.RenderHgoFileManagerCss(true)
+</head>
+<body style="margin: 0; padding: 1rem; background: #F8FAFC; font-family: system-ui, sans-serif;">
+    <div style="margin-bottom: 1rem;">
+        <a href="/admin/manager" style="color: #1E3A8A; text-decoration: none; font-size: 0.875rem;">
+            <span class="material-symbols-outlined" style="font-size: 1rem; vertical-align: middle;">arrow_back</span>
+            Quay lại Admin
+        </a>
+    </div>
+    <div style="height: calc(100vh - 80px);">
+        @await Component.InvokeAsync("FileManagerComponent", new FileManagerModel()
+        {
+            Id = "FM1",
+            RootFolder = Model.RootFolder,
+            ApiEndPoint = "/api/filemanager",
+            Config = new FileManagerConfig()
+        })
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    @this.RenderHgoFileManagerJavaScripts()
+</body>
+</html>

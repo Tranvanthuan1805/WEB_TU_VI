@@ -1,10 +1,13 @@
 ﻿
-using Web.Components;
+using HGO.ASPNetCore.FileManager;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Web.Components;
 using Web.Components.Account;
 using Web.Data;
+using Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,8 +16,10 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddEnvironmentVariables();
 
+builder.Services.AddControllers();
+builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<AppDBContext>(options =>
+builder.Services.AddDbContextFactory<AppDBContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DBContext") ?? throw new InvalidOperationException("Connection string 'DBContext' not found.");
     options.UseNpgsql(connectionString);
@@ -23,7 +28,16 @@ builder.Services.AddDbContext<AppDBContext>(options =>
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
-    .AddInteractiveWebAssemblyComponents();
+    .AddInteractiveWebAssemblyComponents()
+    .AddAuthenticationStateSerialization(options =>
+    {
+        // Nếu cần đầy đủ claims thì bật dòng này
+        options.SerializeAllClaims = true;
+    });
+
+builder.Services.AddRazorPages();
+builder.Services.AddControllers();
+;
 
 builder.Services.AddCascadingAuthenticationState();
 
@@ -63,12 +77,19 @@ builder.Services.AddIdentity<User, IdentityRole>(options =>
 
 builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
 
+builder.Services.AddScoped<ToastService>();
+builder.Services.AddScoped<ConfirmDialogService>();
+
+builder.Services.AddHgoFileManager();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();
+    app.MapOpenApi(); // mặc định: /openapi/v1.json
+
 }
 else
 {
@@ -85,7 +106,21 @@ app.UseAuthorization();
 
 app.UseAntiforgery();
 
+var uploadRoot = Path.Combine(builder.Environment.ContentRootPath, "FileServer");
+Directory.CreateDirectory(uploadRoot);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadRoot),
+    RequestPath = "/contents"
+});
+
+
+app.UseHgoFileManager();
+
 app.MapStaticAssets();
+app.MapRazorPages();
+app.MapControllers();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()

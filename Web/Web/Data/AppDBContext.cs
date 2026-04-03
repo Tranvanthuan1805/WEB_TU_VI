@@ -2,11 +2,14 @@
 using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
 using Web.Data;
+using Web.Models;
 
 namespace Web.Data
 {
     public class AppDBContext(DbContextOptions<AppDBContext> options) : IdentityDbContext<User>(options)
     {
+        public DbSet<Post> Posts { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);

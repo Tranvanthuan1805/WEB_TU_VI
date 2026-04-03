@@ -1,0 +1,67 @@
+@using Web.Services
+@implements IDisposable
+@inject ToastService ToastService
+
+@if (_visible)
+{
+    <div class="fixed top-4 right-4 z-[9999] max-w-sm">
+        <div class="@_bgClass rounded-lg shadow-lg border p-4 flex items-start gap-3" style="@_bgStyle">
+            <div class="flex-1">
+                <p class="text-sm font-medium @_textClass">@_message</p>
+            </div>
+            <button type="button" class="flex-shrink-0 @_textClass hover:opacity-70" @onclick="Hide">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _visible;
+    private string _message = "";
+    private string _bgClass = "";
+    private string _textClass = "";
+    private string _bgStyle = "";
+
+    protected override void OnInitialized()
+    {
+        ToastService.OnShow += OnToastShow;
+    }
+
+    private void OnToastShow(string type, string message)
+    {
+        _message = message;
+        _visible = true;
+
+        (_bgClass, _bgStyle, _textClass) = type switch
+        {
+            "success" => ("bg-surface-container-low border-primary", "border-left: 4px solid var(--primary);", "text-primary"),
+            "error" => ("bg-surface-container-low border-error-container", "border-left: 4px solid var(--error-container);", "text-on-error-container"),
+            "warning" => ("bg-surface-container-low border-tertiary-container", "border-left: 4px solid var(--tertiary-container);", "text-on-tertiary-container"),
+            "info" => ("bg-surface-container-low border-secondary-container", "border-left: 4px solid var(--secondary-container);", "text-on-secondary-container"),
+            _ => ("bg-surface-container border-outline", "", "text-on-surface")
+        };
+
+        InvokeAsync(StateHasChanged);
+        _ = AutoDismiss();
+    }
+
+    private async Task AutoDismiss()
+    {
+        await Task.Delay(3000);
+        await InvokeAsync(Hide);
+    }
+
+    private void Hide()
+    {
+        _visible = false;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        ToastService.OnShow -= OnToastShow;
+    }
+}

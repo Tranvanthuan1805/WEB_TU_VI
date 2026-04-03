@@ -1,10 +1,79 @@
 @inherits LayoutComponentBase
 
+@attribute [StreamRendering]
 <div class="page bg-background min-h-screen flex flex-col">
     <main class="flex-1">
         <NavMenu></NavMenu>
         <article class="content">
-            @Body
+            <div class="max-w-screen-2xl mx-auto px-8 py-16 grid grid-cols-1 lg:grid-cols-12 gap-16">
+                <!-- Left: Contextual Sidebar (Explanations) -->
+                <aside class="lg:col-span-3 order-2 lg:order-1">
+                    <div class="sticky top-32 space-y-12">
+                        <!-- Knowledge Section -->
+                        <div>
+                            <span class="label-sm uppercase tracking-widest text-primary font-label text-[10px] mb-4 block">Kiến Thức Tử Vi</span>
+                            <h3 class="font-headline text-2xl text-primary mb-6 italic">Giải Mã Thuật Ngữ</h3>
+                            <div class="space-y-8">
+                                <div class="group">
+                                    <h4 class="text-primary-container font-headline text-lg mb-2">Cung (Palaces)</h4>
+                                    <p class="text-on-surface-variant text-sm leading-relaxed font-light">12 cung địa bàn đại diện cho 12 phương diện của cuộc đời như Mệnh, Phụ, Phúc, Điền, Quan...</p>
+                                </div>
+                                <div class="group">
+                                    <h4 class="text-primary-container font-headline text-lg mb-2">Sao (Stars)</h4>
+                                    <p class="text-on-surface-variant text-sm leading-relaxed font-light">Hệ thống Chính tinh và Phụ tinh tương tác lẫn nhau, tạo nên các cách cục tốt xấu trong lá số.</p>
+                                </div>
+                                <div class="group">
+                                    <h4 class="text-primary-container font-headline text-lg mb-2">Hạn (Periods)</h4>
+                                    <p class="text-on-surface-variant text-sm leading-relaxed font-light">Đại vận 10 năm và tiểu vận hàng năm giúp dự đoán các biến cố và thời cơ trong cuộc sống.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+                <!-- Center: Main Generation Form -->
+                <section class="lg:col-span-6 order-1 lg:order-2 space-y-16">
+                    @Body
+                </section>
+                <!-- Right: Decorative / Social Proof -->
+                <aside class="lg:col-span-3 order-3 hidden xl:block">
+                    <div class="space-y-12">
+                        <div class="relative rounded-sm overflow-hidden aspect-[3/4]">
+                            <img class="w-full h-full object-cover grayscale brightness-50" data-alt="ethereal portrait"
+                                 src="https://lh3.googleusercontent.com/aida-public/AB6AXuAm4UysmCrrtwbRhfFYYTqcrMv4VHb4TAgR4mIz_bBGFJY-GVLrg_dGtlH5HkOBJfnO5zwLxOn14ne2os0hYVk7fUSGEw1kJbJuXmcDH5c4XY3L8h8UKUr2v-8glPqWIpgCUQ6o7-e0_Rerm4W_qmf5Fru3ZqMsyqP6DpwsiKgYGlZle9wdJMgxZ9EXStQwhQB_dx0cEGGIsHcSQOkYkgdQRKm7b0mIkfbseXXwsWDh_o-vbhY8aIAKnW2kp_WWrxhOXP_EFhvYz4E" />
+                            <div class="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent"></div>
+                            <div class="absolute bottom-6 left-6 right-6">
+                                <p class="text-sm italic text-on-surface-variant">"Mệnh tốt không bằng Thân tốt, Thân tốt không bằng Hạn tốt."</p>
+                            </div>
+                        </div>
+                        <div class="space-y-6">
+                            <h5 class="font-label text-[10px] uppercase tracking-widest text-primary-container">Bài viết mới nhất</h5>
+                            @if (_recentPosts == null)
+                            {
+                                <p class="text-xs text-outline">Đang tải...</p>
+                            }
+                            else
+                            {
+                                if (_recentPosts.Any())
+                                {
+                                    <div class="space-y-4">
+                                        @foreach (var post in _recentPosts)
+                                        {
+                                            <NavLink class="block group" href="@($"/bai-viet/{post.Slug}")">
+                                                <p class="text-sm font-headline text-primary group-hover:text-primary-container transition-colors mb-1">@post.Title</p>
+                                                <span class="text-[10px] text-on-secondary-container italic">"@post.Description"</span>
+                                            </NavLink>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <p class="text-xs text-outline">Chưa có bài viết nào.</p>
+                                }
+                            }
+                        </div>
+                    </div>
+                </aside>
+            </div>
         </article>
         <Footer></Footer>
     </main>
@@ -21,3 +90,25 @@
         font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
     }
 </style>
+
+@code {
+    private List<Post> _recentPosts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        _recentPosts = await context.Posts
+            .Where(p => p.Published)
+            .OrderByDescending(p => p.DateUpdated)
+            .Take(5)
+            .ToListAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+        }
+    }
+}

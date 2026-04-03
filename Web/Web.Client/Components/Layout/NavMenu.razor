@@ -8,7 +8,7 @@
         <!-- Desktop menu -->
         <nav class="hidden md:flex gap-8 items-center">
             <NavLink class="text-yellow-400 hover:border-b-2 hover:border-yellow-400 transition-colors font-bold text-lg tracking-tight" href="" Match="NavLinkMatch.All">Trang chủ</NavLink>
-            <NavLink class="text-yellow-400 hover:border-b-2 hover:border-yellow-400 transition-colors font-bold text-lg tracking-tight" href="#">Bài viết</NavLink>
+            <NavLink class="text-yellow-400 hover:border-b-2 hover:border-yellow-400 transition-colors font-bold text-lg tracking-tight" href="/bai-viet">Bài viết</NavLink>
         </nav>
         
         <!-- Mobile hamburger button -->
@@ -23,7 +23,7 @@
         <div class="md:hidden bg-surface shadow-xl border-t border-yellow-900/20 p-4">
             <nav class="flex flex-col gap-4 items-center">
                 <NavLink class="text-yellow-400 hover:border-b-2 hover:border-yellow-400 transition-colors font-bold text-lg tracking-tight" href="" Match="NavLinkMatch.All" @onclick="CloseMenu">Trang chủ</NavLink>
-                <NavLink class="text-yellow-400 hover:border-b-2 hover:border-yellow-400 transition-colors font-bold text-lg tracking-tight" href="#" @onclick="CloseMenu">Bài viết</NavLink>
+                <NavLink class="text-yellow-400 hover:border-b-2 hover:border-yellow-400 transition-colors font-bold text-lg tracking-tight" href="/bai-viet" @onclick="CloseMenu">Bài viết</NavLink>
             </nav>
         </div>
     }

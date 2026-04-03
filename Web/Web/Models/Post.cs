@@ -22,6 +22,8 @@ namespace Web.Models
         public string? Slug { set; get; }
 
         [Display(Name = "Nội dung")]
+        [Required(ErrorMessage = "Phải có nội dung bài viết")]
+        [MinLength(10,ErrorMessage = "{0} dài {1}")]
         public string Content { set; get; }
 
         [Display(Name = "Xuất bản")]

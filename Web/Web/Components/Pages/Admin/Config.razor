@@ -1,149 +1,81 @@
 @page "/admin/config"
-
-@using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components
-@using Web.Data
+@rendermode InteractiveServer
 
 @attribute [Authorize(Roles = RoleName.Administrator)]
+@inject ToastService ToastService
 
-<PageTitle>Configuration - Precision Admin</PageTitle>
+<PageTitle>Thiết lập</PageTitle>
 
 <div class="config-page">
     <div class="page-header">
-        <h2>Configuration</h2>
-        <p>Manage your architectural workspace parameters, SEO presence, and administrative identity through our high-precision control suite.</p>
+        <h2>Thiết lập</h2>
+        <p>Cấu hình thông số web.</p>
     </div>
 
-    <form class="config-form" @onsubmit="SaveConfig">
-        <div class="config-grid">
-            <section class="config-card">
-                <div class="card-header">
-                    <span class="material-symbols-outlined">app_registration</span>
-                    <h3>General Settings</h3>
+    <div class="config-grid">
+        <section class="config-card full-width">
+            <div class="card-header">
+                <span class="material-symbols-outlined">data_object</span>
+                <h3>Seed Data</h3>
+            </div>
+            <div class="card-body">
+                <p class="seed-description">Tạo hoặc xóa dữ liệu mẫu cho việc phát triển và kiểm tra. Dữ liệu seed có tiêu đề chứa "[Seed Data]".</p>
+                <div class="seed-actions">
+                    <button type="button" class="btn-seed-create" @onclick="CreateSeedData" disabled="@_isSeeding">
+                        <span class="material-symbols-outlined">add_circle</span>
+                        @(_isSeeding ? "Đang tạo..." : "Tạo Seed Data")
+                    </button>
+                    <button type="button" class="btn-seed-delete" @onclick="DeleteSeedData" disabled="@_isSeeding">
+                        <span class="material-symbols-outlined">delete_sweep</span>
+                        @(_isSeeding ? "Đang xóa..." : "Xóa Seed Data")
+                    </button>
                 </div>
-                <div class="card-body">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Site Name</label>
-                            <input type="text" class="form-input" @bind="siteName" placeholder="Enter site name..." />
-                        </div>
-                        <div class="form-group">
-                            <label>Primary Email</label>
-                            <input type="email" class="form-input" @bind="primaryEmail" placeholder="admin@example.com" />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Site Logo</label>
-                        <div class="logo-upload">
-                            <div class="logo-preview">
-                                <span class="material-symbols-outlined">architecture</span>
-                            </div>
-                            <div class="logo-info">
-                                <span>Click or drag to update branding</span>
-                                <span class="logo-hint">SVG, PNG, or WEBP (Max 2MB)</span>
-                            </div>
-                            <span class="material-symbols-outlined upload-icon">cloud_upload</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="config-card">
-                <div class="card-header">
-                    <span class="material-symbols-outlined">account_circle</span>
-                    <h3>Admin Profile</h3>
-                </div>
-                <div class="card-body">
-                    <div class="avatar-section">
-                        <img src="@adminAvatar" alt="Admin Avatar" class="admin-avatar" />
-                        <div class="avatar-actions">
-                            <button type="button" class="change-avatar-btn">Change Avatar</button>
-                            <span class="avatar-hint">Recommended: 400x400px</span>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Full Name</label>
-                        <input type="text" class="form-input" @bind="adminName" placeholder="Enter full name..." />
-                    </div>
-                    <div class="security-section">
-                        <h4>Security Credentials</h4>
-                        <div class="form-group">
-                            <label>New Password</label>
-                            <input type="password" class="form-input" @bind="newPassword" placeholder="••••••••" />
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <section class="config-card full-width">
-                <div class="card-header">
-                    <span class="material-symbols-outlined">travel_explore</span>
-                    <h3>SEO Configuration</h3>
-                </div>
-                <div class="card-body">
-                    <div class="seo-grid">
-                        <div class="form-group">
-                            <label>Meta Title</label>
-                            <input type="text" class="form-input" @bind="metaTitle" placeholder="Enter meta title..." />
-                        </div>
-                        <div class="form-group">
-                            <label>Keywords</label>
-                            <div class="keywords-container">
-                                @foreach (var keyword in keywords)
-                                {
-                                    <span class="keyword-tag">
-                                        @keyword
-                                        <button type="button" class="keyword-remove" @onclick="() => RemoveKeyword(keyword)">
-                                            <span class="material-symbols-outlined">close</span>
-                                        </button>
-                                    </span>
-                                }
-                                <input type="text" class="keyword-input" placeholder="Add tag..." @bind="newKeyword" @onkeydown="AddKeywordOnEnter" />
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label>Meta Description</label>
-                        <textarea class="form-textarea" @bind="metaDescription" rows="5" placeholder="Enter meta description..."></textarea>
-                        <span class="char-count">@metaDescription.Length / 200 characters</span>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </form>
-
-    <div class="sticky-save-bar">
-        <button type="button" class="btn-discard" @onclick="DiscardChanges">Discard Changes</button>
-        <button type="button" class="btn-save" @onclick="SaveConfig">Deploy Configurations</button>
+            </div>
+        </section>
     </div>
 </div>
 
 @code {
-    private string siteName = "Precision Architect Portal";
-    private string primaryEmail = "admin@precision-architect.com";
-    private string adminName = "Admin User";
-    private string newPassword = "";
-    private string metaTitle = "Precision Architect | Modern Management Suite for Creative Professionals";
-    private string metaDescription = "The Precision Architect is a high-end administrative system designed for modern engineering and design firms. Manage projects with surgical precision, expansive white space, and editorial-grade data visualization.";
-    private string newKeyword = "";
-    private string adminAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuBAUcom4s87cigJ14atHN2jYNuTAnm4Bnlj2_QgfGZY5PXF411_dHF7eTPP9xc6l7HL9I_gHSglbtOhoukr3DOgKvpygDT3oGT2ZZ8FMG9uHBBtDzVXHmZKoqgohln7-tWjxaWvwaNO7pulzGiOC0xoNmKRLKQHJKwxUdYquLIKRisACA64bHx4lD1RPvT7oHfwPRy3ZPe4S_B8RnowJTXlxZ1nbOGJwcEm-Tnao3bXLN6ydTSfmF7Pyg_byRe3SJDw9JlJyGscEKYo";
+    private bool _isSeeding;
 
-    private List<string> keywords = new() { "ADMIN", "DASHBOARD", "ARCHITECTURE" };
-
-    private void AddKeywordOnEnter(KeyboardEventArgs e)
+    private async Task CreateSeedData()
     {
-        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(newKeyword))
+        _isSeeding = true;
+        try
         {
-            keywords.Add(newKeyword.Trim().ToUpper());
-            newKeyword = "";
+            using var context = DbFactory.CreateDbContext();
+            var count = await PostSeeder.SeedPostsAsync(context);
+            ToastService.Show("success", $"Đã tạo {count} bài viết seed");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi tạo seed: {ex.Message}");
+        }
+        finally
+        {
+            _isSeeding = false;
         }
     }
 
-    private void RemoveKeyword(string keyword)
+    private async Task DeleteSeedData()
     {
-        keywords.Remove(keyword);
+        _isSeeding = true;
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var count = await PostSeeder.DeleteSeedPostsAsync(context);
+            if (count > 0)
+                ToastService.Show("success", $"Đã xóa {count} bài viết seed");
+            else
+                ToastService.Show("info", "Không có dữ liệu seed để xóa");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi xóa seed: {ex.Message}");
+        }
+        finally
+        {
+            _isSeeding = false;
+        }
     }
-
-    private void SaveConfig() { }
-    private void DiscardChanges() { }
 }
