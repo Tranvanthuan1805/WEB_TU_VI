@@ -3,11 +3,20 @@
   "defaultProvider": "cdnjs",
   "libraries": [
     {
+      "library": "elfinder@2.1.66",
+      "destination": "wwwroot/lib/elfinder/"
+    },
+    {
+      "library": "jqueryui@1.14.1",
+      "destination": "wwwroot/lib/jqueryui/"
+    },
+    {
+      "library": "jquery@3.7.1",
+      "destination": "wwwroot/lib/jquery/"
+    },
+    {
       "library": "Chart.js@4.5.0",
-      "destination": "wwwroot/lib/Chart.js/",
-      "files": [
-        "chart.min.js"
-      ]
+      "destination": "wwwroot/lib/Chart.js/"
     },
     {
       "library": "tinymce@8.1.2",

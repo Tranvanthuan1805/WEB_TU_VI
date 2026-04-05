@@ -1,0 +1,95 @@
+@page "/admin/file-explorer"
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@attribute [Authorize(Roles = RoleName.Administrator)]
+@inject NavigationManager Navigation
+
+<PageTitle>File</PageTitle>
+
+<div class="w-full h-screen flex flex-col">
+    <div class="page-header">
+        <h2>Quản lý file</h2>
+        <p>Thêm, sửa, xoá file.</p>
+    </div>
+
+    <div class="iframe-wrapper flex-1">
+        @if (!iframeLoaded)
+        {
+            <div class="iframe-loading">
+                <div class="spinner"></div>
+                <span>Đang tải trình quản lý file...</span>
+            </div>
+        }
+
+        <iframe class="w-full h-full @(iframeLoaded ? string.Empty : "iframe-hidden")"
+                src="@($"{Navigation.BaseUri.TrimEnd('/')}/file-manager")"
+                @onload="OnIframeLoaded">
+        </iframe>
+    </div>
+</div>
+
+<style>
+    .page-header {
+        margin-bottom: 2.5rem;
+    }
+
+        .page-header h2 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            color: var(--on-surface);
+            margin: 0 0 0.5rem 0;
+            letter-spacing: -0.02em;
+        }
+
+        .page-header p {
+            font-size: 0.875rem;
+            color: var(--secondary);
+            margin: 0;
+            max-width: 40rem;
+        }
+
+    .iframe-wrapper {
+        position: relative;
+        min-height: 400px;
+    }
+
+    .iframe-loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: rgba(255,255,255,0.92);
+        z-index: 10;
+    }
+
+    .iframe-hidden {
+        visibility: hidden;
+    }
+
+    .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #ddd;
+        border-top-color: #3b82f6;
+        border-radius: 9999px;
+        animation: spin 0.9s linear infinite;
+    }
+
+    @@keyframes spin {
+        to {
+            transform: rotate(360deg);
+        }
+    }
+</style>
+
+@code {
+    private bool iframeLoaded;
+
+    private void OnIframeLoaded(ProgressEventArgs _)
+    {
+        iframeLoaded = true;
+    }
+}

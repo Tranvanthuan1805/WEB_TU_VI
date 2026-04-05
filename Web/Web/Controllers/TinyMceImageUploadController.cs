@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Web.Data;
 
@@ -12,40 +13,54 @@ namespace Web.Controllers
         private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
         private const long MaxFileSize = 5 * 1024 * 1024; // 5MB
 
+        private readonly IWebHostEnvironment _env;
+
+        public TinyMceImageUploadController(IWebHostEnvironment env)
+        {
+            _env = env;
+        }
+
         [HttpPost("upload-image")]
         public async Task<IActionResult> UploadImage(IFormFile file)
         {
-            if (file == null || file.Length == 0)
+            try
             {
-                return BadRequest(new { error = "No file uploaded" });
-            }
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { error = "No file uploaded" });
+                }
 
-            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
-            if (!AllowedExtensions.Contains(extension))
+                var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (!AllowedExtensions.Contains(extension))
+                {
+                    return BadRequest(new { error = "Invalid file type. Only jpg, jpeg, png, gif, webp are allowed." });
+                }
+
+                if (file.Length > MaxFileSize)
+                {
+                    return BadRequest(new { error = "File too large. Maximum size is 5MB." });
+                }
+
+                var imgDir = Path.Combine(_env.ContentRootPath, "FileServer", "upload-image");
+                if (!Directory.Exists(imgDir))
+                {
+                    Directory.CreateDirectory(imgDir);
+                }
+
+                var fileName = $"{Guid.NewGuid():N}{extension}";
+                var filePath = Path.Combine(imgDir, fileName);
+
+                await using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                return Ok(new { location = $"/contents/upload-image/{fileName}" });
+            }
+            catch (Exception ex)
             {
-                return BadRequest(new { error = "Invalid file type. Only jpg, jpeg, png, gif, webp are allowed." });
+                return StatusCode(500, new { error = $"Internal server error: {ex.Message}" });
             }
-
-            if (file.Length > MaxFileSize)
-            {
-                return BadRequest(new { error = "File too large. Maximum size is 5MB." });
-            }
-
-            var imgDir = Path.Combine(Directory.GetCurrentDirectory(), "FileServer");
-            if (!Directory.Exists(imgDir))
-            {
-                Directory.CreateDirectory(imgDir);
-            }
-
-            var fileName = $"{Guid.NewGuid():N}{extension}";
-            var filePath = Path.Combine(imgDir, fileName);
-
-            await using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await file.CopyToAsync(stream);
-            }
-
-            return Ok(new { location = $"/contents/{fileName}" });
         }
     }
 }

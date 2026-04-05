@@ -36,7 +36,7 @@
             {
                 <NavLink href="@($"/bai-viet/{post.Slug}")" class="block group bg-surface-container border border-outline-variant/30 rounded-lg p-6 hover:border-primary-container/50 hover:bg-surface-container-high transition-all">
                     <h2 class="font-headline text-xl text-primary group-hover:text-primary-container transition-colors mb-2 italic">@post.Title</h2>
-                    <p class="text-sm text-on-surface-variant italic mb-3">"@post.Description"</p>
+                    <p class="text-sm text-on-surface-variant italic mb-3">"@((MarkupString)post.Description)"</p>
                     <span class="text-xs text-outline">@post.DateUpdated.ToString("dd/MM/yyyy")</span>
                 </NavLink>
             }

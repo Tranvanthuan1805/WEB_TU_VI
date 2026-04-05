@@ -5,6 +5,7 @@
 
 #custom
 appsettings.json
+FileServer/
 
 # User-specific files
 *.rsuser

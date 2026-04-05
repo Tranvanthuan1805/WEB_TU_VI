@@ -1,5 +1,4 @@
 ﻿
-using HGO.ASPNetCore.FileManager;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -16,15 +15,17 @@ builder.Configuration
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddEnvironmentVariables();
 
-builder.Services.AddControllers();
-builder.Services.AddOpenApi();
-
 builder.Services.AddDbContextFactory<AppDBContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DBContext") ?? throw new InvalidOperationException("Connection string 'DBContext' not found.");
     options.UseNpgsql(connectionString);
 });
 
+builder.Services.AddControllers();
+builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
+
+builder.Services.AddOpenApi();
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
@@ -34,10 +35,6 @@ builder.Services.AddRazorComponents()
         // Nếu cần đầy đủ claims thì bật dòng này
         options.SerializeAllClaims = true;
     });
-
-builder.Services.AddRazorPages();
-builder.Services.AddControllers();
-;
 
 builder.Services.AddCascadingAuthenticationState();
 
@@ -80,7 +77,8 @@ builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
 builder.Services.AddScoped<ToastService>();
 builder.Services.AddScoped<ConfirmDialogService>();
 
-builder.Services.AddHgoFileManager();
+// Add services to the container.
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
@@ -114,9 +112,6 @@ app.UseStaticFiles(new StaticFileOptions
     FileProvider = new PhysicalFileProvider(uploadRoot),
     RequestPath = "/contents"
 });
-
-
-app.UseHgoFileManager();
 
 app.MapStaticAssets();
 app.MapRazorPages();

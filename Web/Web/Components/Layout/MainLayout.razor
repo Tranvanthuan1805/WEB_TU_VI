@@ -60,7 +60,7 @@
                                         {
                                             <NavLink class="block group" href="@($"/bai-viet/{post.Slug}")">
                                                 <p class="text-sm font-headline text-primary group-hover:text-primary-container transition-colors mb-1">@post.Title</p>
-                                                <span class="text-[10px] text-on-secondary-container italic">"@post.Description"</span>
+                                                <span class="text-[10px] text-sm text-on-surface-variant italic">"@((MarkupString)post.Description)"</span>
                                             </NavLink>
                                         }
                                     </div>
