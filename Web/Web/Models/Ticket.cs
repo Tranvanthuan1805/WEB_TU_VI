@@ -29,7 +29,16 @@ namespace Web.Models
         [Range(0, int.MaxValue, ErrorMessage = "Giá trị từ {1} đến {2}")]
         public decimal QuantityUsed { get; set; }
 
+        private bool _published = true;
+
         [Display(Name = "Xuất bản")]
-        public bool Published { set; get; } = true;
+        public bool Published
+        {
+            get => _published && IsAvailable;
+            set => _published = value;
+        }
+
+        [NotMapped]
+        public bool IsAvailable => QuantityUsed < Quantity;
     }
 }

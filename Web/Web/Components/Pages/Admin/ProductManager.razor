@@ -239,19 +239,19 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Giá gốc (VNĐ)</label>
-                            <InputNumber class="form-input" @bind-Value="_originPriceInput" @oninput="OnOriginPriceChanged" placeholder="Nhập giá gốc..." />
+                            <InputNumber class="form-input" @bind-Value="_originPriceInput" @bind:after="OnOriginPriceChanged" placeholder="Nhập giá gốc..." />
                             <span class="form-hint">Để trống nếu nhập giá bán</span>
                         </div>
                         <div class="form-group">
                             <label>Giá bán (VNĐ)</label>
-                            <InputNumber class="form-input" @bind-Value="_priceInput" @oninput="OnPriceChanged" placeholder="Nhập giá bán..." />
+                            <InputNumber class="form-input" @bind-Value="_priceInput" @bind:after="OnPriceChanged" placeholder="Nhập giá bán..." />
                             <span class="form-hint">Để trống nếu nhập giá gốc</span>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Giảm giá (%)</label>
-                            <InputNumber class="form-input" @bind-Value="_editModel.Discount" @oninput="OnDiscountChanged" placeholder="0-100" />
+                            <InputNumber class="form-input" @bind-Value="_editModel.Discount" @bind:after="OnDiscountChanged" placeholder="0-100" />
                             <span class="form-hint">Tự động tính khi nhập giá</span>
                         </div>
                         <div class="form-group">
@@ -267,9 +267,17 @@
                         </div>
                         <div class="form-group">
                             <label class="checkbox-label">
-                                <InputCheckbox @bind-Value="_editModel.Published" />
+                                <InputCheckbox @bind-Value="_editModel.Published" disabled="@(!_editModel.IsAvailable)" />
                                 Xuất bản
                             </label>
+                            @if (!_editModel.IsAvailable)
+                            {
+                                <span class="form-hint text-error">Không thể xuất bản — sản phẩm đã hết hàng</span>
+                            }
+                            else
+                            {
+                                <span class="form-hint">Cho phép hiển thị công khai</span>
+                            }
                         </div>
                     </div>
                 </div>
@@ -838,6 +846,10 @@
         font-size: 0.75rem;
         margin-top: 0.25rem;
     }
+
+    .text-error {
+        color: #dc2626;
+    }
 </style>
 
 @code {
@@ -884,7 +896,7 @@
 
     private void UpdateCounts()
     {
-        _publishedCount = _allProducts.Count(p => p.Published);
+        _publishedCount = _allProducts.Count(p => p.IsAvailable);
         _outOfStockCount = _allProducts.Count(p => p.Quantity > 0 && p.QuantitySold >= p.Quantity);
         _totalCount = _allProducts.Count;
         _totalPages = (int)Math.Ceiling((double)_filteredProducts.Count / _pageSize);
@@ -893,6 +905,8 @@
         endItem = Math.Min(_currentPage * _pageSize, _filteredProducts.Count);
         _jumpToPage = _currentPage;
     }
+
+    private bool IsProductAvailable(Product p) => p.IsAvailable;
 
     private void ApplyFilters()
     {
@@ -1056,29 +1070,27 @@
                _editModel.Quantity != 0;
     }
 
-    private void OnOriginPriceChanged(ChangeEventArgs e)
+    private void OnOriginPriceChanged()
     {
         if (_updatingFromCode) return;
         
-        if (decimal.TryParse(e.Value?.ToString(), out var originPrice))
+        if (_originPriceInput.HasValue && _originPriceInput.Value > 0)
         {
-            _originPriceInput = originPrice;
             CalculatePriceFromOriginPrice();
         }
     }
 
-    private void OnPriceChanged(ChangeEventArgs e)
+    private void OnPriceChanged()
     {
         if (_updatingFromCode) return;
         
-        if (decimal.TryParse(e.Value?.ToString(), out var price))
+        if (_priceInput.HasValue && _priceInput.Value > 0)
         {
-            _priceInput = price;
             CalculatePriceFromPriceInput();
         }
     }
 
-    private void OnDiscountChanged(ChangeEventArgs e)
+    private void OnDiscountChanged()
     {
         if (_updatingFromCode) return;
         

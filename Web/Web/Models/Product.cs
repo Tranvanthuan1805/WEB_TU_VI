@@ -15,8 +15,14 @@ namespace Web.Models
         [StringLength(255, MinimumLength = 5, ErrorMessage = "{0} dài {1} đến {2}")]
         public string Name { set; get; }
 
+        private bool _published;
+
         [Display(Name = "Xuất bản")]
-        public bool Published { set; get; }
+        public bool Published
+        {
+            get => _published && IsAvailable;
+            set => _published = value;
+        }
 
         [Display(Name = "Ngày tạo")]
         public DateTime DateCreated { set; get; }
@@ -47,6 +53,9 @@ namespace Web.Models
         [Display(Name = "số lượng vé")]
         [Range(1, int.MaxValue, ErrorMessage = "Giá trị từ {1} đến {2}")]
         public decimal NumberofTickets { get; set; } = 1;
+
+        [NotMapped]
+        public bool IsAvailable => Quantity < 0 || QuantitySold < Quantity;
 
     }
 }

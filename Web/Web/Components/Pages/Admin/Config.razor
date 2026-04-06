@@ -44,8 +44,12 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            var count = await Seeder.SeedPostsAsync(context);
-            ToastService.Show("success", $"Đã tạo {count} bài viết seed");
+            
+            var postCount = await Seeder.SeedPostsAsync(context);
+            var productCount = await Seeder.SeedProductsAsync(context);
+            var ticketCount = await Seeder.SeedTicketsAsync(context);
+            
+            ToastService.Show("success", $"Đã tạo seed: {postCount} posts, {productCount} products, {ticketCount} tickets");
         }
         catch (Exception ex)
         {
@@ -63,9 +67,14 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            var count = await Seeder.DeleteSeedPostsAsync(context);
-            if (count > 0)
-                ToastService.Show("success", $"Đã xóa {count} bài viết seed");
+            
+            var postCount = await Seeder.DeleteSeedPostsAsync(context);
+            var productCount = await Seeder.DeleteSeedProductsAsync(context);
+            var ticketCount = await Seeder.DeleteSeedTicketsAsync(context);
+            
+            var total = postCount + productCount + ticketCount;
+            if (total > 0)
+                ToastService.Show("success", $"Đã xóa seed: {postCount} posts, {productCount} products, {ticketCount} tickets");
             else
                 ToastService.Show("info", "Không có dữ liệu seed để xóa");
         }

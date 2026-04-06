@@ -230,9 +230,17 @@
                     {
                         <div class="form-group">
                             <label class="checkbox-label">
-                                <InputCheckbox @bind-Value="_editModel.Published" />
+                                <InputCheckbox @bind-Value="_editModel.Published" disabled="@(!_editModel.IsAvailable)" />
                                 Xuất bản
                             </label>
+                            @if (!_editModel.IsAvailable)
+                            {
+                                <span class="form-hint text-error">Không thể xuất bản — vé đã hết lượt</span>
+                            }
+                            else
+                            {
+                                <span class="form-hint">Cho phép hiển thị công khai</span>
+                            }
                         </div>
                     }
                 </div>
@@ -788,6 +796,10 @@
         font-size: 0.75rem;
         margin-top: 0.25rem;
     }
+
+    .text-error {
+        color: #dc2626;
+    }
 </style>
 
 @code {
@@ -837,7 +849,7 @@
 
     private void UpdateCounts()
     {
-        _activeCount = _allTickets.Count(t => t.Published);
+        _activeCount = _allTickets.Count(t => t.IsAvailable);
         _usedUpCount = _allTickets.Count(t => t.Quantity > 0 && t.QuantityUsed >= t.Quantity);
         _totalCount = _allTickets.Count;
         _totalPages = (int)Math.Ceiling((double)_filteredTickets.Count / _pageSize);
