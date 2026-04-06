@@ -1092,15 +1092,21 @@
         _updatingFromCode = true;
         try
         {
-            if (_editModel.Discount > 0)
-            {
-                _editModel.Price = Math.Round(_originPriceInput.Value * (1 - _editModel.Discount / 100), 0);
-                _priceInput = _editModel.Price;
-            }
-            else
+            if (!_priceInput.HasValue || _priceInput.Value == 0)
             {
                 _editModel.Price = _originPriceInput.Value;
                 _priceInput = _editModel.Price;
+                _editModel.Discount = 0;
+            }
+            else if (_priceInput.Value >= _originPriceInput.Value)
+            {
+                _editModel.Discount = 0;
+                _editModel.Price = _priceInput.Value;
+            }
+            else
+            {
+                _editModel.Discount = Math.Round(((_originPriceInput.Value - _priceInput.Value) / _originPriceInput.Value) * 100, 0);
+                _editModel.Price = _priceInput.Value;
             }
         }
         finally
@@ -1118,13 +1124,20 @@
         {
             if (_originPriceInput.HasValue && _originPriceInput.Value > 0)
             {
-                if (_priceInput.Value < _originPriceInput.Value)
+                if (_priceInput.Value > _originPriceInput.Value)
                 {
-                    _editModel.Discount = Math.Round(((_originPriceInput.Value - _priceInput.Value) / _originPriceInput.Value) * 100, 0);
+                    _editModel.Discount = 0;
+                    _editModel.Price = _priceInput.Value;
+                }
+                else if (_priceInput.Value == _originPriceInput.Value)
+                {
+                    _editModel.Discount = 0;
+                    _editModel.Price = _priceInput.Value;
                 }
                 else
                 {
-                    _editModel.Discount = 0;
+                    _editModel.Discount = Math.Round(((_originPriceInput.Value - _priceInput.Value) / _originPriceInput.Value) * 100, 0);
+                    _editModel.Price = _priceInput.Value;
                 }
             }
             else
@@ -1132,6 +1145,7 @@
                 _editModel.OriginPrice = _priceInput.Value;
                 _originPriceInput = _priceInput.Value;
                 _editModel.Price = _priceInput.Value;
+                _editModel.Discount = 0;
             }
         }
         finally
@@ -1147,15 +1161,36 @@
         _updatingFromCode = true;
         try
         {
-            if (_originPriceInput.HasValue && _originPriceInput.Value > 0 && _editModel.Discount > 0)
+            if (_editModel.Discount < 0)
             {
-                _editModel.Price = Math.Round(_originPriceInput.Value * (1 - _editModel.Discount / 100), 0);
-                _priceInput = _editModel.Price;
+                _editModel.Discount = 0;
             }
-            else if (_priceInput.HasValue && _priceInput.Value > 0 && _editModel.Discount > 0)
+
+            if (_editModel.Discount == 0)
             {
-                _editModel.OriginPrice = Math.Round(_priceInput.Value / (1 - _editModel.Discount / 100), 0);
-                _originPriceInput = _editModel.OriginPrice;
+                if (_originPriceInput.HasValue && _originPriceInput.Value > 0)
+                {
+                    _editModel.Price = _originPriceInput.Value;
+                    _priceInput = _editModel.Price;
+                }
+                else if (_priceInput.HasValue && _priceInput.Value > 0)
+                {
+                    _editModel.OriginPrice = _priceInput.Value;
+                    _originPriceInput = _editModel.OriginPrice;
+                }
+            }
+            else if (_editModel.Discount > 0 && _editModel.Discount <= 100)
+            {
+                if (_originPriceInput.HasValue && _originPriceInput.Value > 0)
+                {
+                    _editModel.Price = Math.Round(_originPriceInput.Value * (1 - _editModel.Discount / 100), 0);
+                    _priceInput = _editModel.Price;
+                }
+                else if (_priceInput.HasValue && _priceInput.Value > 0)
+                {
+                    _editModel.OriginPrice = Math.Round(_priceInput.Value / (1 - _editModel.Discount / 100), 0);
+                    _originPriceInput = _editModel.OriginPrice;
+                }
             }
         }
         finally
@@ -1179,6 +1214,26 @@
             }
 
             var now = DateTime.UtcNow;
+
+            if (_originPriceInput.HasValue && _originPriceInput.Value > 0)
+            {
+                _editModel.OriginPrice = _originPriceInput.Value;
+            }
+
+            if (_priceInput.HasValue && _priceInput.Value > 0)
+            {
+                _editModel.Price = _priceInput.Value;
+            }
+
+            if (_editModel.OriginPrice == 0 && _editModel.Price == 0)
+            {
+                _editModel.Discount = 0;
+            }
+            else if (_editModel.Price > _editModel.OriginPrice && _editModel.OriginPrice > 0)
+            {
+                ToastService.Show("warning", "Giá bán không được lớn hơn giá gốc!");
+                return;
+            }
 
             if (_editModel.Quantity > 0 && _editModel.QuantitySold >= _editModel.Quantity)
             {

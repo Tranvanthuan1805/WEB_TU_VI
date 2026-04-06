@@ -22,8 +22,8 @@ namespace Web.Models
         public DateTime DateUpdated { set; get; }
 
         [Display(Name = "số lượng")]
-        [Range(-1, int.MaxValue, ErrorMessage = "Giá trị từ {1} đến {2}")]
-        public decimal Quantity { get; set; } = -1;
+        [Range(1, int.MaxValue, ErrorMessage = "Giá trị từ {1} đến {2}")]
+        public decimal Quantity { get; set; } = 1;
 
         [Display(Name = "số lượng đã dùng")]
         [Range(0, int.MaxValue, ErrorMessage = "Giá trị từ {1} đến {2}")]

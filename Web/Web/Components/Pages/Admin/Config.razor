@@ -44,7 +44,7 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            var count = await PostSeeder.SeedPostsAsync(context);
+            var count = await Seeder.SeedPostsAsync(context);
             ToastService.Show("success", $"Đã tạo {count} bài viết seed");
         }
         catch (Exception ex)
@@ -63,7 +63,7 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            var count = await PostSeeder.DeleteSeedPostsAsync(context);
+            var count = await Seeder.DeleteSeedPostsAsync(context);
             if (count > 0)
                 ToastService.Show("success", $"Đã xóa {count} bài viết seed");
             else
