@@ -1,26 +1,23 @@
-@page "/admin/manager"
+@page "/admin/products"
 @rendermode InteractiveServer
 @attribute [StreamRendering]
-@using Web.Utilities
-@using TinyMCE.Blazor
 
 @attribute [Authorize(Roles = RoleName.Administrator)]
-@inject NavigationManager Navigation
 @inject ToastService ToastService
 @inject ConfirmDialogService ConfirmDialogService
 @inject IJSRuntime JS
 
-<PageTitle>Quản lý bài viết</PageTitle>
+<PageTitle>Quản lý sản phẩm</PageTitle>
 
 <div class="article-manager" data-theme="admin">
     <div class="page-header">
         <div>
-            <h2>Quản lý bài viết</h2>
-            <p>Xem, tạo, chỉnh sửa và xóa bài viết.</p>
+            <h2>Quản lý sản phẩm</h2>
+            <p>Xem, tạo, chỉnh sửa và xóa sản phẩm.</p>
         </div>
         <button class="add-article-btn" @onclick="ShowCreateForm">
             <span class="material-symbols-outlined">add</span>
-            <span>Thêm bài viết</span>
+            <span>Thêm sản phẩm</span>
         </button>
     </div>
 
@@ -34,15 +31,15 @@
         </div>
         <div class="stat-mini">
             <div class="stat-mini-header">
-                <span class="stat-mini-label">Nháp</span>
-                <span class="material-symbols-outlined stat-mini-icon warning">pending</span>
+                <span class="stat-mini-label">Hết hàng</span>
+                <span class="material-symbols-outlined stat-mini-icon warning">inventory_2</span>
             </div>
-            <span class="stat-mini-value">@_draftCount</span>
+            <span class="stat-mini-value">@_outOfStockCount</span>
         </div>
         <div class="stat-mini">
             <div class="stat-mini-header">
                 <span class="stat-mini-label">Tổng số</span>
-                <span class="material-symbols-outlined stat-mini-icon">article</span>
+                <span class="material-symbols-outlined stat-mini-icon">inventory</span>
             </div>
             <span class="stat-mini-value">@_totalCount</span>
         </div>
@@ -53,13 +50,13 @@
             <div class="search-filter">
                 <div class="search-input">
                     <span class="material-symbols-outlined">search</span>
-                    <input type="text" placeholder="Tìm kiếm theo tiêu đề..." @bind="searchQuery" @oninput="OnSearchChanged" />
+                    <input type="text" placeholder="Tìm kiếm theo tên..." @bind="searchQuery" @oninput="OnSearchChanged" />
                 </div>
                 <div class="category-dropdown">
                     <select @bind="_statusFilter" @bind:after="OnFilterChanged">
-                        <option value="">Tất cả trạng thái</option>
+                        <option value="">Tất cả</option>
                         <option value="published">Đã xuất bản</option>
-                        <option value="draft">Nháp</option>
+                        <option value="outofstock">Hết hàng</option>
                     </select>
                     <span class="material-symbols-outlined dropdown-icon">expand_more</span>
                 </div>
@@ -70,67 +67,102 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th @onclick="() => ToggleSort(nameof(Post.Title))" class="sortable">
-                            Tiêu đề
-                            @GetSortIcon(nameof(Post.Title))
+                        <th @onclick="() => ToggleSort(nameof(Product.Name))" class="sortable">
+                            Tên sản phẩm
+                            @GetSortIcon(nameof(Product.Name))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Product.OriginPrice))" class="sortable">
+                            Giá gốc
+                            @GetSortIcon(nameof(Product.OriginPrice))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Product.Price))" class="sortable">
+                            Giá
+                            @GetSortIcon(nameof(Product.Price))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Product.Discount))" class="sortable">
+                            Giảm giá
+                            @GetSortIcon(nameof(Product.Discount))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Product.Quantity))" class="sortable">
+                            Số lượng
+                            @GetSortIcon(nameof(Product.Quantity))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Product.QuantitySold))" class="sortable">
+                            Đã bán
+                            @GetSortIcon(nameof(Product.QuantitySold))
                         </th>
                         <th>Trạng thái</th>
-                        <th @onclick="() => ToggleSort(nameof(Post.DateCreated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Product.DateCreated))" class="sortable">
                             Ngày tạo
-                            @GetSortIcon(nameof(Post.DateCreated))
+                            @GetSortIcon(nameof(Product.DateCreated))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Post.DateUpdated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Product.DateUpdated))" class="sortable">
                             Ngày cập nhật
-                            @GetSortIcon(nameof(Post.DateUpdated))
+                            @GetSortIcon(nameof(Product.DateUpdated))
                         </th>
                         <th class="text-right">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
-@if (_pagedPosts == null)
+@if (_pagedProducts == null)
                     {
                         <tr>
-                            <td colspan="5" class="text-center py-8 text-on-surface-variant">
+                            <td colspan="10" class="text-center py-8 text-on-surface-variant">
                                 Đang tải...
                             </td>
                         </tr>
                     }
                     else
                     {
-                        foreach (var post in _pagedPosts)
+                        foreach (var product in _pagedProducts)
                         {
                             <tr>
                                 <td>
                                     <div class="article-title-cell">
-                                        <span class="article-title">@post.Title</span>
+                                        <span class="article-title">@product.Name</span>
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="status-tag @(post.Published ? "published" : "draft")">@(post.Published ? "Xuất bản" : "Nháp")</span>
+                                    <span class="price-text">@product.OriginPrice.ToString("N0")₫</span>
                                 </td>
                                 <td>
-                                    <span class="date-text">@post.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
+                                    <span class="price-text">@product.Price.ToString("N0")₫</span>
                                 </td>
                                 <td>
-                                    <span class="date-text">@post.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
+                                    <span class="discount-text">@product.Discount.ToString("0")%</span>
+                                </td>
+                                <td>
+                                    <span class="quantity-text">@(product.Quantity < 0 ? "∞" : product.Quantity.ToString("N0"))</span>
+                                </td>
+                                <td>
+                                    <span class="quantity-text">@product.QuantitySold.ToString("N0")</span>
+                                </td>
+                                <td>
+                                    <span class="status-tag @(product.Published ? "published" : "draft")">@(product.Published ? "Xuất bản" : "Nháp")</span>
+                                </td>
+                                <td>
+                                    <span class="date-text">@product.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
+                                </td>
+                                <td>
+                                    <span class="date-text">@product.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
                                 <td>
                                     <div class="row-actions">
-                                        <button class="row-action-btn" title="Sửa" @onclick="() => EditPost(post)">
+                                        <button class="row-action-btn" title="Sửa" @onclick="() => EditProduct(product)">
                                             <span class="material-symbols-outlined">edit</span>
                                         </button>
-                                        <button class="row-action-btn danger" title="Xóa" @onclick="() => DeletePost(post)">
+                                        <button class="row-action-btn danger" title="Xóa" @onclick="() => DeleteProduct(product)">
                                             <span class="material-symbols-outlined">delete</span>
                                         </button>
                                     </div>
                                 </td>
                             </tr>
                         }
-                        if (!_pagedPosts.Any())
+                        if (!_pagedProducts.Any())
                         {
                             <tr>
-                                <td colspan="5" class="text-center py-8 text-on-surface-variant">
-                                    Không có bài viết nào.
+                                <td colspan="10" class="text-center py-8 text-on-surface-variant">
+                                    Không có sản phẩm nào.
                                 </td>
                             </tr>
                         }
@@ -148,9 +180,9 @@
                     class="page-size-input"
                     min="1"
                     @bind="_pageSize"
-                    @bind:after="UpdatePagedPosts" />
+                    @bind:after="UpdatePagedProducts" />
                 </div>
-                <span class="showing-text">Hiển thị @startItem-@endItem của @_totalFiltered bài viết</span>
+                <span class="showing-text">Hiển thị @startItem-@endItem của @_totalFiltered sản phẩm</span>
                 <div class="pagination">
                     <button class="page-btn" disabled="@(_currentPage == 1)" @onclick="() => GoToPage(_currentPage - 1)">
                         <span class="material-symbols-outlined">chevron_left</span>
@@ -188,57 +220,58 @@
     <div class="editor-modal-overlay" @onclick="CloseEditor">
         <div class="editor-modal overflow-auto" @onclick:stopPropagation="true">
             <div class="editor-header">
-                <h3>@(_isEditing ? "Chỉnh sửa bài viết" : "Thêm bài viết mới")</h3>
+                <h3>@(_isEditing ? "Chỉnh sửa sản phẩm" : "Thêm sản phẩm mới")</h3>
                 <button class="close-btn" @onclick="CloseEditor">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
-            <EditForm Model="_editModel" OnValidSubmit="SavePost">
+            <EditForm Model="_editModel" OnValidSubmit="SaveProduct">
                 <DataAnnotationsValidator />
                 <div class="editor-body">
                     <div class="form-group">
                         <ValidationSummary class="text-error" role="alert" />
                     </div>
                     <div class="form-group">
-                        <label>Tiêu đề <span class="required">*</span></label>
-                        <InputText class="form-input" @bind-Value="_editModel.Title" placeholder="Nhập tiêu đề..." />
-                        <ValidationMessage For="@(() => _editModel.Title)" />
+                        <label>Tên sản phẩm <span class="required">*</span></label>
+                        <InputText class="form-input" @bind-Value="_editModel.Name" placeholder="Nhập tên sản phẩm..." />
+                        <ValidationMessage For="@(() => _editModel.Name)" />
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Slug</label>
-                            <InputText class="form-input" @bind-Value="_editModel.Slug" placeholder="Tự động tạo từ tiêu đề" />
-                            <span class="form-hint">Để trống để tự động tạo</span>
+                            <label>Giá gốc (VNĐ)</label>
+                            <InputNumber class="form-input" @bind-Value="_originPriceInput" @oninput="OnOriginPriceChanged" placeholder="Nhập giá gốc..." />
+                            <span class="form-hint">Để trống nếu nhập giá bán</span>
                         </div>
                         <div class="form-group">
-                            <label>Mô tả ngắn</label>
-                            <InputText class="form-input" @bind-Value="_editModel.Description" placeholder="Tự động tạo từ nội dung" />
-                            <span class="form-hint">Để trống để tự động tạo</span>
+                            <label>Giá bán (VNĐ)</label>
+                            <InputNumber class="form-input" @bind-Value="_priceInput" @oninput="OnPriceChanged" placeholder="Nhập giá bán..." />
+                            <span class="form-hint">Để trống nếu nhập giá gốc</span>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label>Nội dung <span class="required">*</span></label>
-                        @if (_editModel != null)
-                        {
-                            <Editor class="form-input"
-                            LicenseKey="gpl"
-                            ScriptSrc="@Assets["lib/tinymce/tinymce.min.js"]"
-                            JsConfSrc="elfinderTinyMceConfig"
-                            @bind-Value="_editModel.Content"
-                            Field="@(() => _editModel.Content)"
-                            Conf="@_tinymceConfig" />
-                            <ValidationMessage For="@(() => _editModel.Content)" />
-                        }
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Giảm giá (%)</label>
+                            <InputNumber class="form-input" @bind-Value="_editModel.Discount" @oninput="OnDiscountChanged" placeholder="0-100" />
+                            <span class="form-hint">Tự động tính khi nhập giá</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Số lượng</label>
+                            <InputNumber class="form-input" @bind-Value="_editModel.Quantity" placeholder="-1 cho không giới hạn" />
+                            <span class="form-hint">Nhập -1 cho số lượng không giới hạn</span>
+                        </div>
                     </div>
-                    @if (_editModel != null)
-                    {
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Số lượng vé</label>
+                            <InputNumber class="form-input" @bind-Value="_editModel.NumberofTickets" placeholder="Số lượng vé" />
+                        </div>
                         <div class="form-group">
                             <label class="checkbox-label">
                                 <InputCheckbox @bind-Value="_editModel.Published" />
                                 Xuất bản
                             </label>
                         </div>
-                    }
+                    </div>
                 </div>
                 <div class="editor-footer">
                     <button type="button" class="btn-secondary" @onclick="CloseEditor">Hủy</button>
@@ -453,6 +486,7 @@
             color: var(--on-surface-variant);
             background: var(--surface-container);
             border-bottom: 1px solid var(--outline-variant);
+            white-space: nowrap;
         }
 
             .data-table th.sortable {
@@ -469,6 +503,7 @@
             border-bottom: 1px solid var(--outline-variant);
             font-size: 0.875rem;
             color: var(--on-surface);
+            white-space: nowrap;
         }
 
         .data-table tbody tr:hover {
@@ -491,6 +526,20 @@
     .article-title {
         font-weight: 500;
         color: var(--on-surface);
+    }
+
+    .price-text {
+        font-weight: 500;
+        color: var(--on-surface);
+    }
+
+    .discount-text {
+        color: #dc2626;
+        font-weight: 500;
+    }
+
+    .quantity-text {
+        color: var(--on-surface-variant);
     }
 
     .status-tag {
@@ -799,39 +848,35 @@
     private int _jumpToPage = 1;
     private bool _showEditor = false;
     private bool _isEditing = false;
-    private int? _editingPostId;
+    private int? _editingProductId;
 
     private int _publishedCount;
-    private int _draftCount;
+    private int _outOfStockCount;
     private int _totalCount;
 
-    private string _sortField = nameof(Post.DateUpdated);
+    private string _sortField = nameof(Product.DateUpdated);
     private bool _sortDescending = true;
 
-    private List<Post> _allPosts;
-    private List<Post> _filteredPosts;
-    private List<Post> _pagedPosts;
+    private List<Product> _allProducts;
+    private List<Product> _filteredProducts;
+    private List<Product> _pagedProducts;
 
     [SupplyParameterFromForm]
-    private Post _editModel { get; set; } = new();
+    private Product _editModel { get; set; } = new();
+
+    private decimal? _originPriceInput;
+    private decimal? _priceInput;
+    private bool _updatingFromCode = false;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadPosts();
+        await LoadProducts();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            // No JS setup needed — file picker is handled entirely in JS
-        }
-    }
-
-    private async Task LoadPosts()
+    private async Task LoadProducts()
     {
         using var context = DbFactory.CreateDbContext();
-        _allPosts = await context.Posts
+        _allProducts = await context.Products
             .OrderByDescending(p => p.DateUpdated)
             .ToListAsync();
         ApplyFilters();
@@ -839,42 +884,57 @@
 
     private void UpdateCounts()
     {
-        _publishedCount = _allPosts.Count(p => p.Published);
-        _draftCount = _allPosts.Count(p => !p.Published);
-        _totalCount = _allPosts.Count;
-        _totalPages = (int)Math.Ceiling((double)_filteredPosts.Count / _pageSize);
-        _totalFiltered = _filteredPosts.Count;
-        startItem = _filteredPosts.Count == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
-        endItem = Math.Min(_currentPage * _pageSize, _filteredPosts.Count);
+        _publishedCount = _allProducts.Count(p => p.Published);
+        _outOfStockCount = _allProducts.Count(p => p.Quantity > 0 && p.QuantitySold >= p.Quantity);
+        _totalCount = _allProducts.Count;
+        _totalPages = (int)Math.Ceiling((double)_filteredProducts.Count / _pageSize);
+        _totalFiltered = _filteredProducts.Count;
+        startItem = _filteredProducts.Count == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
+        endItem = Math.Min(_currentPage * _pageSize, _filteredProducts.Count);
         _jumpToPage = _currentPage;
     }
 
     private void ApplyFilters()
     {
-        _filteredPosts = _allPosts.AsEnumerable()
-            .Where(p => string.IsNullOrEmpty(searchQuery) || p.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        _filteredProducts = _allProducts.AsEnumerable()
+            .Where(p => string.IsNullOrEmpty(searchQuery) || p.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
             .Where(p => (string.IsNullOrWhiteSpace(_statusFilter))
             || (_statusFilter == "published" && p.Published)
-            || (_statusFilter == "draft" && !p.Published))
+            || (_statusFilter == "outofstock" && p.Quantity > 0 && p.QuantitySold >= p.Quantity))
         .ToList();
 
-        _filteredPosts = _sortField switch
+        _filteredProducts = _sortField switch
         {
-            nameof(Post.Title) => _sortDescending
-                ? _filteredPosts.OrderByDescending(p => p.Title).ToList()
-                : _filteredPosts.OrderBy(p => p.Title).ToList(),
-            nameof(Post.DateCreated) => _sortDescending
-                ? _filteredPosts.OrderByDescending(p => p.DateCreated).ToList()
-                : _filteredPosts.OrderBy(p => p.DateCreated).ToList(),
+            nameof(Product.Name) => _sortDescending
+                ? _filteredProducts.OrderByDescending(p => p.Name).ToList()
+                : _filteredProducts.OrderBy(p => p.Name).ToList(),
+            nameof(Product.OriginPrice) => _sortDescending
+                ? _filteredProducts.OrderByDescending(p => p.OriginPrice).ToList()
+                : _filteredProducts.OrderBy(p => p.OriginPrice).ToList(),
+            nameof(Product.Price) => _sortDescending
+                ? _filteredProducts.OrderByDescending(p => p.Price).ToList()
+                : _filteredProducts.OrderBy(p => p.Price).ToList(),
+            nameof(Product.Discount) => _sortDescending
+                ? _filteredProducts.OrderByDescending(p => p.Discount).ToList()
+                : _filteredProducts.OrderBy(p => p.Discount).ToList(),
+            nameof(Product.Quantity) => _sortDescending
+                ? _filteredProducts.OrderByDescending(p => p.Quantity).ToList()
+                : _filteredProducts.OrderBy(p => p.Quantity).ToList(),
+            nameof(Product.QuantitySold) => _sortDescending
+                ? _filteredProducts.OrderByDescending(p => p.QuantitySold).ToList()
+                : _filteredProducts.OrderBy(p => p.QuantitySold).ToList(),
+            nameof(Product.DateCreated) => _sortDescending
+                ? _filteredProducts.OrderByDescending(p => p.DateCreated).ToList()
+                : _filteredProducts.OrderBy(p => p.DateCreated).ToList(),
             _ => _sortDescending
-                ? _filteredPosts.OrderByDescending(p => p.DateUpdated).ToList()
-                : _filteredPosts.OrderBy(p => p.DateUpdated).ToList()
+                ? _filteredProducts.OrderByDescending(p => p.DateUpdated).ToList()
+                : _filteredProducts.OrderBy(p => p.DateUpdated).ToList()
         };
         _currentPage = 1;
-        UpdatePagedPosts();
+        UpdatePagedProducts();
     }
 
-    private void UpdatePagedPosts()
+    private void UpdatePagedProducts()
     {
         if (_pageSize < 1)
         {
@@ -882,7 +942,7 @@
             return;
         }
 
-        _pagedPosts = _filteredPosts
+        _pagedProducts = _filteredProducts
             .Skip((_currentPage - 1) * _pageSize)
             .Take(_pageSize)
             .ToList();
@@ -906,18 +966,12 @@
         ApplyFilters();
     }
 
-    private void OnPageSizeChanged()
-    {
-        _pageSize = Math.Clamp(_pageSize, 10, 20);
-        UpdatePagedPosts();
-    }
-
     private async Task GoToPage(int page)
     {
         if (page >= 1 && page <= _totalPages)
         {
             _currentPage = page;
-            UpdatePagedPosts();
+            UpdatePagedProducts();
             await JS.InvokeVoidAsync("scrollTo", 0, 0);
         }
     }
@@ -954,23 +1008,29 @@
     private void ShowCreateForm()
     {
         _isEditing = false;
-        _editingPostId = null;
-        _editModel = new Post();
+        _editingProductId = null;
+        _editModel = new Product();
+        _originPriceInput = null;
+        _priceInput = null;
         _showEditor = true;
     }
 
-    private void EditPost(Post post)
+    private void EditProduct(Product product)
     {
         _isEditing = true;
-        _editingPostId = post.PostId;
-        _editModel = new Post
+        _editingProductId = product.ProductId;
+        _editModel = new Product
         {
-            Title = post.Title,
-            Slug = post.Slug,
-            Description = post.Description,
-            Content = post.Content,
-            Published = post.Published
+            Name = product.Name,
+            OriginPrice = product.OriginPrice,
+            Price = product.Price,
+            Discount = product.Discount,
+            Quantity = product.Quantity,
+            NumberofTickets = product.NumberofTickets,
+            Published = product.Published
         };
+        _originPriceInput = product.OriginPrice;
+        _priceInput = product.Price;
         _showEditor = true;
     }
 
@@ -982,7 +1042,7 @@
                 "Hủy thay đổi?",
                 "Các thay đổi chưa lưu sẽ bị mất.",
                 "Hủy thay đổi",
-                isDanger: false);
+                isDanger: true);
             if (!confirmed) return;
         }
         _showEditor = false;
@@ -990,12 +1050,121 @@
 
     private bool HasUnsavedChanges()
     {
-        return !string.IsNullOrEmpty(_editModel.Title) ||
-               !string.IsNullOrEmpty(_editModel.Content) ||
-               !string.IsNullOrEmpty(_editModel.Slug);
+        return !string.IsNullOrEmpty(_editModel.Name) ||
+               _editModel.OriginPrice > 0 ||
+               _editModel.Price > 0 ||
+               _editModel.Quantity != 0;
     }
 
-    private async Task SavePost()
+    private void OnOriginPriceChanged(ChangeEventArgs e)
+    {
+        if (_updatingFromCode) return;
+        
+        if (decimal.TryParse(e.Value?.ToString(), out var originPrice))
+        {
+            _originPriceInput = originPrice;
+            CalculatePriceFromOriginPrice();
+        }
+    }
+
+    private void OnPriceChanged(ChangeEventArgs e)
+    {
+        if (_updatingFromCode) return;
+        
+        if (decimal.TryParse(e.Value?.ToString(), out var price))
+        {
+            _priceInput = price;
+            CalculatePriceFromPriceInput();
+        }
+    }
+
+    private void OnDiscountChanged(ChangeEventArgs e)
+    {
+        if (_updatingFromCode) return;
+        
+        RecalculatePriceFromDiscount();
+    }
+
+    private void CalculatePriceFromOriginPrice()
+    {
+        if (!_originPriceInput.HasValue || _originPriceInput.Value <= 0) return;
+        
+        _updatingFromCode = true;
+        try
+        {
+            if (_editModel.Discount > 0)
+            {
+                _editModel.Price = Math.Round(_originPriceInput.Value * (1 - _editModel.Discount / 100), 0);
+                _priceInput = _editModel.Price;
+            }
+            else
+            {
+                _editModel.Price = _originPriceInput.Value;
+                _priceInput = _editModel.Price;
+            }
+        }
+        finally
+        {
+            _updatingFromCode = false;
+        }
+    }
+
+    private void CalculatePriceFromPriceInput()
+    {
+        if (!_priceInput.HasValue || _priceInput.Value <= 0) return;
+        
+        _updatingFromCode = true;
+        try
+        {
+            if (_originPriceInput.HasValue && _originPriceInput.Value > 0)
+            {
+                if (_priceInput.Value < _originPriceInput.Value)
+                {
+                    _editModel.Discount = Math.Round(((_originPriceInput.Value - _priceInput.Value) / _originPriceInput.Value) * 100, 0);
+                }
+                else
+                {
+                    _editModel.Discount = 0;
+                }
+            }
+            else
+            {
+                _editModel.OriginPrice = _priceInput.Value;
+                _originPriceInput = _priceInput.Value;
+                _editModel.Price = _priceInput.Value;
+            }
+        }
+        finally
+        {
+            _updatingFromCode = false;
+        }
+    }
+
+    private void RecalculatePriceFromDiscount()
+    {
+        if (_updatingFromCode) return;
+        
+        _updatingFromCode = true;
+        try
+        {
+            if (_originPriceInput.HasValue && _originPriceInput.Value > 0 && _editModel.Discount > 0)
+            {
+                _editModel.Price = Math.Round(_originPriceInput.Value * (1 - _editModel.Discount / 100), 0);
+                _priceInput = _editModel.Price;
+            }
+            else if (_priceInput.HasValue && _priceInput.Value > 0 && _editModel.Discount > 0)
+            {
+                _editModel.OriginPrice = Math.Round(_priceInput.Value / (1 - _editModel.Discount / 100), 0);
+                _originPriceInput = _editModel.OriginPrice;
+            }
+        }
+        finally
+        {
+            _updatingFromCode = false;
+        }
+    }
+
+    private async Task SaveProduct()
     {
         try
         {
@@ -1003,68 +1172,65 @@
             {
                 var confirmed = await ConfirmDialogService.ShowAsync(
                     "Xác nhận cập nhật",
-                    "Bạn có chắc muốn cập nhật bài viết này?",
+                    "Bạn có chắc muốn cập nhật sản phẩm này?",
                     "Cập nhật",
-                    isDanger: false);
+                    isDanger: true);
                 if (!confirmed) return;
             }
 
             var now = DateTime.UtcNow;
 
-            if (string.IsNullOrEmpty(_editModel.Slug))
+            if (_editModel.Quantity > 0 && _editModel.QuantitySold >= _editModel.Quantity)
             {
-                _editModel.Slug = AppUtilities.GenerateSlug(_editModel.Title);
+                _editModel.Published = false;
             }
 
-            if (string.IsNullOrEmpty(_editModel.Description))
-            {
-                var plainText = System.Text.RegularExpressions.Regex.Replace(_editModel.Content, "<[^>]+>", "");
-                _editModel.Description = plainText.Length > 300
-                    ? plainText.Substring(0, 300) + "..."
-                    : plainText;
-            }
-
-            if (_isEditing && _editingPostId.HasValue)
+            if (_isEditing && _editingProductId.HasValue)
             {
                 using var context = DbFactory.CreateDbContext();
-                var post = await context.Posts.FindAsync(_editingPostId.Value);
-                if (post == null)
+                var product = await context.Products.FindAsync(_editingProductId.Value);
+                if (product == null)
                 {
-                    ToastService.Show("error", "Không tìm thấy bài viết!");
+                    ToastService.Show("error", "Không tìm thấy sản phẩm!");
                     return;
                 }
 
-                post.Title = _editModel.Title;
-                post.Slug = _editModel.Slug;
-                post.Description = _editModel.Description;
-                post.Content = _editModel.Content;
-                post.Published = _editModel.Published;
-                post.DateUpdated = now;
+                product.Name = _editModel.Name;
+                product.OriginPrice = _editModel.OriginPrice;
+                product.Price = _editModel.Price;
+                product.Discount = _editModel.Discount;
+                product.Quantity = _editModel.Quantity;
+                product.NumberofTickets = _editModel.NumberofTickets;
+                product.Published = _editModel.Published;
+                product.DateUpdated = now;
 
-                context.Posts.Update(post);
+                context.Products.Update(product);
                 await context.SaveChangesAsync();
-                ToastService.Show("success", "Đã cập nhật bài viết!");
+                ToastService.Show("success", "Đã cập nhật sản phẩm!");
             }
             else
             {
-                var post = new Post
+                var product = new Product
                 {
-                    Title = _editModel.Title,
-                    Slug = _editModel.Slug,
-                    Description = _editModel.Description,
-                    Content = _editModel.Content,
+                    Name = _editModel.Name,
+                    OriginPrice = _editModel.OriginPrice,
+                    Price = _editModel.Price,
+                    Discount = _editModel.Discount,
+                    Quantity = _editModel.Quantity,
+                    QuantitySold = 0,
+                    NumberofTickets = _editModel.NumberofTickets,
                     Published = _editModel.Published,
                     DateCreated = now,
                     DateUpdated = now
                 };
                 using var context = DbFactory.CreateDbContext();
-                context.Posts.Add(post);
+                context.Products.Add(product);
                 await context.SaveChangesAsync();
-                ToastService.Show("success", "Đã tạo bài viết mới!");
+                ToastService.Show("success", "Đã tạo sản phẩm mới!");
             }
 
             _showEditor = false;
-            await LoadPosts();
+            await LoadProducts();
         }
         catch (Exception ex)
         {
@@ -1072,11 +1238,11 @@
         }
     }
 
-    private async Task DeletePost(Post post)
+    private async Task DeleteProduct(Product product)
     {
         var confirmed = await ConfirmDialogService.ShowAsync(
             "Xác nhận xóa",
-            $"Bạn có chắc muốn xóa bài viết \"{post.Title}\"?",
+            $"Bạn có chắc muốn xóa sản phẩm \"{product.Name}\"?",
             "Xóa",
             isDanger: true);
 
@@ -1085,115 +1251,16 @@
         try
         {
             using var context = DbFactory.CreateDbContext();
-            context.Posts.Remove(post);
+            context.Products.Remove(product);
             await context.SaveChangesAsync();
-            ToastService.Show("success", "Đã xóa bài viết!");
-            await LoadPosts();
+            ToastService.Show("success", "Đã xóa sản phẩm!");
+            await LoadProducts();
         }
         catch (Exception ex)
         {
             ToastService.Show("error", $"Lỗi khi xóa: {ex.Message}");
         }
     }
-
-    private Dictionary<string, object> _tinymceConfig => new()
-    {
-
-// Full bộ plugin free/open-source đáng dùng
-    {
-        "plugins",
-        "accordion advlist anchor autolink autoresize autosave charmap code codesample " +
-        "directionality emoticons fullscreen help image importcss insertdatetime link " +
-        "lists media nonbreaking pagebreak preview quickbars save searchreplace table " +
-        "visualblocks visualchars wordcount"
-    },
-
-    // Menu đầy đủ cho editor
-    { "menubar", "file edit view insert format tools table help" },
-
-    // Toolbar đầy đủ nhưng vẫn dễ dùng
-    {
-        "toolbar",
-        "undo redo restoredraft | blocks fontfamily fontsize | " +
-        "bold italic underline strikethrough forecolor backcolor | " +
-        "alignleft aligncenter alignright alignjustify | " +
-        "bullist numlist outdent indent | " +
-        "accordion | link anchor image media table | " +
-        "elfinder | " +
-        "charmap emoticons codesample blockquote hr pagebreak nonbreaking | " +
-        "ltr rtl | searchreplace visualblocks visualchars | " +
-        "preview code fullscreen | insertdatetime | save help"
-    },
-
-    { "toolbar_sticky", true },
-    { "height", 400  },
-
-    // Tự co giãn chiều cao editor
-    { "autoresize_bottom_margin", 16 },
-    { "autoresize_overflow_padding", 8 },
-
-    // Quick toolbars
-    { "quickbars_selection_toolbar", "bold italic underline | blocks | forecolor backcolor | quicklink blockquote" },
-    { "quickbars_insert_toolbar", "quickimage quicktable | hr pagebreak" },
-
-    // Image upload
-    { "automatic_uploads", true },
-    { "images_upload_url", $"{Navigation.BaseUri.TrimEnd('/')}/api/tinymce/upload-image" },
-    { "images_upload_credentials", true },
-    { "file_picker_types", "file image media" },
-
-    // Image options
-    { "image_advtab", true },
-    { "image_caption", true },
-    { "image_title", true },
-    { "image_description", true },
-    { "image_dimensions", true },
-
-    // Link options
-    { "link_default_target", "_blank" },
-    { "link_assume_external_targets", true },
-
-    // Table options
-    { "table_default_attributes", new Dictionary<string, string> { { "border", "1" } } },
-    { "table_default_styles", new Dictionary<string, string> { { "border-collapse", "collapse" }, { "width", "100%" } } },
-
-    // Autosave
-    { "autosave_ask_before_unload", true },
-    { "autosave_interval", "30s" },
-    { "autosave_prefix", "tinymce-autosave-{path}{query}-{id}-" },
-    { "autosave_restore_when_empty", true },
-    { "autosave_retention", "2m" },
-
-    // Paste / URL / nội dung
-    { "paste_data_images", true },
-    { "branding", false },
-
-    // Context menu
-    { "contextmenu", "undo redo | inserttable | cell row column deletetable | link image table" },
-
-    // Thanh trạng thái
-    { "statusbar", true },
-
-    // Save button callback
-    {
-        "save_onsavecallback",
-        "function () { console.log('Save clicked'); }"
-    },
-
-    // Content style để figure/caption/table nhìn đẹp hơn
-    {
-        "content_style",
-        "body { font-family:Helvetica,Arial,sans-serif; font-size:14px } " +
-        "figure.image { display:inline-block; margin: 0 2px 0 1px; } " +
-        "figure.image img { margin:8px 8px 0 8px; } " +
-        "figure.image figcaption { text-align:center; margin:6px 8px 6px 8px; color:#666; } " +
-        "table { border-collapse: collapse; width:100%; } " +
-        "table td, table th { border:1px solid #ccc; padding:8px; }"
-    },
-    // promotion
-    { "promotion", false }
-
-    };
 
     private IEnumerable<object> GetVisiblePages()
     {
@@ -1212,7 +1279,6 @@
         bool showStartEllipsis = windowStart > 3;
         bool showEndEllipsis = windowEnd < _totalPages - 2;
 
-        // First 3 pages
         int firstEnd = Math.Min(3, _totalPages);
         for (int i = 1; i <= firstEnd; i++)
             yield return i;
@@ -1220,7 +1286,6 @@
         if (showStartEllipsis)
             yield return "...";
 
-        // Middle 3 pages
         for (int i = windowStart; i <= windowEnd; i++)
         {
             if (i > firstEnd && i < _totalPages - 2)
@@ -1230,10 +1295,8 @@
         if (showEndEllipsis)
             yield return "...";
 
-        // Last 3 pages
         int lastStart = Math.Max(_totalPages - 2, firstEnd + 1);
         for (int i = lastStart; i <= _totalPages; i++)
             yield return i;
     }
 }
-

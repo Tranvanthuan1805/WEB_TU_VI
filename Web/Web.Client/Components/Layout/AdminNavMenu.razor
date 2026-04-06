@@ -15,9 +15,17 @@
                 <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dashboard</span>
                 <span>Dashboard</span>
             </NavLink>
-            <NavLink href="/admin/manager" class="hover:text-primary">
+            <NavLink href="/admin/posts" class="hover:text-primary">
                 <span class="material-symbols-outlined">description</span>
                 <span>Bài viết</span>
+            </NavLink>
+            <NavLink href="/admin/products" class="hover:text-primary">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">inventory_2</span>
+                <span>Sản phẩm</span>
+            </NavLink>
+            <NavLink href="/admin/tickets" class="hover:text-primary">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">confirmation_number</span>
+                <span>Vé</span>
             </NavLink>
             <NavLink href="/admin/file-explorer" class="hover:text-primary">
                 <span class="material-symbols-outlined">folder</span>
@@ -58,6 +66,14 @@
             <NavLink href="/admin/manager" class="hover:text-primary" @onclick="CloseMenu">
                 <span class="material-symbols-outlined">description</span>
                 <span>Bài viết</span>
+            </NavLink>
+            <NavLink href="/admin/products" class="hover:text-primary" @onclick="CloseMenu">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">inventory_2</span>
+                <span>Sản phẩm</span>
+            </NavLink>
+            <NavLink href="/admin/tickets" class="hover:text-primary" @onclick="CloseMenu">
+                <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24">confirmation_number</span>
+                <span>Vé</span>
             </NavLink>
             <NavLink href="/admin/file-explorer" class="hover:text-primary" @onclick="CloseMenu">
                 <span class="material-symbols-outlined">folder</span>

@@ -9,6 +9,9 @@ namespace Web.Data
     public class AppDBContext(DbContextOptions<AppDBContext> options) : IdentityDbContext<User>(options)
     {
         public DbSet<Post> Posts { get; set; }
+        public DbSet<Product> Products { get; set; }
+        public DbSet<Ticket> Tickets { get; set; }
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

@@ -1,0 +1,1140 @@
+@page "/admin/tickets"
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+@attribute [Authorize(Roles = RoleName.Administrator)]
+@inject NavigationManager Navigation
+@inject ToastService ToastService
+@inject ConfirmDialogService ConfirmDialogService
+@inject IJSRuntime JS
+
+<PageTitle>Quản lý vé</PageTitle>
+
+<div class="article-manager" data-theme="admin">
+    <div class="page-header">
+        <div>
+            <h2>Quản lý vé</h2>
+            <p>Xem, tạo, chỉnh sửa và xóa vé.</p>
+        </div>
+        <button class="add-article-btn" @onclick="ShowCreateForm">
+            <span class="material-symbols-outlined">add</span>
+            <span>Thêm vé</span>
+        </button>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Đang hoạt động</span>
+                <span class="material-symbols-outlined stat-mini-icon">check_circle</span>
+            </div>
+            <span class="stat-mini-value">@_activeCount</span>
+        </div>
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Hết lượt</span>
+                <span class="material-symbols-outlined stat-mini-icon warning">block</span>
+            </div>
+            <span class="stat-mini-value">@_usedUpCount</span>
+        </div>
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Tổng số</span>
+                <span class="material-symbols-outlined stat-mini-icon">confirmation_number</span>
+            </div>
+            <span class="stat-mini-value">@_totalCount</span>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-controls">
+            <div class="search-filter">
+                <div class="search-input">
+                    <span class="material-symbols-outlined">search</span>
+                    <input type="text" placeholder="Tìm kiếm theo mã..." @bind="searchQuery" @oninput="OnSearchChanged" />
+                </div>
+                <div class="category-dropdown">
+                    <select @bind="_statusFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tất cả</option>
+                        <option value="published">Đang hoạt động</option>
+                        <option value="usedup">Hết lượt</option>
+                    </select>
+                    <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th @onclick="() => ToggleSort(nameof(Models.Ticket.Code))" class="sortable">
+                            Mã
+                            @GetSortIcon(nameof(Models.Ticket.Code))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Models.Ticket.Quantity))" class="sortable">
+                            Số lượng
+                            @GetSortIcon(nameof(Models.Ticket.Quantity))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Models.Ticket.QuantityUsed))" class="sortable">
+                            Đã dùng
+                            @GetSortIcon(nameof(Models.Ticket.QuantityUsed))
+                        </th>
+                        <th>Còn lại</th>
+                        <th>Trạng thái</th>
+                        <th @onclick="() => ToggleSort(nameof(Models.Ticket.DateCreated))" class="sortable">
+                            Ngày tạo
+                            @GetSortIcon(nameof(Models.Ticket.DateCreated))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Models.Ticket.DateUpdated))" class="sortable">
+                            Ngày cập nhật
+                            @GetSortIcon(nameof(Models.Ticket.DateUpdated))
+                        </th>
+                        <th class="text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+@if (_pagedTickets == null)
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-8 text-on-surface-variant">
+                                Đang tải...
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var ticket in _pagedTickets)
+                        {
+                            var isUsedUp = ticket.Quantity > 0 && ticket.QuantityUsed >= ticket.Quantity;
+                            <tr>
+                                <td>
+                                    <span class="code-text">@ticket.Code</span>
+                                </td>
+                                <td>
+                                    <span class="quantity-text">@(ticket.Quantity == -1 ? "∞" : ticket.Quantity.ToString("N0"))</span>
+                                </td>
+                                <td>
+                                    <span class="quantity-text">@ticket.QuantityUsed.ToString("N0")</span>
+                                </td>
+                                <td>
+                                    <span class="quantity-text">@(ticket.Quantity == -1 ? "∞" : (ticket.Quantity - ticket.QuantityUsed).ToString("N0"))</span>
+                                </td>
+                                <td>
+                                    <span class="status-tag @(isUsedUp ? "usedup" : (ticket.Published ? "published" : "draft"))">@(isUsedUp ? "Hết lượt" : (ticket.Published ? "Hoạt động" : "Không hoạt động"))</span>
+                                </td>
+                                <td>
+                                    <span class="date-text">@ticket.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
+                                </td>
+                                <td>
+                                    <span class="date-text">@ticket.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
+                                </td>
+                                <td>
+                                    <div class="row-actions">
+                                        <button class="row-action-btn" title="Sửa" @onclick="() => EditTicket(ticket)">
+                                            <span class="material-symbols-outlined">edit</span>
+                                        </button>
+                                        <button class="row-action-btn danger" title="Xóa" @onclick="() => DeleteTicket(ticket)">
+                                            <span class="material-symbols-outlined">delete</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        if (!_pagedTickets.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center py-8 text-on-surface-variant">
+                                    Không có vé nào.
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalPages > 1)
+        {
+            <div class="table-footer w-full overflow-auto">
+                <div class="page-size-control">
+                    <label class="text-xs text-on-surface-variant">Số dòng:</label>
+                    <input type="number"
+                    class="page-size-input"
+                    min="1"
+                    @bind="_pageSize"
+                    @bind:after="UpdatePagedTickets" />
+                </div>
+                <span class="showing-text">Hiển thị @startItem-@endItem của @_totalFiltered vé</span>
+                <div class="pagination">
+                    <button class="page-btn" disabled="@(_currentPage == 1)" @onclick="() => GoToPage(_currentPage - 1)">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </button>
+                    @foreach (var item in GetVisiblePages())
+                    {
+                        if (item is int pageNum)
+                        {
+                            <button class="page-btn @(_currentPage == pageNum ? "active" : "")" @onclick="() => GoToPage(pageNum)">@pageNum</button>
+                        }
+                        else
+                        {
+                            <span class="page-ellipsis">...</span>
+                        }
+                    }
+                    <button class="page-btn" disabled="@(_currentPage == _totalPages)" @onclick="() => GoToPage(_currentPage + 1)">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </button>
+                </div>
+                <div class="page-jump">
+                    <label class="text-xs text-on-surface-variant">Tới trang:</label>
+                    <input type="number"
+                    class="page-jump-input"
+                    min="1" max="@_totalPages"
+                    @bind="_jumpToPage"
+                    @bind:after="JumpToPage" />
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (_showEditor)
+{
+    <div class="editor-modal-overlay" @onclick="CloseEditor">
+        <div class="editor-modal overflow-auto" @onclick:stopPropagation="true">
+            <div class="editor-header">
+                <h3>@(_isEditing ? "Chỉnh sửa vé" : "Thêm vé mới")</h3>
+                <button class="close-btn" @onclick="CloseEditor">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <EditForm Model="_editModel" OnValidSubmit="SaveTicket">
+                <DataAnnotationsValidator />
+                <div class="editor-body">
+                    <div class="form-group">
+                        <ValidationSummary class="text-error" role="alert" />
+                    </div>
+                    <div class="form-group">
+                        <label>Mã vé <span class="required">*</span></label>
+                        <InputText class="form-input" @bind-Value="_editModel.Code" placeholder="Nhập mã vé..." />
+                        <span class="form-hint">Để trống để tự động tạo mã</span>
+                        <ValidationMessage For="@(() => _editModel.Code)" />
+                    </div>
+                    <div class="form-group">
+                        <label>Số lượng</label>
+                        <InputNumber class="form-input" @bind-Value="_editModel.Quantity" placeholder="Nhập số lượng (-1 cho vô hạn)..." />
+                        <span class="form-hint">Nhập -1 cho vé vô hạn, hoặc số nguyên dương cho giới hạn</span>
+                        <ValidationMessage For="@(() => _editModel.Quantity)" />
+                    </div>
+                    @if (_editModel != null)
+                    {
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <InputCheckbox @bind-Value="_editModel.Published" />
+                                Xuất bản
+                            </label>
+                        </div>
+                    }
+                </div>
+                <div class="editor-footer">
+                    <button type="button" class="btn-secondary" @onclick="CloseEditor">Hủy</button>
+                    <button type="submit" class="btn-primary">@(_isEditing ? "Cập nhật" : "Tạo mới")</button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        vertical-align: middle;
+    }
+
+    .article-manager[data-theme="admin"] {
+        --primary: #1E3A8A;
+        --primary-container: #1E3A8A;
+        --on-primary: #ffffff;
+        --surface: #F8FAFC;
+        --surface-container: #e2e8f0;
+        --surface-container-low: #f1f5f9;
+        --surface-container-high: #cbd5e1;
+        --on-surface: #1e293b;
+        --on-surface-variant: #475569;
+        --outline: #64748B;
+        --outline-variant: #cbd5e1;
+        --error-container: #dc2626;
+        --on-error-container: #ffffff;
+        --secondary-container: #e2e8f0;
+        --on-secondary-container: #475569;
+        --tertiary-container: #6E2C00;
+        --on-tertiary-container: #ffffff;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+
+        .page-header h2 {
+            color: var(--on-surface);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 0 0.25rem;
+        }
+
+        .page-header p {
+            color: var(--on-surface-variant);
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+    .add-article-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        background: var(--primary);
+        color: var(--on-primary);
+        border: none;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+        .add-article-btn:hover {
+            opacity: 0.9;
+        }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-mini {
+        background: var(--surface-container-low);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+
+    .stat-mini-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-mini-label {
+        font-size: 0.75rem;
+        color: var(--on-surface-variant);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .stat-mini-icon {
+        color: var(--primary);
+        font-size: 1.25rem;
+    }
+
+        .stat-mini-icon.warning {
+            color: #f59e0b;
+        }
+
+    .stat-mini-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--on-surface);
+    }
+
+    .stat-mini-trend {
+        font-size: 0.75rem;
+        color: var(--on-surface-variant);
+    }
+
+    .table-container {
+        background: var(--surface-container-low);
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+
+    .table-controls {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--outline-variant);
+    }
+
+    .search-filter {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .search-input {
+        position: relative;
+        flex: 1;
+    }
+
+        .search-input .material-symbols-outlined {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--on-surface-variant);
+            font-size: 1.25rem;
+        }
+
+        .search-input input {
+            width: 100%;
+            padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+            border: 1px solid var(--outline-variant);
+            border-radius: 0.5rem;
+            background: var(--surface);
+            color: var(--on-surface);
+            font-size: 0.875rem;
+        }
+
+            .search-input input:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.1);
+            }
+
+    .category-dropdown {
+        position: relative;
+        min-width: 180px;
+    }
+
+        .category-dropdown select {
+            width: 100%;
+            padding: 0.5rem 2rem 0.5rem 0.75rem;
+            border: 1px solid var(--outline-variant);
+            border-radius: 0.5rem;
+            background: var(--surface);
+            color: var(--on-surface);
+            font-size: 0.875rem;
+            appearance: none;
+            cursor: pointer;
+        }
+
+    .dropdown-icon {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: var(--on-surface-variant);
+    }
+
+    .data-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--on-surface-variant);
+            background: var(--surface-container);
+            border-bottom: 1px solid var(--outline-variant);
+        }
+
+            .data-table th.sortable {
+                cursor: pointer;
+                user-select: none;
+            }
+
+                .data-table th.sortable:hover {
+                    background: var(--surface-container-high);
+                }
+
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--outline-variant);
+            font-size: 0.875rem;
+            color: var(--on-surface);
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--surface-container);
+        }
+
+    .article-title-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .code-text {
+        font-family: monospace;
+        font-weight: 500;
+        color: var(--on-surface);
+    }
+
+    .quantity-text {
+        font-variant-numeric: tabular-nums;
+    }
+
+    .status-tag {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+        .status-tag.published {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-tag.draft {
+            background: var(--secondary-container);
+            color: var(--on-secondary-container);
+        }
+
+        .status-tag.usedup {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+    .date-text {
+        color: var(--on-surface-variant);
+        font-size: 0.8125rem;
+    }
+
+    .row-actions {
+        display: flex;
+        gap: 0.25rem;
+        justify-content: flex-end;
+    }
+
+    .row-action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border: none;
+        border-radius: 0.375rem;
+        background: transparent;
+        color: var(--on-surface-variant);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .row-action-btn:hover {
+            background: var(--surface-container);
+        }
+
+        .row-action-btn.danger:hover {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+    .table-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: var(--surface-container);
+    }
+
+    .showing-text {
+        font-size: 0.8125rem;
+        color: var(--on-surface-variant);
+    }
+
+    .pagination {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .page-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface-variant);
+        font-size: 0.8125rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .page-btn:hover:not(:disabled):not(.active) {
+            background: var(--surface-container-high);
+        }
+
+        .page-btn.active {
+            background: var(--primary);
+            color: var(--on-primary);
+            border-color: var(--primary);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    .page-ellipsis {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        color: var(--on-surface-variant);
+        font-size: 0.8125rem;
+    }
+
+    .page-size-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .page-size-input {
+        width: 3.5rem;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface);
+        text-align: center;
+        font-size: 0.8125rem;
+    }
+
+    .page-jump {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .page-jump-input {
+        width: 3.5rem;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface);
+        text-align: center;
+        font-size: 0.8125rem;
+    }
+
+    .editor-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+    }
+
+    .editor-modal {
+        background: var(--surface-container-low);
+        border-radius: 0.75rem;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--outline-variant);
+    }
+
+        .editor-header h3 {
+            margin: 0;
+            color: var(--on-surface);
+            font-size: 1.125rem;
+        }
+
+    .close-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border: none;
+        border-radius: 0.375rem;
+        background: transparent;
+        color: var(--on-surface-variant);
+        cursor: pointer;
+    }
+
+        .close-btn:hover {
+            background: var(--surface-container);
+        }
+
+    .editor-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            color: var(--on-surface);
+            margin-bottom: 0.375rem;
+        }
+
+    .form-input {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface);
+        font-size: 0.875rem;
+    }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.1);
+        }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .form-hint {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--on-surface-variant);
+        margin-top: 0.25rem;
+    }
+
+    .checkbox-label {
+        display: flex !important;
+        align-items: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+    .required {
+        color: #dc2626;
+    }
+
+    .editor-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--outline-variant);
+    }
+
+    .btn-primary {
+        padding: 0.5rem 1.5rem;
+        background: var(--primary);
+        color: var(--on-primary);
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+    .btn-secondary {
+        padding: 0.5rem 1.5rem;
+        background: transparent;
+        color: var(--on-surface-variant);
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+        .btn-secondary:hover {
+            background: var(--surface-container);
+        }
+
+    .validation-message {
+        color: #dc2626;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+    }
+</style>
+
+@code {
+    private string searchQuery = "";
+    private string _statusFilter = "";
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private int _jumpToPage = 1;
+    private bool _showEditor = false;
+    private bool _isEditing = false;
+    private int? _editingTicketId;
+
+    private int _activeCount;
+    private int _usedUpCount;
+    private int _totalCount;
+
+    private string _sortField = nameof(Models.Ticket.DateUpdated);
+    private bool _sortDescending = true;
+
+    private List<Models.Ticket> _allTickets;
+    private List<Models.Ticket> _filteredTickets;
+    private List<Models.Ticket> _pagedTickets;
+
+    [SupplyParameterFromForm]
+    private Models.Ticket _editModel { get; set; } = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTickets();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+        }
+    }
+
+    private async Task LoadTickets()
+    {
+        using var context = DbFactory.CreateDbContext();
+        _allTickets = await context.Tickets
+            .OrderByDescending(t => t.DateUpdated)
+            .ToListAsync();
+        ApplyFilters();
+    }
+
+    private void UpdateCounts()
+    {
+        _activeCount = _allTickets.Count(t => t.Published);
+        _usedUpCount = _allTickets.Count(t => t.Quantity > 0 && t.QuantityUsed >= t.Quantity);
+        _totalCount = _allTickets.Count;
+        _totalPages = (int)Math.Ceiling((double)_filteredTickets.Count / _pageSize);
+        _totalFiltered = _filteredTickets.Count;
+        startItem = _filteredTickets.Count == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
+        endItem = Math.Min(_currentPage * _pageSize, _filteredTickets.Count);
+        _jumpToPage = _currentPage;
+    }
+
+    private void ApplyFilters()
+    {
+        _filteredTickets = _allTickets.AsEnumerable()
+            .Where(t => string.IsNullOrEmpty(searchQuery) || t.Code.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+            .Where(t => (string.IsNullOrWhiteSpace(_statusFilter))
+            || (_statusFilter == "published" && t.Published)
+            || (_statusFilter == "usedup" && t.Quantity > 0 && t.QuantityUsed >= t.Quantity))
+        .ToList();
+
+        _filteredTickets = _sortField switch
+        {
+            nameof(Models.Ticket.Code) => _sortDescending
+                ? _filteredTickets.OrderByDescending(t => t.Code).ToList()
+                : _filteredTickets.OrderBy(t => t.Code).ToList(),
+            nameof(Models.Ticket.Quantity) => _sortDescending
+                ? _filteredTickets.OrderByDescending(t => t.Quantity).ToList()
+                : _filteredTickets.OrderBy(t => t.Quantity).ToList(),
+            nameof(Models.Ticket.QuantityUsed) => _sortDescending
+                ? _filteredTickets.OrderByDescending(t => t.QuantityUsed).ToList()
+                : _filteredTickets.OrderBy(t => t.QuantityUsed).ToList(),
+            nameof(Models.Ticket.DateCreated) => _sortDescending
+                ? _filteredTickets.OrderByDescending(t => t.DateCreated).ToList()
+                : _filteredTickets.OrderBy(t => t.DateCreated).ToList(),
+            _ => _sortDescending
+                ? _filteredTickets.OrderByDescending(t => t.DateUpdated).ToList()
+                : _filteredTickets.OrderBy(t => t.DateUpdated).ToList()
+        };
+        _currentPage = 1;
+        UpdatePagedTickets();
+    }
+
+    private void UpdatePagedTickets()
+    {
+        if (_pageSize < 1)
+        {
+            _pageSize = 1;
+            return;
+        }
+
+        _pagedTickets = _filteredTickets
+            .Skip((_currentPage - 1) * _pageSize)
+            .Take(_pageSize)
+            .ToList();
+        UpdateCounts();
+        StateHasChanged();
+    }
+
+    private int _totalPages;
+    private int _totalFiltered;
+    private int startItem;
+    private int endItem;
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? "";
+        ApplyFilters();
+    }
+
+    private void OnFilterChanged()
+    {
+        ApplyFilters();
+    }
+
+    private void OnPageSizeChanged()
+    {
+        _pageSize = Math.Clamp(_pageSize, 10, 20);
+        UpdatePagedTickets();
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page >= 1 && page <= _totalPages)
+        {
+            _currentPage = page;
+            UpdatePagedTickets();
+            await JS.InvokeVoidAsync("scrollTo", 0, 0);
+        }
+    }
+
+    private async Task JumpToPage()
+    {
+        if (_jumpToPage < 1)
+            _jumpToPage = 1;
+        else if (_jumpToPage > _totalPages)
+            _jumpToPage = _totalPages;
+        await GoToPage(_jumpToPage);
+    }
+
+    private void ToggleSort(string field)
+    {
+        if (_sortField == field)
+        {
+            _sortDescending = !_sortDescending;
+        }
+        else
+        {
+            _sortField = field;
+            _sortDescending = true;
+        }
+        ApplyFilters();
+    }
+
+    private string GetSortIcon(string field)
+    {
+        if (_sortField != field) return "";
+        return _sortDescending ? " ↓" : " ↑";
+    }
+
+    private void ShowCreateForm()
+    {
+        _isEditing = false;
+        _editingTicketId = null;
+        _editModel = new Models.Ticket();
+        _showEditor = true;
+    }
+
+    private void EditTicket(Models.Ticket ticket)
+    {
+        _isEditing = true;
+        _editingTicketId = ticket.TicketId;
+        _editModel = new Models.Ticket
+        {
+            Code = ticket.Code,
+            Quantity = ticket.Quantity,
+            Published = ticket.Published
+        };
+        _showEditor = true;
+    }
+
+    private async Task CloseEditor()
+    {
+        if (_showEditor && HasUnsavedChanges())
+        {
+            var confirmed = await ConfirmDialogService.ShowAsync(
+                "Hủy thay đổi?",
+                "Các thay đổi chưa lưu sẽ bị mất.",
+                "Hủy thay đổi",
+                isDanger: true);
+            if (!confirmed) return;
+        }
+        _showEditor = false;
+    }
+
+    private bool HasUnsavedChanges()
+    {
+        return !string.IsNullOrEmpty(_editModel.Code) || _editModel.Quantity != 0;
+    }
+
+    private string GenerateCode()
+    {
+        return Guid.NewGuid().ToString("N").Substring(0, 16).ToUpper();
+    }
+
+    private async Task SaveTicket()
+    {
+        try
+        {
+            if (_isEditing)
+            {
+                var confirmed = await ConfirmDialogService.ShowAsync(
+                    "Xác nhận cập nhật",
+                    "Bạn có chắc muốn cập nhật vé này?",
+                    "Cập nhật",
+                    isDanger: true);
+                if (!confirmed) return;
+            }
+
+            var now = DateTime.UtcNow;
+
+            if (string.IsNullOrEmpty(_editModel.Code))
+            {
+                _editModel.Code = GenerateCode();
+            }
+
+            var originalPublished = _editModel.Published;
+            if (_editModel.Quantity > 0 && _editModel.QuantityUsed >= _editModel.Quantity)
+            {
+                _editModel.Published = false;
+            }
+            else
+            {
+                _editModel.Published = originalPublished;
+            }
+
+            if (_isEditing && _editingTicketId.HasValue)
+            {
+                using var context = DbFactory.CreateDbContext();
+                var ticket = await context.Tickets.FindAsync(_editingTicketId.Value);
+                if (ticket == null)
+                {
+                    ToastService.Show("error", "Không tìm thấy vé!");
+                    return;
+                }
+
+                ticket.Code = _editModel.Code;
+                ticket.Quantity = _editModel.Quantity;
+                ticket.Published = _editModel.Published;
+                ticket.DateUpdated = now;
+
+                context.Tickets.Update(ticket);
+                await context.SaveChangesAsync();
+                ToastService.Show("success", "Đã cập nhật vé!");
+            }
+            else
+            {
+                var ticket = new Models.Ticket
+                {
+                    Code = _editModel.Code,
+                    Quantity = _editModel.Quantity,
+                    QuantityUsed = 0,
+                    Published = _editModel.Published,
+                    DateCreated = now,
+                    DateUpdated = now
+                };
+                using var context = DbFactory.CreateDbContext();
+                context.Tickets.Add(ticket);
+                await context.SaveChangesAsync();
+                ToastService.Show("success", "Đã tạo vé mới!");
+            }
+
+            _showEditor = false;
+            await LoadTickets();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteTicket(Models.Ticket ticket)
+    {
+        var confirmed = await ConfirmDialogService.ShowAsync(
+            "Xác nhận xóa",
+            $"Bạn có chắc muốn xóa vé \"{ticket.Code}\"?",
+            "Xóa",
+            isDanger: true);
+
+        if (!confirmed) return;
+
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            context.Tickets.Remove(ticket);
+            await context.SaveChangesAsync();
+            ToastService.Show("success", "Đã xóa vé!");
+            await LoadTickets();
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi xóa: {ex.Message}");
+        }
+    }
+
+    private IEnumerable<object> GetVisiblePages()
+    {
+        if (_totalPages <= 9)
+        {
+            for (int i = 1; i <= _totalPages; i++)
+                yield return i;
+            yield break;
+        }
+
+        int windowStart = Math.Max(1, _currentPage - 1);
+        int windowEnd = Math.Min(_totalPages, windowStart + 2);
+        if (windowEnd - windowStart < 2)
+            windowStart = Math.Max(1, windowEnd - 2);
+
+        bool showStartEllipsis = windowStart > 3;
+        bool showEndEllipsis = windowEnd < _totalPages - 2;
+
+        int firstEnd = Math.Min(3, _totalPages);
+        for (int i = 1; i <= firstEnd; i++)
+            yield return i;
+
+        if (showStartEllipsis)
+            yield return "...";
+
+        for (int i = windowStart; i <= windowEnd; i++)
+        {
+            if (i > firstEnd && i < _totalPages - 2)
+                yield return i;
+        }
+
+        if (showEndEllipsis)
+            yield return "...";
+
+        int lastStart = Math.Max(_totalPages - 2, firstEnd + 1);
+        for (int i = lastStart; i <= _totalPages; i++)
+            yield return i;
+    }
+}
