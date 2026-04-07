@@ -31,6 +31,13 @@
         </div>
         <div class="stat-mini">
             <div class="stat-mini-header">
+                <span class="stat-mini-label">Nháp</span>
+                <span class="material-symbols-outlined stat-mini-icon">edit_note</span>
+            </div>
+            <span class="stat-mini-value">@_draftCount</span>
+        </div>
+        <div class="stat-mini">
+            <div class="stat-mini-header">
                 <span class="stat-mini-label">Hết hàng</span>
                 <span class="material-symbols-outlined stat-mini-icon warning">inventory_2</span>
             </div>
@@ -56,6 +63,7 @@
                     <select @bind="_statusFilter" @bind:after="OnFilterChanged">
                         <option value="">Tất cả</option>
                         <option value="published">Đã xuất bản</option>
+                        <option value="draft">Nháp</option>
                         <option value="outofstock">Hết hàng</option>
                     </select>
                     <span class="material-symbols-outlined dropdown-icon">expand_more</span>
@@ -116,6 +124,7 @@
                     {
                         foreach (var product in _pagedProducts)
                         {
+                            var isOutOfStock = product.Quantity > 0 && product.QuantitySold >= product.Quantity;
                             <tr>
                                 <td>
                                     <div class="article-title-cell">
@@ -138,7 +147,7 @@
                                     <span class="quantity-text">@product.QuantitySold.ToString("N0")</span>
                                 </td>
                                 <td>
-                                    <span class="status-tag @(product.Published ? "published" : "draft")">@(product.Published ? "Xuất bản" : "Nháp")</span>
+                                    <span class="status-tag @(isOutOfStock ? "usedup" : (product.Published ? "published" : "draft"))">@(isOutOfStock ? "Hết hàng" : (product.Published ? "Xuất bản" : "Nháp"))</span>
                                 </td>
                                 <td>
                                     <span class="date-text">@product.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
@@ -239,24 +248,24 @@
                     <div class="form-row">
                         <div class="form-group">
                             <label>Giá gốc (VNĐ)</label>
-                            <InputNumber class="form-input" @bind-Value="_originPriceInput" @bind:after="OnOriginPriceChanged" placeholder="Nhập giá gốc..." />
+                            <InputNumber class="form-input" @bind-Value="_originPriceInput" @bind-Value:after="OnOriginPriceChanged" placeholder="Nhập giá gốc..." />
                             <span class="form-hint">Để trống nếu nhập giá bán</span>
                         </div>
                         <div class="form-group">
                             <label>Giá bán (VNĐ)</label>
-                            <InputNumber class="form-input" @bind-Value="_priceInput" @bind:after="OnPriceChanged" placeholder="Nhập giá bán..." />
+                            <InputNumber class="form-input" @bind-Value="_priceInput" @bind-Value:after="OnPriceChanged" placeholder="Nhập giá bán..." />
                             <span class="form-hint">Để trống nếu nhập giá gốc</span>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label>Giảm giá (%)</label>
-                            <InputNumber class="form-input" @bind-Value="_editModel.Discount" @bind:after="OnDiscountChanged" placeholder="0-100" />
+                            <InputNumber class="form-input" @bind-Value="_editModel.Discount" @bind-Value:after="OnDiscountChanged" placeholder="0-100" />
                             <span class="form-hint">Tự động tính khi nhập giá</span>
                         </div>
                         <div class="form-group">
                             <label>Số lượng</label>
-                            <InputNumber class="form-input" @bind-Value="_editModel.Quantity" placeholder="-1 cho không giới hạn" />
+                            <InputNumber class="form-input" @bind-Value="_editModel.Quantity" @bind-Value:after="OnQuantityChanged" placeholder="-1 cho không giới hạn" />
                             <span class="form-hint">Nhập -1 cho số lượng không giới hạn</span>
                         </div>
                     </div>
@@ -357,12 +366,13 @@
 
     .stats-row {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 1rem;
         margin-bottom: 1.5rem;
     }
 
     .stat-mini {
+        min-width: 0;
         background: var(--surface-container-low);
         border-radius: 0.75rem;
         padding: 1rem 1.25rem;
@@ -566,6 +576,11 @@
         .status-tag.draft {
             background: var(--secondary-container);
             color: var(--on-secondary-container);
+        }
+
+        .status-tag.usedup {
+            background: #fef2f2;
+            color: #dc2626;
         }
 
     .date-text {
@@ -863,6 +878,7 @@
     private int? _editingProductId;
 
     private int _publishedCount;
+    private int _draftCount;
     private int _outOfStockCount;
     private int _totalCount;
 
@@ -896,7 +912,8 @@
 
     private void UpdateCounts()
     {
-        _publishedCount = _allProducts.Count(p => p.IsAvailable);
+        _publishedCount = _allProducts.Count(p => p.Published);
+        _draftCount = _allProducts.Count(p => !p.Published && p.IsAvailable);
         _outOfStockCount = _allProducts.Count(p => p.Quantity > 0 && p.QuantitySold >= p.Quantity);
         _totalCount = _allProducts.Count;
         _totalPages = (int)Math.Ceiling((double)_filteredProducts.Count / _pageSize);
@@ -914,6 +931,7 @@
             .Where(p => string.IsNullOrEmpty(searchQuery) || p.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
             .Where(p => (string.IsNullOrWhiteSpace(_statusFilter))
             || (_statusFilter == "published" && p.Published)
+            || (_statusFilter == "draft" && !p.Published && p.IsAvailable)
             || (_statusFilter == "outofstock" && p.Quantity > 0 && p.QuantitySold >= p.Quantity))
         .ToList();
 
@@ -1041,7 +1059,8 @@
             Discount = product.Discount,
             Quantity = product.Quantity,
             NumberofTickets = product.NumberofTickets,
-            Published = product.Published
+            Published = product.Published,
+            QuantitySold = product.QuantitySold
         };
         _originPriceInput = product.OriginPrice;
         _priceInput = product.Price;
@@ -1095,6 +1114,13 @@
         if (_updatingFromCode) return;
         
         RecalculatePriceFromDiscount();
+    }
+
+    private void OnQuantityChanged()
+    {
+        if (_updatingFromCode) return;
+        
+        // StateHasChanged();
     }
 
     private void CalculatePriceFromOriginPrice()
