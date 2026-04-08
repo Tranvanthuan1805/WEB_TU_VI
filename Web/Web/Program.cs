@@ -76,6 +76,10 @@ builder.Services.AddSingleton<IEmailSender<User>, IdentityNoOpEmailSender>();
 
 builder.Services.AddScoped<ToastService>();
 builder.Services.AddScoped<ConfirmDialogService>();
+builder.Services.AddScoped<VnpayService>();
+builder.Services.AddScoped<OrderService>();
+
+builder.Services.AddHostedService<PendingPaymentCleanupService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

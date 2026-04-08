@@ -1,0 +1,211 @@
+@page "/vnpay-return"
+@rendermode InteractiveServer
+
+@inject NavigationManager Nav
+@inject ToastService ToastService
+@inject HttpClient Http
+
+<PageTitle>Kết quả thanh toán | Lá Số Tử Vi</PageTitle>
+
+<div class="max-w-2xl mx-auto px-4 py-8 md:py-16">
+    <div class="text-center">
+        <h1 class="font-headline text-2xl sm:text-3xl text-primary mb-6 italic">Kết quả thanh toán</h1>
+
+        @if (_hasError)
+        {
+            <div class="bg-error/10 border border-error/30 rounded-lg p-6">
+                <span class="material-symbols-outlined text-4xl text-error mb-4">error</span>
+                <p class="text-error font-body text-lg">@_errorMessage</p>
+            </div>
+        }
+        else
+        {
+            @switch (_paymentState)
+            {
+                case PaymentState.Pending:
+                    <div class="bg-surface-variant/50 rounded-lg p-8">
+                        <span class="material-symbols-outlined text-5xl text-on-surface-variant animate-spin mb-4">sync</span>
+                        <p class="text-on-surface-variant font-body text-lg">Đang xác nhận thanh toán...</p>
+                    </div>
+                    break;
+
+                case PaymentState.Paid:
+                    <div class="bg-primary/10 border border-primary/30 rounded-lg p-6">
+                        <span class="material-symbols-outlined text-4xl text-primary mb-4">check_circle</span>
+                        <p class="text-primary font-body text-lg mb-2">Thanh toán thành công!</p>
+                        @if (!string.IsNullOrEmpty(_ticketCode))
+                        {
+                            <div class="bg-surface-variant rounded-lg p-4 mt-4">
+                                <p class="text-on-surface-variant text-sm mb-1">Mã vé của bạn:</p>
+                                <p class="text-primary font-headline text-2xl italic">@_ticketCode</p>
+                            </div>
+                        }
+                    </div>
+                    break;
+
+                case PaymentState.PaymentFailed:
+                    <div class="bg-error/10 border border-error/30 rounded-lg p-6">
+                        <span class="material-symbols-outlined text-4xl text-error mb-4">cancel</span>
+                        <p class="text-error font-body text-lg">Thanh toán thất bại</p>
+                        <p class="text-on-surface-variant text-sm mt-2">Vui lòng thử lại hoặc liên hệ hỗ trợ.</p>
+                    </div>
+                    break;
+
+                case PaymentState.Expired:
+                    <div class="bg-error/10 border border-error/30 rounded-lg p-6">
+                        <span class="material-symbols-outlined text-4xl text-error mb-4">schedule</span>
+                        <p class="text-error font-body text-lg">Đơn thanh toán đã hết hạn</p>
+                        <p class="text-on-surface-variant text-sm mt-2">Vui lòng đặt lại.</p>
+                    </div>
+                    break;
+
+                case PaymentState.Timeout:
+                    <div class="bg-surface-variant/50 rounded-lg p-6">
+                        <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-4">hourglass_empty</span>
+                        <p class="text-on-surface-variant font-body text-lg mb-4">Quá thời gian chờ.</p>
+                        <button class="bg-primary text-on-primary px-6 py-2 rounded-lg font-body hover:bg-primary/90 transition-colors"
+                                @onclick="RestartPolling">
+                            Kiểm tra lại
+                        </button>
+                    </div>
+                    break;
+            }
+
+            @if (_paymentState == PaymentState.Paid && _totalAmount > 0)
+            {
+                <div class="mt-4 text-on-surface-variant">
+                    <p class="text-sm">Số tiền: <span class="font-semibold">@_totalAmount.ToString("N0")₫</span></p>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private enum PaymentState
+    {
+        Pending,
+        Paid,
+        PaymentFailed,
+        Expired,
+        Timeout
+    }
+
+    private PaymentState _paymentState = PaymentState.Pending;
+    private bool _hasError;
+    private string _errorMessage = string.Empty;
+    private string? _ticketCode;
+    private decimal _totalAmount;
+
+    private CancellationTokenSource? _cts;
+    private const int PollingIntervalMs = 2000;
+    private const int TimeoutSeconds = 60;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var txnRef = queryParams["txnRef"];
+
+        if (string.IsNullOrEmpty(txnRef))
+        {
+            _hasError = true;
+            _errorMessage = "Không tìm thấy mã giao dịch";
+            return;
+        }
+
+        await StartPolling(txnRef);
+    }
+
+    private async Task StartPolling(string txnRef)
+    {
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
+        _paymentState = PaymentState.Pending;
+        var elapsed = 0;
+
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                if (elapsed >= TimeoutSeconds * 1000)
+                {
+                    _paymentState = PaymentState.Timeout;
+                    break;
+                }
+
+                await Task.Delay(PollingIntervalMs, token);
+                elapsed += PollingIntervalMs;
+
+                var response = await Http.GetFromJsonAsync<OrderStatusResponse>(
+                    $"api/payment/orders/status?txnRef={txnRef}",
+                    token);
+
+                if (response == null)
+                {
+                    continue;
+                }
+
+                _totalAmount = response.TotalAmount;
+
+                switch (response.Status?.ToLowerInvariant())
+                {
+                    case "paid":
+                        _ticketCode = response.TicketCode;
+                        _paymentState = PaymentState.Paid;
+                        return;
+
+                    case "paymentfailed":
+                        _paymentState = PaymentState.PaymentFailed;
+                        return;
+
+                    case "expired":
+                        _paymentState = PaymentState.Expired;
+                        return;
+
+                    case "pendingpayment":
+                    default:
+                        break;
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+        }
+        catch (Exception)
+        {
+            if (!token.IsCancellationRequested && _paymentState == PaymentState.Pending)
+            {
+                _paymentState = PaymentState.Timeout;
+            }
+        }
+    }
+
+    private async Task RestartPolling()
+    {
+        var uri = Nav.ToAbsoluteUri(Nav.Uri);
+        var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var txnRef = queryParams["txnRef"];
+
+        if (!string.IsNullOrEmpty(txnRef))
+        {
+            await StartPolling(txnRef);
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+
+    private class OrderStatusResponse
+    {
+        public string? Status { get; set; }
+        public decimal TotalAmount { get; set; }
+        public string? TicketCode { get; set; }
+        public int? TicketId { get; set; }
+    }
+}

@@ -1,0 +1,264 @@
+@page "/checkout"
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+@inject NavigationManager Nav
+@inject ToastService ToastService
+@inject HttpClient Http
+
+<PageTitle>Thanh toán | Lá Số Tử Vi</PageTitle>
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
+    <div class="mb-8 md:mb-12">
+        <h1 class="font-headline text-3xl sm:text-4xl md:text-5xl text-primary mb-4 italic">Thanh toán</h1>
+        <p class="text-on-surface-variant font-body text-lg font-light">Chọn sản phẩm và thanh toán qua VNPAY.</p>
+    </div>
+
+    @if (_products == null)
+    {
+        <div class="text-center py-12 text-on-surface-variant">
+            <span class="material-symbols-outlined text-4xl mb-4">inventory_2</span>
+            <p>Đang tải...</p>
+        </div>
+    }
+    else if (!_products.Any())
+    {
+        <div class="text-center py-12 text-on-surface-variant">
+            <span class="material-symbols-outlined text-4xl mb-4">inventory_2</span>
+            <p>Chưa có sản phẩm nào.</p>
+        </div>
+    }
+    else
+    {
+        <div class="space-y-4 mb-8">
+            <h2 class="font-headline text-xl text-on-surface mb-4">Danh sách sản phẩm</h2>
+            
+            @foreach (var product in _products)
+            {
+                <div class="@GetProductCardClass(product)"
+                     @onclick="() => SelectProduct(product)">
+                    <div class="flex items-start gap-4">
+                        <input type="radio"
+                               name="selectedProduct"
+                               checked="@(_selectedProduct?.ProductId == product.ProductId)"
+                               class="mt-1 w-4 h-4 text-primary accent-primary"
+                               @onclick="() => SelectProduct(product)"
+                               @onclick:stopPropagation="true" />
+                        
+                        <div class="flex-1">
+                            <h3 class="font-headline text-lg text-primary italic mb-2">@product.Name</h3>
+                            
+                            <div class="flex flex-wrap items-baseline gap-2 mb-2">
+                                @if (product.Discount > 0)
+                                {
+                                    <del class="text-sm text-on-surface-variant">@product.OriginPrice.ToString("N0")₫</del>
+                                    <span class="text-xl font-semibold text-primary">@product.Price.ToString("N0")₫</span>
+                                    <span class="text-xs bg-error text-on-error px-2 py-0.5 rounded-full">-@((int)product.Discount)%</span>
+                                }
+                                else
+                                {
+                                    <span class="text-xl font-semibold text-primary">@product.Price.ToString("N0")₫</span>
+                                }
+                            </div>
+                            
+                            <div class="text-sm text-on-surface-variant">
+                                @if (product.Quantity == -1)
+                                {
+                                    <span class="font-medium">Còn:</span> <text>∞ (Không giới hạn)</text>
+                                }
+                                else
+                                {
+                                    <span class="font-medium">Còn:</span> @product.Quantity.ToString("N0")
+                                }
+                                <span class="mx-2">|</span>
+                                <span class="font-medium">Vé/sp:</span> @product.NumberofTickets.ToString("N0")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (_selectedProduct != null)
+        {
+            <div class="bg-surface-container border border-outline-variant/30 rounded-lg p-6 mb-6">
+                <h2 class="font-headline text-xl text-on-surface mb-4">Thông tin đơn hàng</h2>
+                
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-4">
+                    <label class="text-on-surface font-medium">Số lượng:</label>
+                    <div class="flex items-center gap-2">
+                        <button class="w-10 h-10 rounded-lg border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors flex items-center justify-center"
+                                disabled="@(_quantity <= 1)"
+                                @onclick="() => DecrementQuantity()">
+                            <span class="material-symbols-outlined">remove</span>
+                        </button>
+                        <input type="number"
+                               class="w-20 text-center bg-surface-container border border-outline-variant rounded-lg py-2 text-on-surface"
+                               min="1"
+                               max="@GetMaxQuantity()"
+                               @bind="_quantity"
+                               @bind:after="OnQuantityChanged" />
+                        <button class="w-10 h-10 rounded-lg border border-outline-variant bg-surface-container hover:bg-surface-container-high transition-colors flex items-center justify-center"
+                                disabled="@(_quantity >= GetMaxQuantity())"
+                                @onclick="() => IncrementQuantity()">
+                            <span class="material-symbols-outlined">add</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="border-t border-outline-variant/30 pt-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg text-on-surface font-medium">Tổng tiền:</span>
+                        <span class="text-2xl font-bold text-primary">@CalculateTotal().ToString("N0")₫</span>
+                    </div>
+                    <div class="text-sm text-on-surface-variant mt-1">
+                        <span class="font-medium">Tổng vé:</span> @(_selectedProduct.NumberofTickets * _quantity)
+                    </div>
+                </div>
+            </div>
+
+            <button class="w-full py-4 bg-[#C81A1A] hover:bg-[#B01818] text-white font-medium text-lg rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled="@_isProcessing"
+                    @onclick="ProcessPayment">
+                @if (_isProcessing)
+                {
+                    <span class="material-symbols-outlined animate-spin">sync</span>
+                    <span>Đang xử lý...</span>
+                }
+                else
+                {
+                    <span class="material-symbols-outlined">payments</span>
+                    <span>Thanh toán VNPAY</span>
+                }
+            </button>
+        }
+    }
+</div>
+
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    }
+</style>
+
+@code {
+    private List<Product> _products;
+    private Product? _selectedProduct;
+    private int _quantity = 1;
+    private bool _isProcessing;
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        _products = await context.Products
+            .Where(p => p.Published && p.IsAvailable)
+            .OrderByDescending(p => p.DateUpdated)
+            .ToListAsync();
+    }
+
+    private string GetProductCardClass(Product product)
+    {
+        var baseClass = "bg-surface-container border border-outline-variant/30 rounded-lg p-5 cursor-pointer transition-all";
+        var selectedClass = _selectedProduct?.ProductId == product.ProductId
+            ? " ring-2 ring-primary-container bg-surface-container-high"
+            : " hover:border-primary-container/50 hover:bg-surface-container-high";
+        return baseClass + selectedClass;
+    }
+
+    private void SelectProduct(Product product)
+    {
+        _selectedProduct = product;
+        _quantity = 1;
+        StateHasChanged();
+    }
+
+    private int GetMaxQuantity()
+    {
+        if (_selectedProduct == null) return 1;
+        if (_selectedProduct.Quantity == -1) return 99;
+        var available = (int)(_selectedProduct.Quantity - _selectedProduct.QuantitySold);
+        return Math.Min(available, 99);
+    }
+
+    private void IncrementQuantity()
+    {
+        if (_quantity < GetMaxQuantity())
+        {
+            _quantity++;
+            StateHasChanged();
+        }
+    }
+
+    private void DecrementQuantity()
+    {
+        if (_quantity > 1)
+        {
+            _quantity--;
+            StateHasChanged();
+        }
+    }
+
+    private void OnQuantityChanged()
+    {
+        var max = GetMaxQuantity();
+        if (_quantity < 1) _quantity = 1;
+        if (_quantity > max) _quantity = max;
+        StateHasChanged();
+    }
+
+    private decimal CalculateTotal()
+    {
+        if (_selectedProduct == null) return 0;
+        return _selectedProduct.Price * _quantity;
+    }
+
+    private async Task ProcessPayment()
+    {
+        if (_selectedProduct == null || _isProcessing) return;
+
+        _isProcessing = true;
+        try
+        {
+            var request = new
+            {
+                productId = _selectedProduct.ProductId,
+                quantity = _quantity
+            };
+
+            var response = await Http.PostAsJsonAsync("/api/checkout/create-vnpay-payment", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                ToastService.ShowError(error?.Error ?? "Có lỗi xảy ra");
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<PaymentResponse>();
+            if (result == null || string.IsNullOrEmpty(result.PaymentUrl))
+            {
+                ToastService.ShowError("Không nhận được liên kết thanh toán");
+                return;
+            }
+            Nav.NavigateTo(result.PaymentUrl, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError($"Lỗi kết nối: {ex.Message}");
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private class ErrorResponse
+    {
+        public string? Error { get; set; }
+    }
+
+    private class PaymentResponse
+    {
+        public string? PaymentUrl { get; set; }
+    }
+}

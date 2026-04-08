@@ -11,6 +11,7 @@ namespace Web.Data
         public DbSet<Post> Posts { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Ticket> Tickets { get; set; }
+        public DbSet<Order> Orders { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -30,6 +31,19 @@ namespace Web.Data
                     item.SetTableName(tableName.Substring(6));// or Replace("AspNet","")
                 }
             }
+
+            modelBuilder.Entity<Order>(entity =>
+            {
+                entity.HasOne(o => o.Product)
+                    .WithMany()
+                    .HasForeignKey(o => o.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(o => o.Ticket)
+                    .WithMany()
+                    .HasForeignKey(o => o.TicketId)
+                    .OnDelete(DeleteBehavior.SetNull);
+            });
         }
     }
 }
