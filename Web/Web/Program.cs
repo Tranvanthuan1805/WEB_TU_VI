@@ -79,6 +79,8 @@ builder.Services.AddScoped<ConfirmDialogService>();
 builder.Services.AddScoped<VnpayService>();
 builder.Services.AddScoped<OrderService>();
 
+builder.Services.AddHttpClient();
+
 builder.Services.AddHostedService<PendingPaymentCleanupService>();
 
 // Add services to the container.

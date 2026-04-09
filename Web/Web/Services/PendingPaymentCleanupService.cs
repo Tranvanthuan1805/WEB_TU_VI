@@ -7,8 +7,8 @@ namespace Web.Services
     public class PendingPaymentCleanupService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
-        private readonly TimeSpan _expireAfter = TimeSpan.FromMinutes(15);
+        private readonly TimeSpan _interval = TimeSpan.FromMinutes(10);
+        private readonly TimeSpan _expireAfter = TimeSpan.FromMinutes(20);
 
         public PendingPaymentCleanupService(IServiceProvider serviceProvider)
         {
@@ -45,9 +45,9 @@ namespace Web.Services
                     order.DateUpdated = DateTime.UtcNow;
 
                     var product = order.Product;
-                    if (product != null && product.Quantity >= 0)
+                    if (product != null)
                     {
-                        product.Quantity += order.Quantity;
+                        product.QuantitySold -= order.Quantity;
                     }
                 }
 

@@ -30,11 +30,8 @@ namespace Web.Services
                 if (!product.IsAvailable)
                     throw new InvalidOperationException("Sản phẩm đã hết hàng");
 
-                if (product.Quantity >= 0 && product.Quantity < quantity)
+                if (product.Quantity >= 0 && product.Quantity < quantity + product.QuantitySold)
                     throw new InvalidOperationException("Sản phẩm đã hết hàng");
-
-                if (product.Quantity >= 0)
-                    product.Quantity -= quantity;
 
                 product.QuantitySold += quantity;
 
@@ -131,8 +128,8 @@ namespace Web.Services
                 order.DateUpdated = DateTime.UtcNow;
 
                 var product = order.Product;
-                if (product != null && product.Quantity >= 0)
-                    product.Quantity += order.Quantity;
+                if (product != null)
+                    product.QuantitySold -= order.Quantity;
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -163,8 +160,8 @@ namespace Web.Services
                 order.DateUpdated = DateTime.UtcNow;
 
                 var product = order.Product;
-                if (product != null && product.Quantity >= 0)
-                    product.Quantity += order.Quantity;
+                if (product != null)
+                    product.QuantitySold -= order.Quantity;
 
                 await context.SaveChangesAsync();
                 await transaction.CommitAsync();

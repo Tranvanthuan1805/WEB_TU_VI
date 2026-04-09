@@ -1,9 +1,8 @@
 @page "/vnpay-return"
 @rendermode InteractiveServer
 
-@inject NavigationManager Nav
 @inject ToastService ToastService
-@inject HttpClient Http
+@inject OrderService OrderService
 
 <PageTitle>Kết quả thanh toán | Lá Số Tử Vi</PageTitle>
 
@@ -47,7 +46,7 @@
                     <div class="bg-error/10 border border-error/30 rounded-lg p-6">
                         <span class="material-symbols-outlined text-4xl text-error mb-4">cancel</span>
                         <p class="text-error font-body text-lg">Thanh toán thất bại</p>
-                        <p class="text-on-surface-variant text-sm mt-2">Vui lòng thử lại hoặc liên hệ hỗ trợ.</p>
+                        <p class="text-on-surface-variant text-sm mt-2">@_vnpMessage</p>
                     </div>
                     break;
 
@@ -59,22 +58,70 @@
                     </div>
                     break;
 
+                case PaymentState.Cancelled:
+                    <div class="bg-error/10 border border-error/30 rounded-lg p-6">
+                        <span class="material-symbols-outlined text-4xl text-error mb-4">cancel</span>
+                        <p class="text-error font-body text-lg">Giao dịch đã bị hủy</p>
+                        <p class="text-on-surface-variant text-sm mt-2">Bạn đã hủy thanh toán.</p>
+                    </div>
+                    break;
+
                 case PaymentState.Timeout:
                     <div class="bg-surface-variant/50 rounded-lg p-6">
                         <span class="material-symbols-outlined text-4xl text-on-surface-variant mb-4">hourglass_empty</span>
-                        <p class="text-on-surface-variant font-body text-lg mb-4">Quá thời gian chờ.</p>
-                        <button class="bg-primary text-on-primary px-6 py-2 rounded-lg font-body hover:bg-primary/90 transition-colors"
-                                @onclick="RestartPolling">
-                            Kiểm tra lại
-                        </button>
+                        @if (_orderNotFound)
+                        {
+                            <p class="text-on-surface-variant font-body text-lg mb-2">Không tìm thấy hóa đơn</p>
+                        }
+                        else
+                        {
+                            <p class="text-on-surface-variant font-body text-lg mb-4">Quá thời gian chờ.</p>
+                            @if (_pollingCount < MaxRetries)
+                            {
+                                <button class="bg-primary text-on-primary px-6 py-2 rounded-lg font-body hover:bg-primary/90 transition-colors"
+                                        @onclick="RestartPolling">
+                                    Kiểm tra lại
+                                </button>
+                            }
+                        }
                     </div>
                     break;
             }
 
-            @if (_paymentState == PaymentState.Paid && _totalAmount > 0)
+            @if (_order != null)
             {
-                <div class="mt-4 text-on-surface-variant">
-                    <p class="text-sm">Số tiền: <span class="font-semibold">@_totalAmount.ToString("N0")₫</span></p>
+                <div class="mt-6 bg-surface-variant/30 rounded-lg p-4 text-left">
+                    <h2 class="font-headline text-lg text-primary mb-3 italic">Chi tiết hóa đơn</h2>
+                    <dl class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <dt class="text-on-surface-variant">Mã đơn hàng:</dt>
+                            <dd class="font-medium text-on-surface">@_order.TxnRef</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-on-surface-variant">Ngày mua:</dt>
+                            <dd class="font-medium text-on-surface">@_order.DateCreated.ToString("dd/MM/yyyy HH:mm")</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-on-surface-variant">Sản phẩm:</dt>
+                            <dd class="font-medium text-on-surface">@_order.Product?.Name</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-on-surface-variant">Số lượng:</dt>
+                            <dd class="font-medium text-on-surface">@_order.Quantity</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-on-surface-variant">Đơn giá:</dt>
+                            <dd class="font-medium text-on-surface">@_order.UnitPrice.ToString("N0")₫</dd>
+                        </div>
+                        <div class="flex justify-between border-t border-outline-variant pt-2 mt-2">
+                            <dt class="text-on-surface-variant font-semibold">Tổng tiền:</dt>
+                            <dd class="font-semibold text-primary">@_order.TotalAmount.ToString("N0")₫</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-on-surface-variant">Trạng thái:</dt>
+                            <dd class="font-medium text-primary">@GetStatusText(_order.Status)</dd>
+                        </div>
+                    </dl>
                 </div>
             }
         }
@@ -82,39 +129,155 @@
 </div>
 
 @code {
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "vnp_TxnRef")]
+    public string? TxnRef { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "vnp_ResponseCode")]
+    public string? VnpResponseCode { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "vnp_TransactionStatus")]
+    public string? VnpTransactionStatus { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery(Name = "vnp_Amount")]
+    public string? VnpAmount { get; set; }
+
     private enum PaymentState
     {
         Pending,
         Paid,
         PaymentFailed,
         Expired,
+        Cancelled,
         Timeout
     }
 
     private PaymentState _paymentState = PaymentState.Pending;
     private bool _hasError;
     private string _errorMessage = string.Empty;
+    private string _vnpMessage = string.Empty;
     private string? _ticketCode;
     private decimal _totalAmount;
 
     private CancellationTokenSource? _cts;
-    private const int PollingIntervalMs = 2000;
+    private const int PollingIntervalSeconds = 20;
     private const int TimeoutSeconds = 60;
+    private const int MaxRetries = 3;
+    private int _pollingCount;
+    private bool _orderNotFound;
+    private Order? _order;
 
     protected override async Task OnInitializedAsync()
     {
-        var uri = Nav.ToAbsoluteUri(Nav.Uri);
-        var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        var txnRef = queryParams["txnRef"];
-
-        if (string.IsNullOrEmpty(txnRef))
+        if (string.IsNullOrEmpty(TxnRef))
         {
             _hasError = true;
-            _errorMessage = "Không tìm thấy mã giao dịch";
+            _errorMessage = "Không tìm thấy hoá đơn";
             return;
         }
 
-        await StartPolling(txnRef);
+        if (!string.IsNullOrEmpty(VnpAmount) && decimal.TryParse(VnpAmount, out var amount))
+        {
+            _totalAmount = amount / 100;
+        }
+
+        if (!string.IsNullOrEmpty(VnpResponseCode))
+        {
+            if (VnpResponseCode != "00")
+            {
+                _paymentState = GetPaymentStateFromResponseCode(VnpResponseCode);
+                _vnpMessage = GetResponseCodeMessage(VnpResponseCode);
+                _order = await OrderService.GetOrderStatusAsync(TxnRef);
+                return;
+            }
+
+            if (VnpTransactionStatus != "00")
+            {
+                _paymentState = GetPaymentStateFromTransactionStatus(VnpTransactionStatus);
+                _vnpMessage = GetTransactionStatusMessage(VnpTransactionStatus);
+                _order = await OrderService.GetOrderStatusAsync(TxnRef);
+                return;
+            }
+        }
+
+        await StartPolling(TxnRef);
+    }
+
+    private static PaymentState GetPaymentStateFromResponseCode(string responseCode)
+    {
+        return responseCode switch
+        {
+            "00" => PaymentState.Pending,
+            "11" => PaymentState.Expired,
+            "24" => PaymentState.Cancelled,
+            "07" or "09" or "10" or "12" or "13" or "51" or "65" or "75" or "79" or "99" => PaymentState.PaymentFailed,
+            _ => PaymentState.PaymentFailed
+        };
+    }
+
+    private static PaymentState GetPaymentStateFromTransactionStatus(string status)
+    {
+        return status switch
+        {
+            "00" => PaymentState.Pending,
+            "01" or "02" or "08" => PaymentState.Pending,
+            "04" or "05" or "06" or "09" => PaymentState.PaymentFailed,
+            "07" => PaymentState.PaymentFailed,
+            _ => PaymentState.PaymentFailed
+        };
+    }
+
+    private static string GetResponseCodeMessage(string responseCode)
+    {
+        return responseCode switch
+        {
+            "00" => "",
+            "07" => "Giao dịch bị nghi ngờ gian lận. Vui lòng liên hệ hỗ trợ.",
+            "09" => "Tài khoản chưa đăng ký InternetBanking.",
+            "10" => "Xác thực thông tin thẻ không đúng quá 3 lần.",
+            "11" => "Đơn hàng đã hết hạn thanh toán.",
+            "12" => "Tài khoản bị khóa.",
+            "13" => "Mật khẩu xác thực (OTP) không đúng.",
+            "24" => "Giao dịch đã bị hủy.",
+            "51" => "Tài khoản không đủ số dư.",
+            "65" => "Đã vượt quá hạn mức giao dịch trong ngày.",
+            "75" => "Ngân hàng đang bảo trì.",
+            "79" => "Nhập sai mật khẩu thanh toán quá số lần quy định.",
+            "99" => "Lỗi không xác định. Vui lòng thử lại.",
+            _ => "Giao dịch không thành công. Vui lòng thử lại."
+        };
+    }
+
+    private static string GetTransactionStatusMessage(string status)
+    {
+        return status switch
+        {
+            "00" => "",
+            "01" => "Giao dịch chưa hoàn tất.",
+            "02" => "Giao dịch bị lỗi.",
+            "04" => "Giao dịch đã được hoàn trả.",
+            "05" => "Đang xử lý hoàn trả.",
+            "06" => "Đã gửi yêu cầu hoàn trả.",
+            "07" => "Giao dịch bị nghi ngờ gian lận.",
+            "08" => "Hết thời gian thanh toán.",
+            "09" => "Hoàn trả bị từ chối.",
+            _ => "Giao dịch không thành công."
+        };
+    }
+
+    private static string GetStatusText(Web.Models.OrderStatus status)
+    {
+        return status switch
+        {
+            Web.Models.OrderStatus.PendingPayment => "Chờ thanh toán",
+            Web.Models.OrderStatus.Paid => "Đã thanh toán",
+            Web.Models.OrderStatus.PaymentFailed => "Thanh toán thất bại",
+            Web.Models.OrderStatus.Expired => "Đã hết hạn",
+            _ => status.ToString()
+        };
     }
 
     private async Task StartPolling(string txnRef)
@@ -124,48 +287,56 @@
         var token = _cts.Token;
 
         _paymentState = PaymentState.Pending;
+        _pollingCount = 0;
+        _orderNotFound = false;
         var elapsed = 0;
 
         try
         {
             while (!token.IsCancellationRequested)
             {
-                if (elapsed >= TimeoutSeconds * 1000)
+                if (elapsed >= TimeoutSeconds)
                 {
                     _paymentState = PaymentState.Timeout;
                     break;
                 }
 
-                await Task.Delay(PollingIntervalMs, token);
-                elapsed += PollingIntervalMs;
+                await Task.Delay(TimeSpan.FromSeconds(PollingIntervalSeconds), token);
+                elapsed += PollingIntervalSeconds;
 
-                var response = await Http.GetFromJsonAsync<OrderStatusResponse>(
-                    $"api/payment/orders/status?txnRef={txnRef}",
-                    token);
 
-                if (response == null)
+                var order = await OrderService.GetOrderStatusAsync(txnRef);
+
+                if (order == null)
                 {
+                    _pollingCount++;
+                    if (_pollingCount >= MaxRetries)
+                    {
+                        _orderNotFound = true;
+                        _paymentState = PaymentState.Timeout;
+                        break;
+                    }
                     continue;
                 }
 
-                _totalAmount = response.TotalAmount;
+                _order = order;
+                _totalAmount = order.TotalAmount;
 
-                switch (response.Status?.ToLowerInvariant())
+                switch (order.Status)
                 {
-                    case "paid":
-                        _ticketCode = response.TicketCode;
+                    case Web.Models.OrderStatus.Paid:
+                        _ticketCode = order.Ticket?.Code;
                         _paymentState = PaymentState.Paid;
                         return;
 
-                    case "paymentfailed":
+                    case Web.Models.OrderStatus.PaymentFailed:
                         _paymentState = PaymentState.PaymentFailed;
                         return;
 
-                    case "expired":
+                    case Web.Models.OrderStatus.Expired:
                         _paymentState = PaymentState.Expired;
                         return;
 
-                    case "pendingpayment":
                     default:
                         break;
                 }
@@ -181,17 +352,17 @@
                 _paymentState = PaymentState.Timeout;
             }
         }
+        finally
+        {
+            await InvokeAsync(StateHasChanged);
+        }
     }
 
     private async Task RestartPolling()
     {
-        var uri = Nav.ToAbsoluteUri(Nav.Uri);
-        var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
-        var txnRef = queryParams["txnRef"];
-
-        if (!string.IsNullOrEmpty(txnRef))
+        if (!string.IsNullOrEmpty(TxnRef))
         {
-            await StartPolling(txnRef);
+            await StartPolling(TxnRef);
         }
     }
 
@@ -199,13 +370,5 @@
     {
         _cts?.Cancel();
         _cts?.Dispose();
-    }
-
-    private class OrderStatusResponse
-    {
-        public string? Status { get; set; }
-        public decimal TotalAmount { get; set; }
-        public string? TicketCode { get; set; }
-        public int? TicketId { get; set; }
     }
 }

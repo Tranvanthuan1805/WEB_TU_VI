@@ -2,6 +2,7 @@
 @rendermode InteractiveServer
 @attribute [StreamRendering]
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 <PageTitle>Sản Phẩm | Lá Số Tử Vi</PageTitle>
 
@@ -46,7 +47,8 @@
         <div class="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             @foreach (var product in _pagedProducts)
             {
-                <div class="bg-surface-container border border-outline-variant/30 rounded-lg p-5 hover:border-primary-container/50 hover:bg-surface-container-high transition-all">
+                if (!product.IsAvailable) continue;
+                <div class="bg-surface-container border border-outline-variant/30 rounded-lg p-5 hover:border-primary-container/50 hover:bg-surface-container-high transition-all flex flex-col">
                     <h2 class="font-headline text-lg text-primary mb-3 italic line-clamp-2">@product.Name</h2>
                     
                     <div class="mb-3">
@@ -54,8 +56,9 @@
                         {
                             <div class="flex items-baseline gap-2 flex-wrap">
                                 <del class="text-sm text-on-surface-variant">@product.OriginPrice.ToString("N0")₫</del>
-                                <span class="text-xl font-semibold text-primary">@product.Price.ToString("N0")₫</span>
-                                <span class="text-xs bg-error text-on-error px-2 py-0.5 rounded-full">-@((int)product.Discount)%</span>
+                                <p class="text-xs bg-error text-on-error px-2 py-0.5 rounded-full">-@((int)product.Discount)%</p>
+                                <p class="text-xl font-semibold text-primary">@product.Price.ToString("N0")₫</p>
+                                
                             </div>
                         }
                         else
@@ -64,18 +67,22 @@
                         }
                     </div>
                     
-                    <div class="space-y-1 text-sm text-on-surface-variant">
+                    <div class="space-y-1 text-sm text-on-surface-variant mb-4">
                         @if (product.Quantity == -1)
                         {
                             <p><span class="font-medium">Còn:</span> ∞ (Không giới hạn)</p>
                         }
                         else
                         {
-                            <p><span class="font-medium">Còn:</span> @product.Quantity.ToString("N0")</p>
+                            <p><span class="font-medium">Còn:</span> @((product.Quantity - product.QuantitySold).ToString("N0"))</p>
                         }
                         <p><span class="font-medium">Đã bán:</span> @product.QuantitySold.ToString("N0")</p>
                         <p><span class="font-medium">Vé/sp:</span> @product.NumberofTickets.ToString("N0")</p>
                     </div>
+                    <button class="w-full py-2 bg-[#C81A1A] hover:bg-[#B01818] text-white font-medium rounded-lg transition-colors mt-auto"
+                            @onclick="() => GoToCheckout(product.ProductId)">
+                        Mua ngay
+                    </button>
                 </div>
             }
         </div>
@@ -287,5 +294,10 @@
         int lastStart = Math.Max(_totalPages - 2, firstEnd + 1);
         for (int i = lastStart; i <= _totalPages; i++)
             yield return i;
+    }
+
+    private void GoToCheckout(int productId)
+    {
+        Nav.NavigateTo($"/checkout?productId={productId}");
     }
 }

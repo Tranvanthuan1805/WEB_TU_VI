@@ -1,3 +1,4 @@
+@using Web.Components.Shared
 @inherits LayoutComponentBase
 
 @attribute [StreamRendering]
@@ -77,6 +78,8 @@
         </article>
         <Footer></Footer>
     </main>
+    <Toast @rendermode="InteractiveServer" />
+    <ConfirmDialog @rendermode="InteractiveServer" />
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>

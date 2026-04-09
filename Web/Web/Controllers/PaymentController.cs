@@ -99,6 +99,11 @@ namespace Web.Controllers
                     await _orderService.MarkPaidAsync(response.Vnp_TxnRef, response.Vnp_TransactionNo);
                     return Ok(new { RspCode = "00", Message = "Confirm Success" });
                 }
+                else if (response.Vnp_ResponseCode == "11")
+                {
+                    await _orderService.MarkExpiredAsync(response.Vnp_TxnRef);
+                    return Ok(new { RspCode = "11", Message = "Order expired" });
+                }
                 else
                 {
                     await _orderService.MarkFailedAsync(response.Vnp_TxnRef, response.Vnp_ResponseCode);

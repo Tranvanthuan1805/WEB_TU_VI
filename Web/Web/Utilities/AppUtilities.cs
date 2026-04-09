@@ -5,6 +5,25 @@ namespace Web.Utilities
 {
     public class AppUtilities
     {
+
+        public static string TruncateMiddle(string value, int maxLength)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length <= maxLength)
+                return value;
+
+            if (maxLength <= 3)
+                return new string('.', maxLength);
+
+            int charsToKeep = maxLength - 3; // chừa chỗ cho "..."
+            int leftLength = (int)Math.Ceiling(charsToKeep / 2.0);
+            int rightLength = charsToKeep / 2;
+
+            string left = value.Substring(0, leftLength);
+            string right = value.Substring(value.Length - rightLength);
+
+            return left + "..." + right;
+        }
+
         public static string GenerateSlug(string str, bool hierarchical = true)
         {
             var slug = str.Trim().ToLower();

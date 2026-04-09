@@ -1,0 +1,1054 @@
+@page "/admin/orders"
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+
+@attribute [Authorize(Roles = RoleName.Administrator)]
+@using Web.Utilities
+@inject ToastService ToastService
+@inject ConfirmDialogService ConfirmDialogService
+@inject IJSRuntime JS
+
+<PageTitle>Quản lý đơn hàng</PageTitle>
+
+<div class="order-manager" data-theme="admin">
+    <div class="page-header">
+        <div>
+            <h2>Quản lý đơn hàng</h2>
+            <p>Xem và quản lý đơn hàng.</p>
+        </div>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Chờ thanh toán</span>
+                <span class="material-symbols-outlined stat-mini-icon">hourglass_empty</span>
+            </div>
+            <span class="stat-mini-value">@_pendingCount</span>
+        </div>
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Đã thanh toán</span>
+                <span class="material-symbols-outlined stat-mini-icon">check_circle</span>
+            </div>
+            <span class="stat-mini-value">@_paidCount</span>
+        </div>
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Thất bại</span>
+                <span class="material-symbols-outlined stat-mini-icon warning">error</span>
+            </div>
+            <span class="stat-mini-value">@_failedCount</span>
+        </div>
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Hết hạn</span>
+                <span class="material-symbols-outlined stat-mini-icon">schedule</span>
+            </div>
+            <span class="stat-mini-value">@_expiredCount</span>
+        </div>
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Tổng số</span>
+                <span class="material-symbols-outlined stat-mini-icon">receipt_long</span>
+            </div>
+            <span class="stat-mini-value">@_totalCount</span>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <div class="table-controls">
+            <div class="search-filter">
+                <div class="search-input">
+                    <span class="material-symbols-outlined">search</span>
+                    <input type="text" placeholder="Tìm kiếm theo mã giao dịch, mã vé, tên sản phẩm..." @bind="searchQuery" @oninput="OnSearchChanged" />
+                </div>
+                <div class="category-dropdown">
+                    <select @bind="_statusFilter" @bind:after="OnFilterChanged">
+                        <option value="">Tất cả</option>
+                        <option value="pending">Chờ thanh toán</option>
+                        <option value="paid">Đã thanh toán</option>
+                        <option value="failed">Thất bại</option>
+                        <option value="expired">Hết hạn</option>
+                    </select>
+                    <span class="material-symbols-outlined dropdown-icon">expand_more</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-table-wrapper ">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th @onclick="() => ToggleSort(nameof(Order.TxnRef))" class="sortable">
+                            Mã giao dịch
+                            @GetSortIcon(nameof(Order.TxnRef))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Product.Name))" class="sortable">
+                            Sản phẩm
+                            @GetSortIcon(nameof(Product.Name))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Ticket.Code))" class="sortable">
+                            Mã vé
+                            @GetSortIcon(nameof(Ticket.Code))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Order.Quantity))" class="sortable">
+                            Số lượng
+                            @GetSortIcon(nameof(Order.Quantity))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Order.UnitPrice))" class="sortable">
+                            Đơn giá
+                            @GetSortIcon(nameof(Order.UnitPrice))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Order.TotalAmount))" class="sortable">
+                            Tổng tiền
+                            @GetSortIcon(nameof(Order.TotalAmount))
+                        </th>
+                        <th>Trạng thái</th>
+                        <th>Mã VNPay</th>
+                        <th @onclick="() => ToggleSort(nameof(Order.DateCreated))" class="sortable">
+                            Ngày tạo
+                            @GetSortIcon(nameof(Order.DateCreated))
+                        </th>
+                        <th @onclick="() => ToggleSort(nameof(Order.DateUpdated))" class="sortable">
+                            Ngày cập nhật
+                            @GetSortIcon(nameof(Order.DateUpdated))
+                        </th>
+                        <th class="text-right">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+@if (_pagedOrders == null)
+                    {
+                        <tr>
+                            <td colspan="11" class="text-center py-8 text-on-surface-variant">
+                                Đang tải...
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var order in _pagedOrders)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="order-ref" title="@order.TxnRef">@AppUtilities.TruncateMiddle(order.TxnRef, 20)</span>
+                                </td>
+                                <td>
+                                    <span class="product-name" title="@order.Product?.Name">
+                                        @AppUtilities.TruncateMiddle(order.Product?.Name ?? "-", 25)
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="ticket-code" title="@order.Ticket?.Code">@AppUtilities.TruncateMiddle(order.Ticket?.Code ?? "-", 15)</span>
+                                </td>
+                                <td>
+                                    <span class="quantity-text">@order.Quantity</span>
+                                </td>
+                                <td>
+                                    <span class="price-text">@order.UnitPrice.ToString("N0")₫</span>
+                                </td>
+                                <td>
+                                    <span class="price-text">@order.TotalAmount.ToString("N0")₫</span>
+                                </td>
+                                <td>
+                                    <span class="status-tag @GetStatusClass(order.Status)">@GetStatusText(order.Status)</span>
+                                </td>
+                                <td>
+                                    <span class="vnp-text">@(order.VnpayTransactionNo ?? "-")</span>
+                                </td>
+                                <td>
+                                    <span class="date-text">@order.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
+                                </td>
+                                <td>
+                                    <span class="date-text">@order.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
+                                </td>
+                                <td>
+                                    <div class="row-actions">
+                                        <button class="row-action-btn" title="Xem chi tiết" @onclick="() => ShowDetailModal(order)">
+                                            <span class="material-symbols-outlined">visibility</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        if (!_pagedOrders.Any())
+                        {
+                            <tr>
+                                <td colspan="11" class="text-center py-8 text-on-surface-variant">
+                                    Không có đơn hàng nào.
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalPages > 1)
+        {
+            <div class="table-footer w-full overflow-auto">
+                <div class="page-size-control">
+                    <label class="text-xs text-on-surface-variant">Số dòng:</label>
+                    <input type="number"
+                    class="page-size-input"
+                    min="1"
+                    @bind="_pageSize"
+                    @bind:after="UpdatePagedOrders" />
+                </div>
+                <span class="showing-text">Hiển thị @startItem-@endItem của @_totalFiltered đơn hàng</span>
+                <div class="pagination">
+                    <button class="page-btn" disabled="@(_currentPage == 1)" @onclick="() => GoToPage(_currentPage - 1)">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </button>
+                    @foreach (var item in GetVisiblePages())
+                    {
+                        if (item is int pageNum)
+                        {
+                            <button class="page-btn @(_currentPage == pageNum ? "active" : "")" @onclick="() => GoToPage(pageNum)">@pageNum</button>
+                        }
+                        else
+                        {
+                            <span class="page-ellipsis">...</span>
+                        }
+                    }
+                    <button class="page-btn" disabled="@(_currentPage == _totalPages)" @onclick="() => GoToPage(_currentPage + 1)">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </button>
+                </div>
+                <div class="page-jump">
+                    <label class="text-xs text-on-surface-variant">Tới trang:</label>
+                    <input type="number"
+                    class="page-jump-input"
+                    min="1" max="@_totalPages"
+                    @bind="_jumpToPage"
+                    @bind:after="JumpToPage" />
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@if (_showDetailModal)
+{
+    <div class="editor-modal-overlay" @onclick="CloseDetailModal">
+        <div class="editor-modal" @onclick:stopPropagation="true">
+            <div class="editor-header">
+                <h3>Chi tiết đơn hàng</h3>
+                <button class="close-btn" @onclick="CloseDetailModal">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="editor-body">
+                @if (_selectedOrder != null)
+                {
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <span class="detail-label">Mã giao dịch</span>
+                            <span class="detail-value">@_selectedOrder.TxnRef</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Sản phẩm</span>
+                            <span class="detail-value">@_selectedOrder.Product?.Name ?? "-"</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Mã sản phẩm</span>
+                            <span class="detail-value">@(_selectedOrder.Product?.ProductId.ToString() ?? "-")</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Mã vé</span>
+                            <span class="detail-value">@_selectedOrder.Ticket?.Code ?? "Không có"</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Số lượng</span>
+                            <span class="detail-value">@_selectedOrder.Quantity</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Đơn giá</span>
+                            <span class="detail-value">@_selectedOrder.UnitPrice.ToString("N0")₫</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Tổng tiền</span>
+                            <span class="detail-value">@_selectedOrder.TotalAmount.ToString("N0")₫</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Trạng thái</span>
+                            <span class="detail-value">
+                                <span class="status-tag @GetStatusClass(_selectedOrder.Status)">@GetStatusText(_selectedOrder.Status)</span>
+                            </span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Mã VNPay</span>
+                            <span class="detail-value">@_selectedOrder.VnpayTransactionNo ?? "-"</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Mã phản hồi</span>
+                            <span class="detail-value">@_selectedOrder.VnpayResponseCode ?? "-"</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Trạng thái VNPay</span>
+                            <span class="detail-value">@_selectedOrder.VnpayTransactionStatus ?? "-"</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Ngày tạo</span>
+                            <span class="detail-value">@_selectedOrder.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Ngày cập nhật</span>
+                            <span class="detail-value">@_selectedOrder.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="editor-footer">
+                <button type="button" class="btn-secondary" @onclick="CloseDetailModal">Đóng</button>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        vertical-align: middle;
+    }
+
+    .order-manager[data-theme="admin"] {
+        --primary: #1E3A8A;
+        --primary-container: #1E3A8A;
+        --on-primary: #ffffff;
+        --surface: #F8FAFC;
+        --surface-container: #e2e8f0;
+        --surface-container-low: #f1f5f9;
+        --surface-container-high: #cbd5e1;
+        --on-surface: #1e293b;
+        --on-surface-variant: #475569;
+        --outline: #64748B;
+        --outline-variant: #cbd5e1;
+        --error-container: #dc2626;
+        --on-error-container: #ffffff;
+        --secondary-container: #e2e8f0;
+        --on-secondary-container: #475569;
+        --tertiary-container: #6E2C00;
+        --on-tertiary-container: #ffffff;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1.5rem;
+    }
+
+        .page-header h2 {
+            color: var(--on-surface);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0 0 0.25rem;
+        }
+
+        .page-header p {
+            color: var(--on-surface-variant);
+            font-size: 0.875rem;
+            margin: 0;
+        }
+
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-mini {
+        min-width: 0;
+        background: var(--surface-container-low);
+        border-radius: 0.75rem;
+        padding: 1rem 1.25rem;
+    }
+
+    .stat-mini-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-mini-label {
+        font-size: 0.75rem;
+        color: var(--on-surface-variant);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .stat-mini-icon {
+        color: var(--primary);
+        font-size: 1.25rem;
+    }
+
+        .stat-mini-icon.warning {
+            color: #f59e0b;
+        }
+
+    .stat-mini-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--on-surface);
+    }
+
+    .table-container {
+        background: var(--surface-container-low);
+        border-radius: 0.75rem;
+        overflow: hidden;
+    }
+
+    .table-controls {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--outline-variant);
+    }
+
+    .search-filter {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+    }
+
+    .search-input {
+        position: relative;
+        flex: 1;
+    }
+
+        .search-input .material-symbols-outlined {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--on-surface-variant);
+            font-size: 1.25rem;
+        }
+
+        .search-input input {
+            width: 100%;
+            padding: 0.5rem 0.75rem 0.5rem 2.5rem;
+            border: 1px solid var(--outline-variant);
+            border-radius: 0.5rem;
+            background: var(--surface);
+            color: var(--on-surface);
+            font-size: 0.875rem;
+        }
+
+            .search-input input:focus {
+                outline: none;
+                border-color: var(--primary);
+                box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.1);
+            }
+
+    .category-dropdown {
+        position: relative;
+        min-width: 180px;
+    }
+
+        .category-dropdown select {
+            width: 100%;
+            padding: 0.5rem 2rem 0.5rem 0.75rem;
+            border: 1px solid var(--outline-variant);
+            border-radius: 0.5rem;
+            background: var(--surface);
+            color: var(--on-surface);
+            font-size: 0.875rem;
+            appearance: none;
+            cursor: pointer;
+        }
+
+    .dropdown-icon {
+        position: absolute;
+        right: 0.5rem;
+        top: 50%;
+        transform: translateY(-50%);
+        pointer-events: none;
+        color: var(--on-surface-variant);
+    }
+
+    .data-table-wrapper {
+        overflow-x: auto;
+    }
+
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .data-table th {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--on-surface-variant);
+            background: var(--surface-container);
+            border-bottom: 1px solid var(--outline-variant);
+            white-space: nowrap;
+        }
+
+            .data-table th.sortable {
+                cursor: pointer;
+                user-select: none;
+            }
+
+                .data-table th.sortable:hover {
+                    background: var(--surface-container-high);
+                }
+
+        .data-table td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--outline-variant);
+            font-size: 0.875rem;
+            color: var(--on-surface);
+            white-space: nowrap;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--surface-container);
+        }
+
+    .order-ref {
+        font-weight: 500;
+        color: var(--on-surface);
+    }
+
+    .product-name {
+        color: var(--on-surface);
+        font-weight: 500;
+    }
+
+    .ticket-code {
+        color: var(--on-surface-variant);
+    }
+
+    .price-text {
+        font-weight: 500;
+        color: var(--on-surface);
+    }
+
+    .quantity-text {
+        color: var(--on-surface-variant);
+    }
+
+    .vnp-text {
+        color: var(--on-surface-variant);
+        font-size: 0.8125rem;
+    }
+
+    .status-tag {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+        .status-tag.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .status-tag.paid {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status-tag.failed {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .status-tag.expired {
+            background: var(--secondary-container);
+            color: var(--on-secondary-container);
+        }
+
+    .date-text {
+        color: var(--on-surface-variant);
+        font-size: 0.8125rem;
+    }
+
+    .row-actions {
+        display: flex;
+        gap: 0.25rem;
+        justify-content: flex-end;
+    }
+
+    .row-action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border: none;
+        border-radius: 0.375rem;
+        background: transparent;
+        color: var(--on-surface-variant);
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+        .row-action-btn:hover {
+            background: var(--surface-container);
+        }
+
+    .table-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: var(--surface-container);
+    }
+
+    .showing-text {
+        font-size: 0.8125rem;
+        color: var(--on-surface-variant);
+    }
+
+    .pagination {
+        display: flex;
+        gap: 0.25rem;
+    }
+
+    .page-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface-variant);
+        font-size: 0.8125rem;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+        .page-btn:hover:not(:disabled):not(.active) {
+            background: var(--surface-container-high);
+        }
+
+        .page-btn.active {
+            background: var(--primary);
+            color: var(--on-primary);
+            border-color: var(--primary);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+    .page-ellipsis {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        height: 2rem;
+        color: var(--on-surface-variant);
+        font-size: 0.8125rem;
+    }
+
+    .page-size-control {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .page-size-input {
+        width: 3.5rem;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface);
+        text-align: center;
+        font-size: 0.8125rem;
+    }
+
+    .page-jump {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .page-jump-input {
+        width: 3.5rem;
+        padding: 0.25rem 0.5rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface);
+        text-align: center;
+        font-size: 0.8125rem;
+    }
+
+    .editor-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+    }
+
+    .editor-modal {
+        background: var(--surface-container-low);
+        border-radius: 0.75rem;
+        width: 90%;
+        max-width: 600px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .editor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--outline-variant);
+    }
+
+        .editor-header h3 {
+            margin: 0;
+            color: var(--on-surface);
+            font-size: 1.125rem;
+        }
+
+    .close-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2rem;
+        height: 2rem;
+        border: none;
+        border-radius: 0.375rem;
+        background: transparent;
+        color: var(--on-surface-variant);
+        cursor: pointer;
+    }
+
+        .close-btn:hover {
+            background: var(--surface-container);
+        }
+
+    .editor-body {
+        padding: 1.5rem;
+        overflow-y: auto;
+        flex: 1;
+    }
+
+    .detail-grid {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--outline-variant);
+    }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+    .detail-label {
+        font-size: 0.875rem;
+        color: var(--on-surface-variant);
+        font-weight: 500;
+    }
+
+    .detail-value {
+        font-size: 0.875rem;
+        color: var(--on-surface);
+        text-align: right;
+    }
+
+    .editor-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.75rem;
+        padding: 1rem 1.5rem;
+        border-top: 1px solid var(--outline-variant);
+    }
+
+    .btn-primary {
+        padding: 0.5rem 1.5rem;
+        background: var(--primary);
+        color: var(--on-primary);
+        border: none;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        cursor: pointer;
+    }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+    .btn-secondary {
+        padding: 0.5rem 1.5rem;
+        background: transparent;
+        color: var(--on-surface-variant);
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        cursor: pointer;
+    }
+
+        .btn-secondary:hover {
+            background: var(--surface-container);
+        }
+</style>
+
+@code {
+    private string searchQuery = "";
+    private string _statusFilter = "";
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private int _jumpToPage = 1;
+    private bool _showDetailModal = false;
+    private Order? _selectedOrder;
+
+    private int _pendingCount;
+    private int _paidCount;
+    private int _failedCount;
+    private int _expiredCount;
+    private int _totalCount;
+
+    private string _sortField = nameof(Order.DateCreated);
+    private bool _sortDescending = true;
+
+    private List<Order> _allOrders;
+    private List<Order> _filteredOrders;
+    private List<Order> _pagedOrders;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        using var context = DbFactory.CreateDbContext();
+        _allOrders = await context.Orders
+            .Include(o => o.Product)
+            .Include(o => o.Ticket)
+            .OrderByDescending(o => o.DateCreated)
+            .ToListAsync();
+        ApplyFilters();
+    }
+
+    private void UpdateCounts()
+    {
+        _pendingCount = _allOrders.Count(o => o.Status == OrderStatus.PendingPayment);
+        _paidCount = _allOrders.Count(o => o.Status == OrderStatus.Paid);
+        _failedCount = _allOrders.Count(o => o.Status == OrderStatus.PaymentFailed);
+        _expiredCount = _allOrders.Count(o => o.Status == OrderStatus.Expired);
+        _totalCount = _allOrders.Count;
+        _totalPages = (int)Math.Ceiling((double)_filteredOrders.Count / _pageSize);
+        _totalFiltered = _filteredOrders.Count;
+        startItem = _filteredOrders.Count == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
+        endItem = Math.Min(_currentPage * _pageSize, _filteredOrders.Count);
+        _jumpToPage = _currentPage;
+    }
+
+    private void ApplyFilters()
+    {
+        _filteredOrders = _allOrders.AsEnumerable()
+            .Where(o =>
+                (string.IsNullOrEmpty(searchQuery) 
+                    || (o.TxnRef?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                    || (o.Ticket?.Code?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                    || (o.Product?.Name?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
+                    || o.DateUpdated.ToString("dd/MM/yyyy").Contains(searchQuery))
+                && (string.IsNullOrWhiteSpace(_statusFilter)
+                    || (_statusFilter == "pending" && o.Status == OrderStatus.PendingPayment)
+                    || (_statusFilter == "paid" && o.Status == OrderStatus.Paid)
+                    || (_statusFilter == "failed" && o.Status == OrderStatus.PaymentFailed)
+                    || (_statusFilter == "expired" && o.Status == OrderStatus.Expired))
+            )
+            .ToList();
+
+        _filteredOrders = _sortField switch
+        {
+            nameof(Order.TxnRef) => _sortDescending
+                ? _filteredOrders.OrderByDescending(o => o.TxnRef).ToList()
+                : _filteredOrders.OrderBy(o => o.TxnRef).ToList(),
+            nameof(Product.Name) => _sortDescending
+                ? _filteredOrders.OrderByDescending(o => o.Product?.Name ?? "").ToList()
+                : _filteredOrders.OrderBy(o => o.Product?.Name ?? "").ToList(),
+            nameof(Ticket.Code) => _sortDescending
+                ? _filteredOrders.OrderByDescending(o => o.Ticket?.Code ?? "").ToList()
+                : _filteredOrders.OrderBy(o => o.Ticket?.Code ?? "").ToList(),
+            nameof(Order.Quantity) => _sortDescending
+                ? _filteredOrders.OrderByDescending(o => o.Quantity).ToList()
+                : _filteredOrders.OrderBy(o => o.Quantity).ToList(),
+            nameof(Order.UnitPrice) => _sortDescending
+                ? _filteredOrders.OrderByDescending(o => o.UnitPrice).ToList()
+                : _filteredOrders.OrderBy(o => o.UnitPrice).ToList(),
+            nameof(Order.TotalAmount) => _sortDescending
+                ? _filteredOrders.OrderByDescending(o => o.TotalAmount).ToList()
+                : _filteredOrders.OrderBy(o => o.TotalAmount).ToList(),
+            nameof(Order.DateCreated) => _sortDescending
+                ? _filteredOrders.OrderByDescending(o => o.DateCreated).ToList()
+                : _filteredOrders.OrderBy(o => o.DateCreated).ToList(),
+            _ => _sortDescending
+                ? _filteredOrders.OrderByDescending(o => o.DateUpdated).ToList()
+                : _filteredOrders.OrderBy(o => o.DateUpdated).ToList()
+        };
+        _currentPage = 1;
+        UpdatePagedOrders();
+    }
+
+    private void UpdatePagedOrders()
+    {
+        if (_pageSize < 1)
+        {
+            _pageSize = 1;
+            return;
+        }
+
+        _pagedOrders = _filteredOrders
+            .Skip((_currentPage - 1) * _pageSize)
+            .Take(_pageSize)
+            .ToList();
+        UpdateCounts();
+        StateHasChanged();
+    }
+
+    private int _totalPages;
+    private int _totalFiltered;
+    private int startItem;
+    private int endItem;
+
+    private void OnSearchChanged(ChangeEventArgs e)
+    {
+        searchQuery = e.Value?.ToString() ?? "";
+        ApplyFilters();
+    }
+
+    private void OnFilterChanged()
+    {
+        ApplyFilters();
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page >= 1 && page <= _totalPages)
+        {
+            _currentPage = page;
+            UpdatePagedOrders();
+            await JS.InvokeVoidAsync("scrollTo", 0, 0);
+        }
+    }
+
+    private async Task JumpToPage()
+    {
+        if (_jumpToPage < 1)
+            _jumpToPage = 1;
+        else if (_jumpToPage > _totalPages)
+            _jumpToPage = _totalPages;
+        await GoToPage(_jumpToPage);
+    }
+
+    private void ToggleSort(string field)
+    {
+        if (_sortField == field)
+        {
+            _sortDescending = !_sortDescending;
+        }
+        else
+        {
+            _sortField = field;
+            _sortDescending = true;
+        }
+        ApplyFilters();
+    }
+
+    private string GetSortIcon(string field)
+    {
+        if (_sortField != field) return "";
+        return _sortDescending ? " ↓" : " ↑";
+    }
+
+    private void ShowDetailModal(Order order)
+    {
+        _selectedOrder = order;
+        _showDetailModal = true;
+    }
+
+    private void CloseDetailModal()
+    {
+        _showDetailModal = false;
+        _selectedOrder = null;
+    }
+
+    private string GetStatusClass(OrderStatus status) => status switch
+    {
+        OrderStatus.PendingPayment => "pending",
+        OrderStatus.Paid => "paid",
+        OrderStatus.PaymentFailed => "failed",
+        OrderStatus.Expired => "expired",
+        _ => ""
+    };
+
+    private string GetStatusText(OrderStatus status) => status switch
+    {
+        OrderStatus.PendingPayment => "Chờ thanh toán",
+        OrderStatus.Paid => "Đã thanh toán",
+        OrderStatus.PaymentFailed => "Thất bại",
+        OrderStatus.Expired => "Hết hạn",
+        _ => status.ToString()
+    };
+
+    private IEnumerable<object> GetVisiblePages()
+    {
+        if (_totalPages <= 9)
+        {
+            for (int i = 1; i <= _totalPages; i++)
+                yield return i;
+            yield break;
+        }
+
+        int windowStart = Math.Max(1, _currentPage - 1);
+        int windowEnd = Math.Min(_totalPages, windowStart + 2);
+        if (windowEnd - windowStart < 2)
+            windowStart = Math.Max(1, windowEnd - 2);
+
+        bool showStartEllipsis = windowStart > 3;
+        bool showEndEllipsis = windowEnd < _totalPages - 2;
+
+        int firstEnd = Math.Min(3, _totalPages);
+        for (int i = 1; i <= firstEnd; i++)
+            yield return i;
+
+        if (showStartEllipsis)
+            yield return "...";
+
+        for (int i = windowStart; i <= windowEnd; i++)
+        {
+            if (i > firstEnd && i < _totalPages - 2)
+                yield return i;
+        }
+
+        if (showEndEllipsis)
+            yield return "...";
+
+        int lastStart = Math.Max(_totalPages - 2, firstEnd + 1);
+        for (int i = lastStart; i <= _totalPages; i++)
+            yield return i;
+    }
+}

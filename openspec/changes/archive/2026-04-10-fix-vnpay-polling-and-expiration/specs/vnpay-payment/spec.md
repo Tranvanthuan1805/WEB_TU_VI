@@ -1,25 +1,4 @@
-## Requirements
-
-### Requirement: Customer can initiate VNPAY payment
-The system SHALL allow customers to initiate a VNPAY payment by creating a pending order and redirecting to VNPAY.
-
-#### Scenario: Successful payment initiation with available product
-- **WHEN** customer clicks "Thanh toán VNPAY" on a product with available quantity
-- **THEN** system creates Order with status PendingPayment
-- **AND** system deducts product quantity in the same DB transaction
-- **AND** system generates unique TxnRef
-- **AND** system builds VNPAY payment URL and redirects customer
-
-#### Scenario: Payment initiation fails due to insufficient quantity
-- **WHEN** customer clicks "Thanh toán VNPAY" on a product with zero quantity
-- **THEN** system returns error "Sản phẩm đã hết hàng"
-- **AND** system does NOT create any Order
-- **AND** system does NOT deduct quantity
-
-#### Scenario: Payment initiation with race condition
-- **WHEN** two customers simultaneously attempt to pay for a product with quantity = 1
-- **THEN** only one customer successfully creates PendingPayment Order
-- **AND** the other customer receives "Sản phẩm đã hết hàng" error
+## MODIFIED Requirements
 
 ### Requirement: IPN endpoint updates order status
 The system SHALL process VNPAY IPN requests to update order status and create tickets.
@@ -41,7 +20,7 @@ The system SHALL process VNPAY IPN requests to update order status and create ti
 - **AND** system restores product quantity
 - **AND** returns appropriate response to VNPAY
 
-#### Scenario: IPN reports expired order
+#### Scenario: IPN reports expired order (NEW)
 - **WHEN** VNPAY sends valid IPN with vnp_ResponseCode = "11"
 - **AND** signature is valid
 - **AND** order status is PendingPayment
@@ -71,7 +50,7 @@ The system SHALL display payment status on ReturnUrl page using polling to check
 - **WHEN** customer returns to ReturnUrl after redirect from VNPAY
 - **THEN** page displays "Đang xác nhận thanh toán..."
 - **AND** page starts polling every 2 seconds using direct service call
-- **AND** page displays elapsed seconds counter
+- **AND** page displays elapsed seconds counter (MODIFIED: was just static message)
 
 #### Scenario: ReturnUrl shows success when order is Paid with Ticket
 - **WHEN** polling returns order status = Paid AND Ticket exists
@@ -89,23 +68,3 @@ The system SHALL display payment status on ReturnUrl page using polling to check
 #### Scenario: ReturnUrl shows retry button after timeout
 - **WHEN** polling exceeds 60 seconds without final status
 - **THEN** page displays "Quá thời gian chờ." with "Kiểm tra lại" button
-
-### Requirement: Background service cleans up pending payments
-The system SHALL automatically expire and restore quantity for pending orders older than 15 minutes.
-
-#### Scenario: Cleanup service expires old pending orders
-- **WHEN** PendingPaymentCleanupService runs
-- **AND** finds Order with status PendingPayment created more than 15 minutes ago
-- **THEN** system updates order status to Expired
-- **AND** system restores product quantity
-- **AND** system does NOT create Ticket
-
-#### Scenario: Cleanup service skips recent pending orders
-- **WHEN** PendingPaymentCleanupService runs
-- **AND** finds Order with status PendingPayment created less than 15 minutes ago
-- **THEN** system does NOT modify the Order
-
-#### Scenario: Cleanup service does not affect paid orders
-- **WHEN** PendingPaymentCleanupService runs
-- **AND** finds Order with status Paid
-- **THEN** system does NOT modify the Order

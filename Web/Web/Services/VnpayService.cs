@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -19,64 +21,68 @@ namespace Web.Services
             var vnpayConfig = _configuration.GetSection("VnPay");
             var tmnCode = vnpayConfig["TmnCode"] ?? "";
             var paymentUrl = vnpayConfig["PaymentUrl"] ?? "";
+            var hashSecret = vnpayConfig["HashSecret"] ?? "";
 
-            var version = "2.1.0";
-            var command = "pay";
-            var currCode = "VND";
-            var locale = "vn";
-            var orderType = "other";
+            var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById(
+                OperatingSystem.IsWindows() ? "SE Asia Standard Time" : "Asia/Ho_Chi_Minh");
+            var nowVn = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
 
-            var amount = request.Amount * 100;
+            // VNPAY yêu cầu amount là số nguyên sau khi nhân 100
+            var amount = Convert.ToInt64(
+                Math.Round(request.Amount * 100m, 0, MidpointRounding.AwayFromZero)
+            );
 
-            var payParams = new SortedDictionary<string, string?>
+            var payParams = new SortedDictionary<string, string?>(StringComparer.Ordinal)
             {
-                { "vnp_Version", version },
-                { "vnp_Command", command },
+                { "vnp_Version", "2.1.0" },
+                { "vnp_Command", "pay" },
                 { "vnp_TmnCode", tmnCode },
-                { "vnp_Amount", amount.ToString() },
-                { "vnp_CurrCode", currCode },
-                { "vnp_OrderInfo", request.OrderInfo },
-                { "vnp_OrderType", orderType },
-                { "vnp_Locale", locale },
+                { "vnp_Amount", amount.ToString(CultureInfo.InvariantCulture) },
+                { "vnp_CurrCode", "VND" },
+                { "vnp_OrderInfo", SanitizeOrderInfo(request.OrderInfo) },
+                { "vnp_OrderType", "other" },
+                { "vnp_Locale", "vn" },
                 { "vnp_ReturnUrl", request.ReturnUrl },
                 { "vnp_TxnRef", request.TxnRef },
-                { "vnp_TransactionId", request.OrderId },
                 { "vnp_IpAddr", request.IpAddress },
-                { "vnp_CreateDate", DateTime.Now.ToString("yyyyMMddHHmmss") }
+                { "vnp_CreateDate", nowVn.ToString("yyyyMMddHHmmss") },
+                { "vnp_ExpireDate", nowVn.AddMinutes(15).ToString("yyyyMMddHHmmss") }
             };
 
-            var queryString = string.Join("&", payParams.Select(kvp =>
-                $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value ?? "")}"));
+            var queryString = BuildQueryString(payParams);
+            var secureHash = ComputeHmacSha512(queryString, hashSecret);
 
-            var secureHash = ComputeHmacSha256(queryString, vnpayConfig["HashSecret"] ?? "");
-            queryString += $"&vnp_SecureHash={secureHash}";
-
-            return $"{paymentUrl}?{queryString}";
+            return $"{paymentUrl}?{queryString}&vnp_SecureHash={secureHash}";
         }
 
         public bool ValidateSignature(IQueryCollection query)
         {
-            var vnp_SecureHash = query["vnp_SecureHash"].ToString();
-            if (string.IsNullOrEmpty(vnp_SecureHash))
+            var receivedHash = query["vnp_SecureHash"].ToString();
+            if (string.IsNullOrWhiteSpace(receivedHash))
                 return false;
 
-            var receivedHash = vnp_SecureHash;
-
-            var excludeParams = new HashSet<string> { "vnp_SecureHash", "vnp_SecureHashType" };
-            var payParams = new SortedDictionary<string, string?>();
+            var payParams = new SortedDictionary<string, string?>(StringComparer.Ordinal);
 
             foreach (var key in query.Keys)
             {
-                if (!excludeParams.Contains(key))
+                // Chỉ lấy params bắt đầu bằng vnp_
+                if (!key.StartsWith("vnp_", StringComparison.Ordinal))
+                    continue;
+
+                // Bỏ params chữ ký
+                if (key.Equals("vnp_SecureHash", StringComparison.OrdinalIgnoreCase) ||
+                    key.Equals("vnp_SecureHashType", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                var value = query[key].ToString();
+                if (!string.IsNullOrWhiteSpace(value))
                 {
-                    payParams[key] = query[key].ToString();
+                    payParams[key] = value;
                 }
             }
 
-            var queryString = string.Join("&", payParams.Select(kvp =>
-                $"{Uri.EscapeDataString(kvp.Key)}={Uri.EscapeDataString(kvp.Value ?? "")}"));
-
-            var computedHash = ComputeHmacSha256(queryString, _configuration["VnPay:HashSecret"] ?? "");
+            var rawData = BuildQueryString(payParams);
+            var computedHash = ComputeHmacSha512(rawData, _configuration["VnPay:HashSecret"] ?? "");
 
             return string.Equals(receivedHash, computedHash, StringComparison.OrdinalIgnoreCase);
         }
@@ -94,11 +100,47 @@ namespace Web.Services
             };
         }
 
-        private static string ComputeHmacSha256(string data, string key)
+        private static string BuildQueryString(SortedDictionary<string, string?> data)
         {
-            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(key));
+            return string.Join("&", data
+                .Where(kvp => !string.IsNullOrWhiteSpace(kvp.Value))
+                .Select(kvp => $"{UrlEncodeVnp(kvp.Key)}={UrlEncodeVnp(kvp.Value!)}"));
+        }
+
+        private static string UrlEncodeVnp(string value)
+        {
+            // Đồng bộ kiểu application/x-www-form-urlencoded
+            // để tránh lệch space giữa + và %20
+            return WebUtility.UrlEncode(value).Replace("%20", "+");
+        }
+
+        private static string ComputeHmacSha512(string data, string key)
+        {
+            using var hmac = new HMACSHA512(Encoding.UTF8.GetBytes(key));
             var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(data));
-            return BitConverter.ToString(hash).Replace("-", "").ToLower();
+            return Convert.ToHexString(hash).ToLowerInvariant();
+        }
+
+        private static string SanitizeOrderInfo(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return "Thanh toan don hang";
+
+            // Bạn có thể thay bằng hàm bỏ dấu đầy đủ hơn nếu muốn
+            var normalized = value.Normalize(NormalizationForm.FormD);
+            var sb = new StringBuilder();
+
+            foreach (var c in normalized)
+            {
+                var uc = System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c);
+                if (uc != System.Globalization.UnicodeCategory.NonSpacingMark)
+                {
+                    if (char.IsLetterOrDigit(c) || c == ' ' || c == ':' || c == '-' || c == '_')
+                        sb.Append(c);
+                }
+            }
+
+            return sb.ToString().Normalize(NormalizationForm.FormC);
         }
     }
 
