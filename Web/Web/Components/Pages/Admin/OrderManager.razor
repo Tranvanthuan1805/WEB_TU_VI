@@ -249,7 +249,7 @@
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Sản phẩm</span>
-                            <span class="detail-value">@_selectedOrder.Product?.Name ?? "-"</span>
+                            <span class="detail-value">@(_selectedOrder.Product?.Name ?? "-")</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Mã sản phẩm</span>
@@ -257,7 +257,7 @@
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Mã vé</span>
-                            <span class="detail-value">@_selectedOrder.Ticket?.Code ?? "Không có"</span>
+                            <span class="detail-value">@(_selectedOrder.Ticket?.Code ?? "-")</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Số lượng</span>
@@ -279,15 +279,15 @@
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Mã VNPay</span>
-                            <span class="detail-value">@_selectedOrder.VnpayTransactionNo ?? "-"</span>
+                            <span class="detail-value">@(_selectedOrder.VnpayTransactionNo ?? "-")</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Mã phản hồi</span>
-                            <span class="detail-value">@_selectedOrder.VnpayResponseCode ?? "-"</span>
+                            <span class="detail-value">@(_selectedOrder.VnpayResponseCode ?? "-")</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Trạng thái VNPay</span>
-                            <span class="detail-value">@_selectedOrder.VnpayTransactionStatus ?? "-"</span>
+                            <span class="detail-value">@(_selectedOrder.VnpayTransactionStatus ?? "-")</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Ngày tạo</span>

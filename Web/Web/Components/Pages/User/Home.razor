@@ -14,11 +14,40 @@
         <form class="space-y-10">
             <!-- Name Input -->
             
+            <!-- Option Checkbox -->
+            <div class="relative group">
+                <label class="text-on-surface font-medium">Chọn loại lá số</label>
+                <div class="flex gap-6 mt-3">
+                    <label class="flex items-center gap-3 cursor-pointer group text-on-surface-variant font-medium">
+                        <input class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" 
+                               name="option" type="radio" value="1" checked="@(selectedOption == "1")" @onchange='() => selectedOption = "1"' />
+                        <span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Option 1</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer group text-on-surface-variant font-medium">
+                        <input class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" 
+                               name="option" type="radio" value="2" checked="@(selectedOption == "2")" @onchange='() => selectedOption = "2"' />
+                        <span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Option 2</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer group text-on-surface-variant font-medium">
+                        <input class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" 
+                               name="option" type="radio" value="3" checked="@(selectedOption == "3")" @onchange='() => selectedOption = "3"' />
+                        <span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Option 3</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Ticket Code Input -->
+            <div class="relative group">
+                <label class="text-on-surface font-medium">Mã vé (tuỳ chọn)</label>
+                <input class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all" 
+                       type="text" @bind="ticketCode" placeholder="Nhập mã vé nếu có" />
+            </div>
+            
             <!-- Date and Calendar Toggle -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div class="relative group">
-                    <label class="block text-[10px] uppercase tracking-[0.2em] text-outline mb-2 group-focus-within:text-primary-container">Ngày tháng năm sinh</label>
-                    <input class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 focus:border-primary-container text-lg font-body transition-all" 
+                    <label class="text-on-surface font-medium">Ngày tháng năm sinh</label>
+                    <input class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0  text-on-surface-variant focus:border-primary-container text-lg font-body transition-all" 
                            type="date" @bind="birthInfo.BirthDate" />
                 </div>
             </div>
@@ -26,8 +55,8 @@
             <!-- Time and Gender -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div class="relative group">
-                    <label class="block text-[10px] uppercase tracking-[0.2em] text-outline mb-2 group-focus-within:text-primary-container">Giờ sinh</label>
-                    <select class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 focus:border-primary-container text-lg font-body transition-all appearance-none" 
+                    <label class="text-on-surface font-medium">Giờ sinh</label>
+                    <select class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all appearance-none" 
                             @bind="birthInfo.BirthHour">
                         <option class="bg-surface" value="Ty">Tý (23h - 01h)</option>
                         <option class="bg-surface" value="Suu">Sửu (01h - 03h)</option>
@@ -44,14 +73,14 @@
                     </select>
                 </div>
                 <div class="relative">
-                    <label class="block text-[10px] uppercase tracking-[0.2em] text-outline mb-4">Giới tính</label>
+                    <label class="text-on-surface font-medium">Giới tính</label>
                     <div class="flex gap-6">
-                        <label class="flex items-center gap-3 cursor-pointer group">
+                        <label class="flex items-center gap-3 cursor-pointer group text-on-surface-variant font-medium">
                             <input class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" 
                                    name="gender" type="radio" value="Nam" checked="@(birthInfo.Gender == "Nam")" @onchange='() => birthInfo.Gender = "Nam"' />
                             <span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Nam</span>
                         </label>
-                        <label class="flex items-center gap-3 cursor-pointer group">
+                        <label class="flex items-center gap-3 cursor-pointer group text-on-surface-variant font-medium">
                             <input class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" 
                                    name="gender" type="radio" value="Nu" checked="@(birthInfo.Gender == "Nữ")" @onchange='() => birthInfo.Gender = "Nữ"' />
                             <span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Nữ</span>
@@ -62,35 +91,81 @@
             
             <div class="pt-8">
                 <button class="group relative w-full py-5 bg-gradient-to-r from-primary-container to-[#e9c400] text-on-primary-container font-label font-extrabold uppercase tracking-[0.3em] text-sm overflow-hidden hover:opacity-90 transition-all active:scale-[0.98]" 
-                        type="button" @onclick="HandleSubmit">
+                        type="button" @onclick="HandleSubmit" disabled="@isLoading">
                     <span class="relative z-10 flex items-center justify-center gap-3">
-                        Lấy Lá Số Ngay
-                        <span class="material-symbols-outlined text-lg">flare</span>
+                        @if (isLoading)
+                        {
+                            <span>Đang xử lý...</span>
+                        }
+                        else
+                        {
+                            <span>Lấy Lá Số Ngay</span>
+                            <span class="material-symbols-outlined text-lg">flare</span>
+                        }
                     </span>
                 </button>
             </div>
         </form>
         
-        <!-- Bagua Placeholder Section -->
-        <div class="mt-20 border-t border-outline-variant/10 pt-20">
-            <div class="relative aspect-square w-full max-w-2xl mx-auto flex items-center justify-center p-8 bg-surface-container-lowest rounded-full border border-primary-container/10 group overflow-hidden">
-                <!-- Rotating Decorative Element -->
-                <div class="absolute inset-0 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
-                    <img class="w-full h-full object-cover" data-alt="intricate circular bagua diagram" 
-                         src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_F64g2DvaLGkjxU3JDZpj_xWzrs1NjdhXdmWPFDslW5v26X08CRPQVNhPC0nP0fwOSWsfk23mSXzceJz73jb5PpXNkcAivg7hGtw2ffqjp8vwwaaC-W7dXfxywNV3Hzbyd4MhsHM3bFNI9ZRLkyOB2fU9S6hk3WCIOilYe0_GlGoM1gv50fEBJbMobEMhZ-oOuNmS-SiR__8MSfNPh3pOxPAt9kQcYaNrq-G3jc82EM_E9MfP8-7nnUamcuUn05-J3CrdW0fWsa4" />
-                </div>
-                <div class="text-center z-10 p-12 glass-panel border border-primary-container/20 rounded-xl max-w-sm">
-                    <span class="material-symbols-outlined text-5xl text-primary-container mb-6 block" style="font-variation-settings: 'FILL' 0, 'wght' 100;">temple_hindu</span>
-                    <h3 class="font-headline text-2xl text-primary mb-4 italic">Bản Đồ Mệnh Cách</h3>
-                    <p class="text-on-surface-variant font-light text-sm leading-relaxed mb-8">Lá số của bạn sẽ được hiển thị tại đây sau khi nhấn nút an lá số.</p>
-                    <div class="flex justify-center gap-4 opacity-40">
-                        <span class="w-2 h-2 rounded-full bg-primary-container"></span>
-                        <span class="w-2 h-2 rounded-full bg-primary-container"></span>
-                        <span class="w-2 h-2 rounded-full bg-primary-container"></span>
+        @if (hasResult)
+        {
+            <!-- Result Section -->
+            <div class="mt-20 border-t border-outline-variant/10 pt-20">
+                <div class="relative aspect-square w-full max-w-2xl mx-auto flex items-center justify-center p-8 bg-surface-container-lowest rounded-full border border-primary-container/10 group overflow-hidden">
+                    <div class="absolute inset-0 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
+                        <img class="w-full h-full object-cover" data-alt="intricate circular bagua diagram" 
+                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_F64g2DvaLGkjxU3JDZpj_xWzrs1NjdhXdmWPFDslW5v26X08CRPQVNhPC0nP0fwOSWsfk23mSXzceJz73jb5PpXNkcAivg7hGtw2ffqjp8vwwaaC-W7dXfxywNV3Hzbyd4MhsHM3bFNI9ZRLkyOB2fU9S6hk3WCIOilYe0_GlGoM1gv50fEBJbMobEMhZ-oOuNmS-SiR__8MSfNPh3pOxPAt9kQcYaNrq-G3jc82EM_E9MfP8-7nnUamcuUn05-J3CrdW0fWsa4" />
+                    </div>
+                    <div class="text-center z-10 p-12 glass-panel border border-primary-container/20 rounded-xl max-w-sm">
+                        <span class="material-symbols-outlined text-5xl text-primary-container mb-6 block" style="font-variation-settings: 'FILL' 0, 'wght' 100;">temple_hindu</span>
+                        <h3 class="font-headline text-2xl text-primary mb-4 italic">Bản Đồ Mệnh Cách</h3>
+                        @if (usedTicket)
+                        {
+                            <div class="text-on-surface font-body text-sm leading-relaxed">
+                                <p class="mb-2"><strong>Họ tên:</strong> @mockResult.FullName</p>
+                                <p class="mb-2"><strong>Ngày sinh:</strong> @mockResult.BirthDate?.ToString("dd/MM/yyyy")</p>
+                                <p class="mb-2"><strong>Giờ sinh:</strong> @mockResult.BirthHour</p>
+                                <p class="mb-2"><strong>Giới tính:</strong> @mockResult.Gender</p>
+                                <p class="mb-2"><strong>Cung mệnh:</strong> @mockResult.CungMenh</p>
+                                <p class="mb-2"><strong>Cung xung:</strong> @mockResult.CungXung</p>
+                                <p class="mb-2"><strong>Vận hạn:</strong> @mockResult.VanHan</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-on-surface-variant font-light text-sm leading-relaxed mb-4">
+                                Để xem đầy đủ, xin vui lòng dùng vé của bạn.
+                            </p>
+                            <a href="/san-pham" class="inline-block px-4 py-2 bg-primary-container text-on-primary-container font-label text-sm uppercase tracking-widest hover:opacity-90 transition-opacity">
+                                Mua vé ngay
+                            </a>
+                        }
                     </div>
                 </div>
             </div>
-        </div>
+        }
+        else
+        {
+            <!-- Bagua Placeholder Section -->
+            <div class="mt-20 border-t border-outline-variant/10 pt-20">
+                <div class="relative aspect-square w-full max-w-2xl mx-auto flex items-center justify-center p-8 bg-surface-container-lowest rounded-full border border-primary-container/10 group overflow-hidden">
+                    <div class="absolute inset-0 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
+                        <img class="w-full h-full object-cover" data-alt="intricate circular bagua diagram" 
+                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_F64g2DvaLGkjxU3JDZpj_xWzrs1NjdhXdmWPFDslW5v26X08CRPQVNhPC0nP0fwOSWsfk23mSXzceJz73jb5PpXNkcAivg7hGtw2ffqjp8vwwaaC-W7dXfxywNV3Hzbyd4MhsHM3bFNI9ZRLkyOB2fU9S6hk3WCIOilYe0_GlGoM1gv50fEBJbMobEMhZ-oOuNmS-SiR__8MSfNPh3pOxPAt9kQcYaNrq-G3jc82EM_E9MfP8-7nnUamcuUn05-J3CrdW0fWsa4" />
+                    </div>
+                    <div class="text-center z-10 p-12 glass-panel border border-primary-container/20 rounded-xl max-w-sm">
+                        <span class="material-symbols-outlined text-5xl text-primary-container mb-6 block" style="font-variation-settings: 'FILL' 0, 'wght' 100;">temple_hindu</span>
+                        <h3 class="font-headline text-2xl text-primary mb-4 italic">Bản Đồ Mệnh Cách</h3>
+                        <p class="text-on-surface-variant font-light text-sm leading-relaxed mb-8">Lá số của bạn sẽ được hiển thị tại đây sau khi nhấn nút an lá số.</p>
+                        <div class="flex justify-center gap-4 opacity-40">
+                            <span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                            <span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                            <span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
 
     
 <style>
@@ -105,6 +180,12 @@
 
 @code {
     private BirthInfo birthInfo = new();
+    private string selectedOption = "1";
+    private string ticketCode = "";
+    private bool isLoading = false;
+    private bool hasResult = false;
+    private bool usedTicket = false;
+    private MockResult? mockResult;
 
     private class BirthInfo
     {
@@ -114,8 +195,63 @@
         public string BirthHour { get; set; } = "Ty";
         public string Gender { get; set; } = "Nam";
     }
-    private void HandleSubmit()
-    {
 
+    private class MockResult
+    {
+        public string FullName { get; set; } = "";
+        public DateTime? BirthDate { get; set; }
+        public string BirthHour { get; set; } = "";
+        public string Gender { get; set; } = "";
+        public string CungMenh { get; set; } = "";
+        public string CungXung { get; set; } = "";
+        public string VanHan { get; set; } = "";
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (isLoading) return;
+
+        isLoading = true;
+        hasResult = false;
+
+        try
+        {
+            bool ticketValid = false;
+
+            if (!string.IsNullOrWhiteSpace(ticketCode))
+            {
+                using var context = DbFactory.CreateDbContext();
+                var ticket = await Task.Run(() => context.Tickets.FirstOrDefault(t => t.Code == ticketCode));
+
+                if (ticket != null && ticket.IsAvailable)
+                {
+                    ticket.QuantityUsed += 1;
+                    await context.SaveChangesAsync();
+                    ticketValid = true;
+                }
+            }
+
+            await Task.Delay(10000);
+
+            usedTicket = ticketValid;
+            mockResult = new MockResult
+            {
+                FullName = birthInfo.FullName,
+                BirthDate = birthInfo.BirthDate,
+                BirthHour = birthInfo.BirthHour,
+                Gender = birthInfo.Gender,
+                CungMenh = "Càn",
+                CungXung = "Khôn",
+                VanHan = "Vận 2024 - 2025: Tài lộc hanh thông"
+            };
+            hasResult = true;
+        }
+        catch (Exception)
+        {
+        }
+        finally
+        {
+            isLoading = false;
+        }
     }
 }

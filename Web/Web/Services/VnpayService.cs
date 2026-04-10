@@ -4,16 +4,19 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Web.Utilities;
 
 namespace Web.Services
 {
     public class VnpayService
     {
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public VnpayService(IConfiguration configuration)
+        public VnpayService(IConfiguration configuration, IHttpContextAccessor httpContextAccessor)
         {
             _configuration = configuration;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public string CreatePaymentUrl(CreatePaymentRequest request)
@@ -27,32 +30,27 @@ namespace Web.Services
                 OperatingSystem.IsWindows() ? "SE Asia Standard Time" : "Asia/Ho_Chi_Minh");
             var nowVn = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
 
-            // VNPAY yêu cầu amount là số nguyên sau khi nhân 100
             var amount = Convert.ToInt64(
                 Math.Round(request.Amount * 100m, 0, MidpointRounding.AwayFromZero)
             );
 
-            var payParams = new SortedDictionary<string, string?>(StringComparer.Ordinal)
-            {
-                { "vnp_Version", "2.1.0" },
-                { "vnp_Command", "pay" },
-                { "vnp_TmnCode", tmnCode },
-                { "vnp_Amount", amount.ToString(CultureInfo.InvariantCulture) },
-                { "vnp_CurrCode", "VND" },
-                { "vnp_OrderInfo", SanitizeOrderInfo(request.OrderInfo) },
-                { "vnp_OrderType", "other" },
-                { "vnp_Locale", "vn" },
-                { "vnp_ReturnUrl", request.ReturnUrl },
-                { "vnp_TxnRef", request.TxnRef },
-                { "vnp_IpAddr", request.IpAddress },
-                { "vnp_CreateDate", nowVn.ToString("yyyyMMddHHmmss") },
-                { "vnp_ExpireDate", nowVn.AddMinutes(15).ToString("yyyyMMddHHmmss") }
-            };
+            var vnpay = new VnPayLibrary(_httpContextAccessor);
 
-            var queryString = BuildQueryString(payParams);
-            var secureHash = ComputeHmacSha512(queryString, hashSecret);
+            vnpay.AddRequestData("vnp_Version", VnPayLibrary.VERSION);
+            vnpay.AddRequestData("vnp_Command", "pay");
+            vnpay.AddRequestData("vnp_TmnCode", tmnCode);
+            vnpay.AddRequestData("vnp_Amount", amount.ToString(CultureInfo.InvariantCulture));
+            vnpay.AddRequestData("vnp_CurrCode", "VND");
+            vnpay.AddRequestData("vnp_OrderInfo", SanitizeOrderInfo(request.OrderInfo));
+            vnpay.AddRequestData("vnp_OrderType", "other");
+            vnpay.AddRequestData("vnp_Locale", "vn");
+            vnpay.AddRequestData("vnp_ReturnUrl", request.ReturnUrl);
+            vnpay.AddRequestData("vnp_TxnRef", request.TxnRef);
+            vnpay.AddRequestData("vnp_IpAddr", request.IpAddress);
+            vnpay.AddRequestData("vnp_CreateDate", nowVn.ToString("yyyyMMddHHmmss"));
+            vnpay.AddRequestData("vnp_ExpireDate", nowVn.AddMinutes(15).ToString("yyyyMMddHHmmss"));
 
-            return $"{paymentUrl}?{queryString}&vnp_SecureHash={secureHash}";
+            return vnpay.CreateRequestUrl(paymentUrl, hashSecret);
         }
 
         public bool ValidateSignature(IQueryCollection query)
@@ -61,15 +59,13 @@ namespace Web.Services
             if (string.IsNullOrWhiteSpace(receivedHash))
                 return false;
 
-            var payParams = new SortedDictionary<string, string?>(StringComparer.Ordinal);
+            var vnpay = new VnPayLibrary();
 
             foreach (var key in query.Keys)
             {
-                // Chỉ lấy params bắt đầu bằng vnp_
                 if (!key.StartsWith("vnp_", StringComparison.Ordinal))
                     continue;
 
-                // Bỏ params chữ ký
                 if (key.Equals("vnp_SecureHash", StringComparison.OrdinalIgnoreCase) ||
                     key.Equals("vnp_SecureHashType", StringComparison.OrdinalIgnoreCase))
                     continue;
@@ -77,14 +73,12 @@ namespace Web.Services
                 var value = query[key].ToString();
                 if (!string.IsNullOrWhiteSpace(value))
                 {
-                    payParams[key] = value;
+                    vnpay.AddResponseData(key, value);
                 }
             }
 
-            var rawData = BuildQueryString(payParams);
-            var computedHash = ComputeHmacSha512(rawData, _configuration["VnPay:HashSecret"] ?? "");
-
-            return string.Equals(receivedHash, computedHash, StringComparison.OrdinalIgnoreCase);
+            var secretKey = _configuration["VnPay:HashSecret"] ?? "";
+            return vnpay.ValidateSignature(receivedHash, secretKey);
         }
 
         public VnpayResponse ParseResponse(IQueryCollection query)
