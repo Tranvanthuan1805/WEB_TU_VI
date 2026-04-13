@@ -42,7 +42,7 @@ namespace Web.Data
                 entity.HasOne(o => o.Ticket)
                     .WithMany()
                     .HasForeignKey(o => o.TicketId)
-                    .OnDelete(DeleteBehavior.SetNull);
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

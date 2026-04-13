@@ -3,6 +3,10 @@
 
 @attribute [Authorize(Roles = RoleName.Administrator)]
 @inject ToastService ToastService
+@inject ConfirmDialogService ConfirmDialog
+@inject IConfiguration Configuration
+@inject IWebHostEnvironment Env
+@using System.ComponentModel.DataAnnotations
 
 <PageTitle>Thiết lập</PageTitle>
 
@@ -21,26 +25,182 @@
             <div class="card-body">
                 <p class="seed-description">Tạo hoặc xóa dữ liệu mẫu cho việc phát triển và kiểm tra. Dữ liệu seed có tiêu đề chứa "[Seed Data]".</p>
                 <div class="seed-actions">
-                    <button type="button" class="btn-seed-create" @onclick="CreateSeedData" disabled="@_isSeeding">
+                    <button type="button" class="btn-seed-create" @onclick="CreateSeedData" disabled="@(_isCreatingSeed || _isDeletingSeed)">
                         <span class="material-symbols-outlined">add_circle</span>
-                        @(_isSeeding ? "Đang tạo..." : "Tạo Seed Data")
+                        @(_isCreatingSeed ? "Đang tạo..." : "Tạo Seed Data")
                     </button>
-                    <button type="button" class="btn-seed-delete" @onclick="DeleteSeedData" disabled="@_isSeeding">
+                    <button type="button" class="btn-seed-delete" @onclick="DeleteSeedData" disabled="@(_isCreatingSeed || _isDeletingSeed)">
                         <span class="material-symbols-outlined">delete_sweep</span>
-                        @(_isSeeding ? "Đang xóa..." : "Xóa Seed Data")
+                        @(_isDeletingSeed ? "Đang xóa..." : "Xóa Seed Data")
                     </button>
                 </div>
+            </div>
+        </section>
+
+        <section class="config-card full-width">
+            <div class="card-header">
+                <span class="material-symbols-outlined">payment</span>
+                <h3>VNPay</h3>
+            </div>
+            <div class="card-body">
+                <p class="seed-description">Cấu hình VNPay.Domain sẽ tự động thêm /api/payments/vnpay/return và /api/payments/vnpay/ipn</p>
+                <EditForm FormName="VnpayConfig" Model="_vnpayConfig" OnValidSubmit="SaveVnPayConfig">
+                    <DataAnnotationsValidator />
+                    <div class="vnpay-form">
+                        <div class="form-group">
+                            <label for="tmnCode">TmnCode</label>
+                            <InputText id="tmnCode" class="form-control" @bind-Value="_vnpayConfig.TmnCode" />
+                            <ValidationMessage For="() => _vnpayConfig.TmnCode" />
+                        </div>
+                        <div class="form-group">
+                            <label for="hashSecret">HashSecret</label>
+                            <InputText type="password" id="hashSecret" class="form-control" @bind-Value="_vnpayConfig.HashSecret" />
+                            <ValidationMessage For="() => _vnpayConfig.HashSecret" />
+                        </div>
+                        <div class="form-group">
+                            <label for="paymentUrl">PaymentUrl</label>
+                            <InputText id="paymentUrl" class="form-control" @bind-Value="_vnpayConfig.PaymentUrl" />
+                            <ValidationMessage For="() => _vnpayConfig.PaymentUrl" />
+                        </div>
+                        <div class="form-group">
+                            <label for="domain">Domain</label>
+                            <InputText id="domain" class="form-control" @bind-Value="_vnpayConfig.Domain" placeholder="https://example.com" />
+                            <ValidationMessage For="() => _vnpayConfig.Domain" />
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-save" disabled="@(_isSaving || _isResetting)">
+                                <span class="material-symbols-outlined">save</span>
+                                @(_isSaving ? "Đang lưu..." : "Lưu")
+                            </button>
+                            <button type="button" class="btn-reset" @onclick="ResetVnPayConfig" disabled="@(_isSaving || _isResetting)">
+                                <span class="material-symbols-outlined">refresh</span>
+                                @(_isResetting ? "Đang reset..." : "Reset")
+                            </button>
+                        </div>
+                    </div>
+                </EditForm>
             </div>
         </section>
     </div>
 </div>
 
 @code {
-    private bool _isSeeding;
+    private bool _isCreatingSeed;
+    private bool _isDeletingSeed;
+    private bool _isSaving;
+    private bool _isResetting;
+    [SupplyParameterFromForm(FormName = "VnpayConfig")]
+    public VnPayConfigModel _vnpayConfig { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        LoadVnPayConfig();
+    }
+
+    private void LoadVnPayConfig()
+    {
+        var vnpaySection = Configuration.GetSection("VnPay");
+        var tmnCode = vnpaySection["TmnCode"] ?? "";
+        var hashSecret = vnpaySection["HashSecret"] ?? "";
+        var paymentUrl = vnpaySection["PaymentUrl"] ?? "";
+        var returnUrl = vnpaySection["ReturnUrl"] ?? "";
+        var ipnUrl = vnpaySection["IpnUrl"] ?? "";
+
+        _vnpayConfig = new VnPayConfigModel
+        {
+            TmnCode = tmnCode,
+            HashSecret = hashSecret,
+            PaymentUrl = paymentUrl,
+            Domain = ExtractDomain(returnUrl)
+        };
+    }
+
+    private string ExtractDomain(string url)
+    {
+        if (string.IsNullOrEmpty(url))
+            return "";
+
+        try
+        {
+            var uri = new Uri(url);
+            return $"{uri.Scheme}://{uri.Host}";
+        }
+        catch
+        {
+            return url;
+        }
+    }
+
+    private async Task SaveVnPayConfig()
+    {
+        var confirmed = await ConfirmDialog.ShowAsync(
+            "Lưu cấu hình",
+            "Bạn có chắc muốn lưu cấu hình VNPay?",
+            "Lưu",
+            false);
+
+        if (!confirmed)
+            return;
+
+        _isSaving = true;
+        try
+        {
+            var returnUrl = _vnpayConfig.Domain.TrimEnd('/') + "/api/payments/vnpay/return";
+            var ipnUrl = _vnpayConfig.Domain.TrimEnd('/') + "/api/payments/vnpay/ipn";
+
+            var vnpayConfig = new Dictionary<string, object>
+            {
+                ["TmnCode"] = _vnpayConfig.TmnCode,
+                ["HashSecret"] = _vnpayConfig.HashSecret,
+                ["PaymentUrl"] = _vnpayConfig.PaymentUrl,
+                ["ReturnUrl"] = returnUrl,
+                ["IpnUrl"] = ipnUrl
+            };          
+            await MergeAndSaveVnPayConfig(vnpayConfig, isReset: false);
+            ToastService.Show("success", "Đã lưu cấu hình VNPay");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi lưu: {ex.Message}");
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task ResetVnPayConfig()
+    {
+        var confirmed = await ConfirmDialog.ShowAsync(
+            "Khôi phục mặc định",
+            "Bạn có chắc muốn khôi phục về giá trị mặc định từ appsettings?",
+            "Khôi phục",
+            true);
+
+        if (!confirmed)
+            return;
+
+        _isResetting = true;
+        try
+        {
+            var defaultVnPay = GetDefaultVnPayFromAppsettings();
+            await MergeAndSaveVnPayConfig(defaultVnPay, isReset: true);
+            LoadVnPayConfig();
+            ToastService.Show("info", "Đã khôi phục về mặc định. Vui lòng F5.");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi khôi phục: {ex.Message}");
+        }
+        finally
+        {
+            _isResetting = false;
+        }
+    }
 
     private async Task CreateSeedData()
     {
-        _isSeeding = true;
+        _isCreatingSeed = true;
         try
         {
             using var context = DbFactory.CreateDbContext();
@@ -57,24 +217,29 @@
         }
         finally
         {
-            _isSeeding = false;
+            _isCreatingSeed = false;
         }
     }
 
     private async Task DeleteSeedData()
     {
-        _isSeeding = true;
+        _isDeletingSeed = true;
         try
         {
             using var context = DbFactory.CreateDbContext();
             
             var postCount = await Seeder.DeleteSeedPostsAsync(context);
-            var productCount = await Seeder.DeleteSeedProductsAsync(context);
-            var ticketCount = await Seeder.DeleteSeedTicketsAsync(context);
+            var (productDeleted, productSkipped) = await Seeder.DeleteSeedProductsAsync(context);
+            var (ticketDeleted, ticketSkipped) = await Seeder.DeleteSeedTicketsAsync(context);
             
-            var total = postCount + productCount + ticketCount;
+            var total = postCount + productDeleted + ticketDeleted;
             if (total > 0)
-                ToastService.Show("success", $"Đã xóa seed: {postCount} posts, {productCount} products, {ticketCount} tickets");
+            {
+                var skipMsg = (productSkipped + ticketSkipped) > 0 
+                    ? $" ({productSkipped} products, {ticketSkipped} tickets bị skip do có đơn hàng)"
+                    : "";
+                ToastService.Show("success", $"Đã xóa seed: {postCount} posts, {productDeleted} products, {ticketDeleted} tickets{skipMsg}");
+            }
             else
                 ToastService.Show("info", "Không có dữ liệu seed để xóa");
         }
@@ -84,7 +249,73 @@
         }
         finally
         {
-            _isSeeding = false;
+            _isDeletingSeed = false;
         }
+    }
+
+    public class VnPayConfigModel
+    {
+        [Required(ErrorMessage = "TmnCode là bắt buộc")]
+        public string TmnCode { get; set; } = "";
+
+        [Required(ErrorMessage = "HashSecret là bắt buộc")]
+        public string HashSecret { get; set; } = "";
+
+        [Required(ErrorMessage = "PaymentUrl là bắt buộc")]
+        [Url(ErrorMessage = "PaymentUrl không hợp lệ")]
+        public string PaymentUrl { get; set; } = "";
+
+        [Required(ErrorMessage = "Domain là bắt buộc")]
+        [Url(ErrorMessage = "Domain không hợp lệ")]
+        public string Domain { get; set; } = "";
+    }
+
+    private Dictionary<string, object>? GetDefaultVnPayFromAppsettings()
+    {
+        try
+        {
+            var appsettingsPath = Path.Combine(Env.ContentRootPath, "appsettings.json");
+            var json = File.ReadAllText(appsettingsPath);
+            var config = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+            if (config != null && config.TryGetValue("VnPay", out var vnpay))
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(
+                    vnpay.ToString() ?? "") ?? new();
+            }
+        }
+        catch { }
+        return new();
+    }
+
+    private Dictionary<string, object>? GetExistingConfigJson()
+    {
+        try
+        {
+            var configPath = Path.Combine(Env.ContentRootPath, "config.json");
+            if (!File.Exists(configPath))
+                return null;
+
+            var json = File.ReadAllText(configPath);
+            return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+        }
+        catch { }
+        return null;
+    }
+
+    private async Task MergeAndSaveVnPayConfig(Dictionary<string, object> vnpayConfig, bool isReset)
+    {
+        var existingConfig = GetExistingConfigJson() ?? new();
+        var newConfig = new Dictionary<string, object>(existingConfig)
+        {
+            ["VnPay"] = vnpayConfig
+        };
+
+        var configPath = Path.Combine(Env.ContentRootPath, "config.json");
+        var json = System.Text.Json.JsonSerializer.Serialize(newConfig, new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        await File.WriteAllTextAsync(configPath, json);
     }
 }

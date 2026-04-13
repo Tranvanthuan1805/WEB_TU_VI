@@ -94,19 +94,31 @@ namespace Web.Data
             return 30;
         }
 
-        public static async Task<int> DeleteSeedProductsAsync(AppDBContext context)
+        public static async Task<(int Deleted, int Skipped)> DeleteSeedProductsAsync(AppDBContext context)
         {
             var products = await context.Products
                 .Where(p => p.Name.Contains(SeedMarker))
                 .ToListAsync();
 
-            if (products.Any())
+            if (!products.Any())
+                return (0, 0);
+
+            var productIds = products.Select(p => p.ProductId).ToHashSet();
+
+            var productIdsWithOrders = await context.Orders
+                .Where(o => productIds.Contains(o.ProductId))
+                .Select(o => o.ProductId)
+                .ToHashSetAsync();
+
+            var safeProducts = products.Where(p => !productIdsWithOrders.Contains(p.ProductId)).ToList();
+
+            if (safeProducts.Any())
             {
-                context.Products.RemoveRange(products);
+                context.Products.RemoveRange(safeProducts);
                 await context.SaveChangesAsync();
             }
 
-            return products.Count;
+            return (safeProducts.Count, products.Count - safeProducts.Count);
         }
 
         public static async Task<int> SeedTicketsAsync(AppDBContext context)
@@ -140,20 +152,32 @@ namespace Web.Data
             return 50;
         }
 
-        public static async Task<int> DeleteSeedTicketsAsync(AppDBContext context)
+        public static async Task<(int Deleted, int Skipped)> DeleteSeedTicketsAsync(AppDBContext context)
         {
             const string ticketSeedMarker = "[SEED]";
             var tickets = await context.Tickets
                 .Where(t => t.Code.Contains(ticketSeedMarker))
                 .ToListAsync();
 
-            if (tickets.Any())
+            if (!tickets.Any())
+                return (0, 0);
+
+            var ticketIds = tickets.Select(t => t.TicketId).ToHashSet();
+
+            var ticketIdsWithOrders = await context.Orders
+                .Where(o => o.TicketId != null && ticketIds.Contains(o.TicketId.Value))
+                .Select(o => o.TicketId!.Value)
+                .ToHashSetAsync();
+
+            var safeTickets = tickets.Where(t => !ticketIdsWithOrders.Contains(t.TicketId)).ToList();
+
+            if (safeTickets.Any())
             {
-                context.Tickets.RemoveRange(tickets);
+                context.Tickets.RemoveRange(safeTickets);
                 await context.SaveChangesAsync();
             }
 
-            return tickets.Count;
+            return (safeTickets.Count, tickets.Count - safeTickets.Count);
         }
 
         private static string GenerateRandomCode(Random random)

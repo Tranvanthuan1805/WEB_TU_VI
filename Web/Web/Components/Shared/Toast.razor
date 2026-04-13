@@ -38,9 +38,9 @@
         (_bgClass, _bgStyle, _textClass) = type switch
         {
             "success" => ("bg-surface-container-low border-primary", "border-left: 4px solid var(--primary);", "text-primary"),
-            "error" => ("bg-surface-container-low border-error-container", "border-left: 4px solid var(--error-container);", "text-on-error-container"),
-            "warning" => ("bg-surface-container-low border-tertiary-container", "border-left: 4px solid var(--tertiary-container);", "text-on-tertiary-container"),
-            "info" => ("bg-surface-container-low border-secondary-container", "border-left: 4px solid var(--secondary-container);", "text-on-secondary-container"),
+            "error" => ("bg-surface-container-low border-error-container", "border-left: 4px solid var(--error);", "text-error"),
+            "warning" => ("bg-surface-container-low border-tertiary-container", "border-left: 4px solid var(--tertiary);", "text-tertiary"),
+            "info" => ("bg-surface-container-low border-secondary-container", "border-left: 4px solid var(--secondary);", "text-secondary"),
             _ => ("bg-surface-container border-outline", "", "text-on-surface")
         };
 

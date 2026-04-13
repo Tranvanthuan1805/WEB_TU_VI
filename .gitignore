@@ -5,6 +5,7 @@
 
 #custom
 appsettings.json
+config.json
 FileServer/
 
 # User-specific files
