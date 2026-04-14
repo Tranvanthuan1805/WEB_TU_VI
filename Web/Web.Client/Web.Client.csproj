@@ -15,7 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Components\Pages\" />
+    <Folder Include="Components\Pages\User\" />
   </ItemGroup>
 
 </Project>
