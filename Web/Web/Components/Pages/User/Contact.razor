@@ -1,0 +1,137 @@
+@page "/lien-he"
+@attribute [StreamRendering]
+
+@inject ToastService ToastService
+@inject NavigationManager NavigationManager
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle>Liên hệ | Lá Số Tử Vi</PageTitle>
+
+<head>
+    <meta name="description" content="Liên hệ với Lá Số Tử Vi - Góp ý hoặc báo lỗi để chúng tôi cải thiện dịch vụ." />
+</head>
+
+<div class="max-w-xl mx-auto py-12">
+    <header class="text-center space-y-4 mb-12">
+        <h1 class="font-headline text-4xl md:text-5xl text-primary leading-tight italic">Liên hệ</h1>
+        <p class="text-on-surface-variant font-light">Góp ý hoặc báo lỗi để chúng tôi cải thiện dịch vụ tốt hơn.</p>
+    </header>
+
+    <EditForm Model="_contactModel" OnValidSubmit="HandleSubmit" FormName="contact" method="post">
+        <DataAnnotationsValidator />
+        <div class="space-y-6">
+            <div class="relative group">
+                <label class="text-on-surface font-medium block mb-2">Loại liên hệ</label>
+                <InputSelect class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all appearance-none"
+                            @bind-Value="_contactModel.ContactType">
+                    <option class="bg-surface" value="GopY">Góp ý</option>
+                    <option class="bg-surface" value="BaoLoi">Báo lỗi</option>
+                </InputSelect>
+            </div>
+
+            <div class="relative group">
+                <label class="text-on-surface font-medium block mb-2">Nội dung <span class="text-red-400">*</span></label>
+                <InputTextArea class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all min-h-[150px]"
+                              @bind-Value="_contactModel.Content" placeholder="Nhập nội dung liên hệ..." />
+                <ValidationMessage For="() => _contactModel.Content" />
+            </div>
+
+            <div class="relative group">
+                <label class="text-on-surface font-medium block mb-2">Email</label>
+                <InputText class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all"
+                           type="email" @bind-Value="_contactModel.Email" placeholder="Nhập email của bạn" />
+                <ValidationMessage For="() => _contactModel.Email" />
+                <p class="text-on-surface-variant text-sm mt-1">Nếu bạn muốn nhận phản hồi, vui lòng để lại email.</p>
+            </div>
+
+            <div class="pt-4">
+                <button class="w-full py-4 bg-primary-container text-on-primary-container font-label font-extrabold uppercase tracking-[0.3em] text-sm hover:opacity-90 transition-all"
+                        type="submit" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <span>Đang gửi...</span>
+                    }
+                    else
+                    {
+                        <span>Gửi liên hệ</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </EditForm>
+
+    @if (showSuccess)
+    {
+        <div class="mt-6 p-4 bg-green-900/30 border border-green-500/50 rounded-lg text-center">
+            <p class="text-green-400">Đã gửi liên hệ thành công!</p>
+        </div>
+    }
+</div>
+
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+    }
+</style>
+
+@code {
+    [SupplyParameterFromForm(FormName = "contact")]
+    private ContactFormModel _contactModel { get; set; } = new();
+    private bool isSubmitting = false;
+    private bool showSuccess = false;
+
+    public class ContactFormModel
+    {
+        [Required(ErrorMessage = "Loại liên hệ là bắt buộc")]
+        public string ContactType { get; set; } = "GopY";
+
+        [Required(ErrorMessage = "Nội dung là bắt buộc")]
+        [MinLength(10, ErrorMessage = "Nội dung quá ngắn")]
+        public string Content { get; set; } = "";
+
+        private string? _email;
+
+        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        public string? Email 
+        {
+            get => _email;
+            set => _email = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+        }
+
+    }
+
+    private async Task HandleSubmit()
+    {
+        isSubmitting = true;
+
+        try
+        {
+            var contact = new Web.Models.Contact
+            {
+                Type = _contactModel.ContactType == "GopY" ? Web.Models.ContactType.GopY : Web.Models.ContactType.BaoLoi,
+                Content = _contactModel.Content,
+                Email = _contactModel.Email ?? "",
+                Status = Web.Models.ContactStatus.Moi,
+                DateCreated = DateTime.UtcNow,
+                DateUpdated = DateTime.UtcNow
+            };
+
+            using var context = DbFactory.CreateDbContext();
+            context.Contacts.Add(contact);
+            await context.SaveChangesAsync();
+
+            showSuccess = true;
+            ToastService.ShowSuccess("Đã gửi liên hệ thành công! Chuyển trang sau giây lát...");
+            await Task.Delay(1500);
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception)
+        {
+            ToastService.ShowError("Có lỗi xảy ra. Vui lòng thử lại.");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+}

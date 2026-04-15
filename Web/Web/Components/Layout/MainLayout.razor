@@ -1,7 +1,21 @@
 @using Web.Components.Shared
 @inherits LayoutComponentBase
+@inject IConfiguration Configuration
 
 @attribute [StreamRendering]
+<HeadContent>
+    @if (_adSenseEnabled && !string.IsNullOrEmpty(_adSensePublisherId))
+    {
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"></script>
+        <script>
+            (window.adsbygoogle = window.adsbygoogle || []).push({
+                google_ad_client: "@_adSensePublisherId",
+                enable_page_level_ads: true
+            });
+        </script>
+    }
+</HeadContent>
+
 <div class="page bg-background min-h-screen flex flex-col">
     <main class="flex-1">
         <NavMenu></NavMenu>
@@ -96,15 +110,29 @@
 
 @code {
     private List<Post> _recentPosts;
+    private bool _adSenseEnabled;
+    private string _adSensePublisherId = "";
 
     protected override async Task OnInitializedAsync()
     {
+        LoadGoogleAdSenseConfig();
+
         using var context = DbFactory.CreateDbContext();
         _recentPosts = await context.Posts
             .Where(p => p.Published)
             .OrderByDescending(p => p.DateUpdated)
             .Take(5)
             .ToListAsync();
+    }
+
+    private void LoadGoogleAdSenseConfig()
+    {
+        var googleAdSenseSection = Configuration.GetSection("GoogleAdSense");
+        var enabled = googleAdSenseSection["Enabled"] ?? "";
+        var publisherId = googleAdSenseSection["PublisherId"] ?? "";
+
+        _adSenseEnabled = bool.TryParse(enabled, out var isEnabled) && isEnabled;
+        _adSensePublisherId = publisherId;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

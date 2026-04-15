@@ -1,4 +1,4 @@
-@page "/admin/orders"
+@page "/admin/contacts"
 @rendermode InteractiveServer
 @attribute [StreamRendering]
 
@@ -8,49 +8,49 @@
 @inject ConfirmDialogService ConfirmDialogService
 @inject IJSRuntime JS
 
-<PageTitle>Quản lý đơn hàng</PageTitle>
+<PageTitle>Quản lý liên hệ</PageTitle>
 
-<div class="order-manager" data-theme="admin">
+<div class="contact-manager" data-theme="admin">
     <div class="page-header">
         <div>
-            <h2>Quản lý đơn hàng</h2>
-            <p>Xem và quản lý đơn hàng.</p>
+            <h2>Quản lý liên hệ</h2>
+            <p>Xem và quản lý liên hệ từ người dùng.</p>
         </div>
     </div>
 
     <div class="stats-row">
         <div class="stat-mini">
             <div class="stat-mini-header">
-                <span class="stat-mini-label">Chờ thanh toán</span>
-                <span class="material-symbols-outlined stat-mini-icon">hourglass_empty</span>
+                <span class="stat-mini-label">Mới</span>
+                <span class="material-symbols-outlined stat-mini-icon">fiber_new</span>
             </div>
-            <span class="stat-mini-value">@_pendingCount</span>
+            <span class="stat-mini-value">@_moiCount</span>
         </div>
         <div class="stat-mini">
             <div class="stat-mini-header">
-                <span class="stat-mini-label">Đã thanh toán</span>
+                <span class="stat-mini-label">Đã đọc</span>
+                <span class="material-symbols-outlined stat-mini-icon">mark_email_read</span>
+            </div>
+            <span class="stat-mini-value">@_daDocCount</span>
+        </div>
+        <div class="stat-mini">
+            <div class="stat-mini-header">
+                <span class="stat-mini-label">Đã xử lý</span>
                 <span class="material-symbols-outlined stat-mini-icon">check_circle</span>
             </div>
-            <span class="stat-mini-value">@_paidCount</span>
+            <span class="stat-mini-value">@_daXuLyCount</span>
         </div>
         <div class="stat-mini">
             <div class="stat-mini-header">
-                <span class="stat-mini-label">Thất bại</span>
-                <span class="material-symbols-outlined stat-mini-icon warning">error</span>
+                <span class="stat-mini-label">Bỏ qua</span>
+                <span class="material-symbols-outlined stat-mini-icon warning">disabled_by_default</span>
             </div>
-            <span class="stat-mini-value">@_failedCount</span>
-        </div>
-        <div class="stat-mini">
-            <div class="stat-mini-header">
-                <span class="stat-mini-label">Hết hạn</span>
-                <span class="material-symbols-outlined stat-mini-icon">schedule</span>
-            </div>
-            <span class="stat-mini-value">@_expiredCount</span>
+            <span class="stat-mini-value">@_boQuaCount</span>
         </div>
         <div class="stat-mini">
             <div class="stat-mini-header">
                 <span class="stat-mini-label">Tổng số</span>
-                <span class="material-symbols-outlined stat-mini-icon">receipt_long</span>
+                <span class="material-symbols-outlined stat-mini-icon">contact_mail</span>
             </div>
             <span class="stat-mini-value">@_totalCount</span>
         </div>
@@ -61,15 +61,15 @@
             <div class="search-filter">
                 <div class="search-input">
                     <span class="material-symbols-outlined">search</span>
-                    <input type="text" placeholder="Tìm kiếm theo mã giao dịch, mã vé, tên sản phẩm..." @bind="searchQuery" @oninput="OnSearchChanged" />
+                    <input type="text" placeholder="Tìm kiếm theo email, nội dung..." @bind="searchQuery" @oninput="OnSearchChanged" />
                 </div>
                 <div class="category-dropdown">
                     <select @bind="_statusFilter" @bind:after="OnFilterChanged">
                         <option value="">Tất cả</option>
-                        <option value="pending">Chờ thanh toán</option>
-                        <option value="paid">Đã thanh toán</option>
-                        <option value="failed">Thất bại</option>
-                        <option value="expired">Hết hạn</option>
+                        <option value="moi">Mới</option>
+                        <option value="dadoc">Đã đọc</option>
+                        <option value="daxuly">Đã xử lý</option>
+                        <option value="boqua">Bỏ qua</option>
                     </select>
                     <span class="material-symbols-outlined dropdown-icon">expand_more</span>
                 </div>
@@ -80,103 +80,80 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th @onclick="() => ToggleSort(nameof(Order.TxnRef))" class="sortable">
-                            Mã giao dịch
-                            @GetSortIcon(nameof(Order.TxnRef))
+                        <th>ID</th>
+                        <th @onclick="() => ToggleSort(nameof(Contact.Type))" class="sortable">
+                            Loại
+                            @GetSortIcon(nameof(Contact.Type))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Product.Name))" class="sortable">
-                            Sản phẩm
-                            @GetSortIcon(nameof(Product.Name))
+                        <th @onclick="() => ToggleSort(nameof(Contact.Email))" class="sortable">
+                            Email
+                            @GetSortIcon(nameof(Contact.Email))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Ticket.Code))" class="sortable">
-                            Mã vé
-                            @GetSortIcon(nameof(Ticket.Code))
-                        </th>
-                        <th @onclick="() => ToggleSort(nameof(Order.Quantity))" class="sortable">
-                            Số lượng
-                            @GetSortIcon(nameof(Order.Quantity))
-                        </th>
-                        <th @onclick="() => ToggleSort(nameof(Order.UnitPrice))" class="sortable">
-                            Đơn giá
-                            @GetSortIcon(nameof(Order.UnitPrice))
-                        </th>
-                        <th @onclick="() => ToggleSort(nameof(Order.TotalAmount))" class="sortable">
-                            Tổng tiền
-                            @GetSortIcon(nameof(Order.TotalAmount))
+                        <th @onclick="() => ToggleSort(nameof(Contact.Content))" class="sortable">
+                            Nội dung
+                            @GetSortIcon(nameof(Contact.Content))
                         </th>
                         <th>Trạng thái</th>
-                        <th>Mã VNPay</th>
-                        <th @onclick="() => ToggleSort(nameof(Order.DateCreated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Contact.DateCreated))" class="sortable">
                             Ngày tạo
-                            @GetSortIcon(nameof(Order.DateCreated))
+                            @GetSortIcon(nameof(Contact.DateCreated))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Order.DateUpdated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Contact.DateUpdated))" class="sortable">
                             Ngày cập nhật
-                            @GetSortIcon(nameof(Order.DateUpdated))
+                            @GetSortIcon(nameof(Contact.DateUpdated))
                         </th>
                         <th class="text-right">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
-@if (_pagedOrders == null)
+@if (_pagedContacts == null)
                     {
                         <tr>
-                            <td colspan="11" class="text-center py-8 text-on-surface-variant">
+                            <td colspan="8" class="text-center py-8 text-on-surface-variant">
                                 Đang tải...
                             </td>
                         </tr>
                     }
                     else
                     {
-                        foreach (var order in _pagedOrders)
+                        foreach (var contact in _pagedContacts)
                         {
                             <tr>
                                 <td>
-                                    <span class="order-ref" title="@order.TxnRef">@AppUtilities.TruncateMiddle(order.TxnRef, 20)</span>
+                                    <span class="contact-id">@contact.ContactId</span>
                                 </td>
                                 <td>
-                                    <span class="product-name" title="@order.Product?.Name">
-                                        @AppUtilities.TruncateMiddle(order.Product?.Name ?? "-", 25)
-                                    </span>
+                                    <span class="type-tag @GetTypeClass(contact.Type)">@GetTypeText(contact.Type)</span>
                                 </td>
                                 <td>
-                                    <span class="ticket-code" title="@order.Ticket?.Code">@AppUtilities.TruncateMiddle(order.Ticket?.Code ?? "-", 15)</span>
+                                    <span class="email-text" title="@contact.Email">@AppUtilities.TruncateMiddle(contact.Email, 30)</span>
                                 </td>
                                 <td>
-                                    <span class="quantity-text">@order.Quantity</span>
+                                    <span class="content-text" title="@contact.Content">@AppUtilities.TruncateMiddle(contact.Content, 40)</span>
                                 </td>
                                 <td>
-                                    <span class="price-text">@order.UnitPrice.ToString("N0")₫</span>
+                                    <span class="status-tag @GetStatusClass(contact.Status)">@GetStatusText(contact.Status)</span>
                                 </td>
                                 <td>
-                                    <span class="price-text">@order.TotalAmount.ToString("N0")₫</span>
+                                    <span class="date-text">@contact.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
                                 <td>
-                                    <span class="status-tag @GetStatusClass(order.Status)">@GetStatusText(order.Status)</span>
-                                </td>
-                                <td>
-                                    <span class="vnp-text">@(order.VnpayTransactionNo ?? "-")</span>
-                                </td>
-                                <td>
-                                    <span class="date-text">@order.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
-                                </td>
-                                <td>
-                                    <span class="date-text">@order.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
+                                    <span class="date-text">@contact.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
                                 <td>
                                     <div class="row-actions">
-                                        <button class="row-action-btn" title="Xem chi tiết" @onclick="() => ShowDetailModal(order)">
+                                        <button class="row-action-btn" title="Xem chi tiết" @onclick="() => ShowDetailModal(contact)">
                                             <span class="material-symbols-outlined">visibility</span>
                                         </button>
                                     </div>
                                 </td>
                             </tr>
                         }
-                        if (!_pagedOrders.Any())
+                        if (!_pagedContacts.Any())
                         {
                             <tr>
-                                <td colspan="11" class="text-center py-8 text-on-surface-variant">
-                                    Không có đơn hàng nào.
+                                <td colspan="8" class="text-center py-8 text-on-surface-variant">
+                                    Không có liên hệ nào.
                                 </td>
                             </tr>
                         }
@@ -194,9 +171,9 @@
                     class="page-size-input"
                     min="1"
                     @bind="_pageSize"
-                    @bind:after="UpdatePagedOrders" />
+                    @bind:after="UpdatePagedContacts" />
                 </div>
-                <span class="showing-text">Hiển thị @startItem-@endItem của @_totalFiltered đơn hàng</span>
+                <span class="showing-text">Hiển thị @startItem-@endItem của @_totalFiltered liên hệ</span>
                 <div class="pagination">
                     <button class="page-btn" disabled="@(_currentPage == 1)" @onclick="() => GoToPage(_currentPage - 1)">
                         <span class="material-symbols-outlined">chevron_left</span>
@@ -234,68 +211,51 @@
     <div class="editor-modal-overlay" @onclick="CloseDetailModal">
         <div class="editor-modal" @onclick:stopPropagation="true">
             <div class="editor-header">
-                <h3>Chi tiết đơn hàng</h3>
+                <h3>Chi tiết liên hệ</h3>
                 <button class="close-btn" @onclick="CloseDetailModal">
                     <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
             <div class="editor-body">
-                @if (_selectedOrder != null)
+                @if (_selectedContact != null)
                 {
                     <div class="detail-grid">
                         <div class="detail-item">
-                            <span class="detail-label">Mã giao dịch</span>
-                            <span class="detail-value">@_selectedOrder.TxnRef</span>
+                            <span class="detail-label">ID</span>
+                            <span class="detail-value">@_selectedContact.ContactId</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Sản phẩm</span>
-                            <span class="detail-value">@(_selectedOrder.Product?.Name ?? "-")</span>
+                            <span class="detail-label">Loại</span>
+                            <span class="detail-value">
+                                <span class="type-tag @GetTypeClass(_selectedContact.Type)">@GetTypeText(_selectedContact.Type)</span>
+                            </span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Mã sản phẩm</span>
-                            <span class="detail-value">@(_selectedOrder.Product?.ProductId.ToString() ?? "-")</span>
+                            <span class="detail-label">Email</span>
+                            <span class="detail-value">@_selectedContact.Email</span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Mã vé</span>
-                            <span class="detail-value">@(_selectedOrder.Ticket?.Code ?? "-")</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Số lượng</span>
-                            <span class="detail-value">@_selectedOrder.Quantity</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Đơn giá</span>
-                            <span class="detail-value">@_selectedOrder.UnitPrice.ToString("N0")₫</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Tổng tiền</span>
-                            <span class="detail-value">@_selectedOrder.TotalAmount.ToString("N0")₫</span>
+                            <span class="detail-label">Nội dung</span>
+                            <span class="detail-value content-full">@_selectedContact.Content</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Trạng thái</span>
                             <span class="detail-value">
-                                <span class="status-tag @GetStatusClass(_selectedOrder.Status)">@GetStatusText(_selectedOrder.Status)</span>
+                                <select class="status-select" @onchange="async (e) => await ChangeStatus(_selectedContact, e.Value?.ToString() ?? string.Empty)">
+                                    <option value="Moi" selected="@(_selectedContact.Status == ContactStatus.Moi)">Mới</option>
+                                    <option value="DaDoc" selected="@(_selectedContact.Status == ContactStatus.DaDoc)">Đã đọc</option>
+                                    <option value="DaXuLy" selected="@(_selectedContact.Status == ContactStatus.DaXuLy)">Đã xử lý</option>
+                                    <option value="BoQua" selected="@(_selectedContact.Status == ContactStatus.BoQua)">Bỏ qua</option>
+                                </select>
                             </span>
                         </div>
                         <div class="detail-item">
-                            <span class="detail-label">Mã VNPay</span>
-                            <span class="detail-value">@(_selectedOrder.VnpayTransactionNo ?? "-")</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Mã phản hồi</span>
-                            <span class="detail-value">@(_selectedOrder.VnpayResponseCode ?? "-")</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Trạng thái VNPay</span>
-                            <span class="detail-value">@(_selectedOrder.VnpayTransactionStatus ?? "-")</span>
-                        </div>
-                        <div class="detail-item">
                             <span class="detail-label">Ngày tạo</span>
-                            <span class="detail-value">@_selectedOrder.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
+                            <span class="detail-value">@_selectedContact.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
                         </div>
                         <div class="detail-item">
                             <span class="detail-label">Ngày cập nhật</span>
-                            <span class="detail-value">@_selectedOrder.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
+                            <span class="detail-value">@_selectedContact.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
                         </div>
                     </div>
                 }
@@ -313,7 +273,7 @@
         vertical-align: middle;
     }
 
-    .order-manager[data-theme="admin"] {
+    .contact-manager[data-theme="admin"] {
         --primary: #1E3A8A;
         --primary-container: #1E3A8A;
         --on-primary: #ffffff;
@@ -512,32 +472,71 @@
             background: var(--surface-container);
         }
 
-    .order-ref {
+    .contact-id {
         font-weight: 500;
         color: var(--on-surface);
     }
 
-    .product-name {
-        color: var(--on-surface);
+    .type-tag {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
         font-weight: 500;
     }
 
-    .ticket-code {
-        color: var(--on-surface-variant);
-    }
+        .type-tag.feedback {
+            background: #dbeafe;
+            color: #1e40af;
+        }
 
-    .price-text {
-        font-weight: 500;
+        .type-tag.bug {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+    .email-text {
         color: var(--on-surface);
     }
 
-    .quantity-text {
+    .content-text {
         color: var(--on-surface-variant);
+        max-width: 200px;
     }
 
-    .vnp-text {
-        color: var(--on-surface-variant);
-        font-size: 0.8125rem;
+    .status-tag.new {
+        background: #fef3c7;
+        color: #92400e;
+    }
+
+    .status-tag.read {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .status-tag.processed {
+        background: #dcfce7;
+        color: #166534;
+    }
+
+    .status-tag.ignored {
+        background: var(--secondary-container);
+        color: var(--on-secondary-container);
+    }
+
+    .content-full {
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-width: 300px;
+    }
+
+    .status-select {
+        padding: 0.25rem 0.5rem;
+        border: 1px solid var(--outline-variant);
+        border-radius: 0.375rem;
+        background: var(--surface);
+        color: var(--on-surface);
+        font-size: 0.875rem;
     }
 
     .status-tag {
@@ -820,100 +819,87 @@
     private int _pageSize = 10;
     private int _jumpToPage = 1;
     private bool _showDetailModal = false;
-    private Order? _selectedOrder;
+    private Contact? _selectedContact;
 
-    private int _pendingCount;
-    private int _paidCount;
-    private int _failedCount;
-    private int _expiredCount;
+    private int _moiCount;
+    private int _daDocCount;
+    private int _daXuLyCount;
+    private int _boQuaCount;
     private int _totalCount;
 
-    private string _sortField = nameof(Order.DateCreated);
+    private string _sortField = nameof(Contact.DateCreated);
     private bool _sortDescending = true;
 
-    private List<Order> _allOrders;
-    private List<Order> _filteredOrders;
-    private List<Order> _pagedOrders;
+    private List<Contact> _allContacts;
+    private List<Contact> _filteredContacts;
+    private List<Contact> _pagedContacts;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadOrders();
+        await LoadContacts();
     }
 
-    private async Task LoadOrders()
+    private async Task LoadContacts()
     {
         using var context = DbFactory.CreateDbContext();
-        _allOrders = await context.Orders
-            .Include(o => o.Product)
-            .Include(o => o.Ticket)
-            .OrderByDescending(o => o.DateCreated)
+        _allContacts = await context.Contacts
+            .OrderByDescending(c => c.DateCreated)
             .ToListAsync();
         ApplyFilters();
     }
 
     private void UpdateCounts()
     {
-        _pendingCount = _allOrders.Count(o => o.Status == OrderStatus.PendingPayment);
-        _paidCount = _allOrders.Count(o => o.Status == OrderStatus.Paid);
-        _failedCount = _allOrders.Count(o => o.Status == OrderStatus.PaymentFailed);
-        _expiredCount = _allOrders.Count(o => o.Status == OrderStatus.Expired);
-        _totalCount = _allOrders.Count;
-        _totalPages = (int)Math.Ceiling((double)_filteredOrders.Count / _pageSize);
-        _totalFiltered = _filteredOrders.Count;
-        startItem = _filteredOrders.Count == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
-        endItem = Math.Min(_currentPage * _pageSize, _filteredOrders.Count);
+        _moiCount = _allContacts.Count(c => c.Status == ContactStatus.Moi);
+        _daDocCount = _allContacts.Count(c => c.Status == ContactStatus.DaDoc);
+        _daXuLyCount = _allContacts.Count(c => c.Status == ContactStatus.DaXuLy);
+        _boQuaCount = _allContacts.Count(c => c.Status == ContactStatus.BoQua);
+        _totalCount = _allContacts.Count;
+        _totalPages = (int)Math.Ceiling((double)_filteredContacts.Count / _pageSize);
+        _totalFiltered = _filteredContacts.Count;
+        startItem = _filteredContacts.Count == 0 ? 0 : (_currentPage - 1) * _pageSize + 1;
+        endItem = Math.Min(_currentPage * _pageSize, _filteredContacts.Count);
         _jumpToPage = _currentPage;
     }
 
     private void ApplyFilters()
     {
-        _filteredOrders = _allOrders.AsEnumerable()
-            .Where(o =>
+        _filteredContacts = _allContacts.AsEnumerable()
+            .Where(c =>
                 (string.IsNullOrEmpty(searchQuery) 
-                    || (o.TxnRef?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
-                    || (o.Ticket?.Code?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
-                    || (o.Product?.Name?.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ?? false)
-                    || o.DateUpdated.ToString("dd/MM/yyyy").Contains(searchQuery))
+                    || c.Email.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+                    || c.Content.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
                 && (string.IsNullOrWhiteSpace(_statusFilter)
-                    || (_statusFilter == "pending" && o.Status == OrderStatus.PendingPayment)
-                    || (_statusFilter == "paid" && o.Status == OrderStatus.Paid)
-                    || (_statusFilter == "failed" && o.Status == OrderStatus.PaymentFailed)
-                    || (_statusFilter == "expired" && o.Status == OrderStatus.Expired))
+                    || (_statusFilter == "moi" && c.Status == ContactStatus.Moi)
+                    || (_statusFilter == "dadoc" && c.Status == ContactStatus.DaDoc)
+                    || (_statusFilter == "daxuly" && c.Status == ContactStatus.DaXuLy)
+                    || (_statusFilter == "boqua" && c.Status == ContactStatus.BoQua))
             )
             .ToList();
 
-        _filteredOrders = _sortField switch
+        _filteredContacts = _sortField switch
         {
-            nameof(Order.TxnRef) => _sortDescending
-                ? _filteredOrders.OrderByDescending(o => o.TxnRef).ToList()
-                : _filteredOrders.OrderBy(o => o.TxnRef).ToList(),
-            nameof(Product.Name) => _sortDescending
-                ? _filteredOrders.OrderByDescending(o => o.Product?.Name ?? "").ToList()
-                : _filteredOrders.OrderBy(o => o.Product?.Name ?? "").ToList(),
-            nameof(Ticket.Code) => _sortDescending
-                ? _filteredOrders.OrderByDescending(o => o.Ticket?.Code ?? "").ToList()
-                : _filteredOrders.OrderBy(o => o.Ticket?.Code ?? "").ToList(),
-            nameof(Order.Quantity) => _sortDescending
-                ? _filteredOrders.OrderByDescending(o => o.Quantity).ToList()
-                : _filteredOrders.OrderBy(o => o.Quantity).ToList(),
-            nameof(Order.UnitPrice) => _sortDescending
-                ? _filteredOrders.OrderByDescending(o => o.UnitPrice).ToList()
-                : _filteredOrders.OrderBy(o => o.UnitPrice).ToList(),
-            nameof(Order.TotalAmount) => _sortDescending
-                ? _filteredOrders.OrderByDescending(o => o.TotalAmount).ToList()
-                : _filteredOrders.OrderBy(o => o.TotalAmount).ToList(),
-            nameof(Order.DateCreated) => _sortDescending
-                ? _filteredOrders.OrderByDescending(o => o.DateCreated).ToList()
-                : _filteredOrders.OrderBy(o => o.DateCreated).ToList(),
+            nameof(Contact.Type) => _sortDescending
+                ? _filteredContacts.OrderByDescending(c => c.Type).ToList()
+                : _filteredContacts.OrderBy(c => c.Type).ToList(),
+            nameof(Contact.Email) => _sortDescending
+                ? _filteredContacts.OrderByDescending(c => c.Email).ToList()
+                : _filteredContacts.OrderBy(c => c.Email).ToList(),
+            nameof(Contact.Content) => _sortDescending
+                ? _filteredContacts.OrderByDescending(c => c.Content).ToList()
+                : _filteredContacts.OrderBy(c => c.Content).ToList(),
+            nameof(Contact.DateCreated) => _sortDescending
+                ? _filteredContacts.OrderByDescending(c => c.DateCreated).ToList()
+                : _filteredContacts.OrderBy(c => c.DateCreated).ToList(),
             _ => _sortDescending
-                ? _filteredOrders.OrderByDescending(o => o.DateUpdated).ToList()
-                : _filteredOrders.OrderBy(o => o.DateUpdated).ToList()
+                ? _filteredContacts.OrderByDescending(c => c.DateUpdated).ToList()
+                : _filteredContacts.OrderBy(c => c.DateUpdated).ToList()
         };
         _currentPage = 1;
-        UpdatePagedOrders();
+        UpdatePagedContacts();
     }
 
-    private void UpdatePagedOrders()
+    private void UpdatePagedContacts()
     {
         if (_pageSize < 1)
         {
@@ -921,7 +907,7 @@
             return;
         }
 
-        _pagedOrders = _filteredOrders
+        _pagedContacts = _filteredContacts
             .Skip((_currentPage - 1) * _pageSize)
             .Take(_pageSize)
             .ToList();
@@ -950,7 +936,7 @@
         if (page >= 1 && page <= _totalPages)
         {
             _currentPage = page;
-            UpdatePagedOrders();
+            UpdatePagedContacts();
             await JS.InvokeVoidAsync("scrollTo", 0, 0);
         }
     }
@@ -984,34 +970,85 @@
         return _sortDescending ? " ↓" : " ↑";
     }
 
-    private void ShowDetailModal(Order order)
+    private void ShowDetailModal(Contact contact)
     {
-        _selectedOrder = order;
+        _selectedContact = contact;
         _showDetailModal = true;
     }
 
     private void CloseDetailModal()
     {
         _showDetailModal = false;
-        _selectedOrder = null;
+        _selectedContact = null;
     }
 
-    private string GetStatusClass(OrderStatus status) => status switch
+    private async Task ChangeStatus(Contact contact, string statusStr)
     {
-        OrderStatus.PendingPayment => "pending",
-        OrderStatus.Paid => "paid",
-        OrderStatus.PaymentFailed => "failed",
-        OrderStatus.Expired => "expired",
+        try
+        {
+            var newStatus = statusStr switch
+            {
+                "Moi" => ContactStatus.Moi,
+                "DaDoc" => ContactStatus.DaDoc,
+                "DaXuLy" => ContactStatus.DaXuLy,
+                "BoQua" => ContactStatus.BoQua,
+                _ => contact.Status
+            };
+
+            if (contact.Status != newStatus)
+            {
+                using var context = DbFactory.CreateDbContext();
+                var dbContact = await context.Contacts.FindAsync(contact.ContactId);
+                if (dbContact != null)
+                {
+                    dbContact.Status = newStatus;
+                    dbContact.DateUpdated = DateTime.UtcNow;
+                    await context.SaveChangesAsync();
+                    ToastService.ShowSuccess("Đã cập nhật trạng thái");
+                    await LoadContacts();
+                    if (_selectedContact != null)
+                    {
+                        _selectedContact = _allContacts.FirstOrDefault(c => c.ContactId == _selectedContact.ContactId);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowError("Lỗi cập nhật trạng thái: " + ex.Message);
+        }
+    }
+
+    private string GetStatusClass(ContactStatus status) => status switch
+    {
+        ContactStatus.Moi => "new",
+        ContactStatus.DaDoc => "read",
+        ContactStatus.DaXuLy => "processed",
+        ContactStatus.BoQua => "ignored",
         _ => ""
     };
 
-    private string GetStatusText(OrderStatus status) => status switch
+    private string GetStatusText(ContactStatus status) => status switch
     {
-        OrderStatus.PendingPayment => "Chờ thanh toán",
-        OrderStatus.Paid => "Đã thanh toán",
-        OrderStatus.PaymentFailed => "Thất bại",
-        OrderStatus.Expired => "Hết hạn",
+        ContactStatus.Moi => "Mới",
+        ContactStatus.DaDoc => "Đã đọc",
+        ContactStatus.DaXuLy => "Đã xử lý",
+        ContactStatus.BoQua => "Bỏ qua",
         _ => status.ToString()
+    };
+
+    private string GetTypeClass(ContactType type) => type switch
+    {
+        ContactType.GopY => "feedback",
+        ContactType.BaoLoi => "bug",
+        _ => ""
+    };
+
+    private string GetTypeText(ContactType type) => type switch
+    {
+        ContactType.GopY => "Góp ý",
+        ContactType.BaoLoi => "Báo lỗi",
+        _ => type.ToString()
     };
 
     private IEnumerable<object> GetVisiblePages()

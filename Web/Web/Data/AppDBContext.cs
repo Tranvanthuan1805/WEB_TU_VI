@@ -12,6 +12,7 @@ namespace Web.Data
         public DbSet<Product> Products { get; set; }
         public DbSet<Ticket> Tickets { get; set; }
         public DbSet<Order> Orders { get; set; }
+        public DbSet<Contact> Contacts { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

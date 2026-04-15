@@ -81,6 +81,43 @@
                 </EditForm>
             </div>
         </section>
+
+        <section class="config-card full-width">
+            <div class="card-header">
+                <span class="material-symbols-outlined">ads_click</span>
+                <h3>Google AdSense</h3>
+            </div>
+            <div class="card-body">
+                <p class="seed-description">Cấu hình Google AdSense Auto Ads. Script sẽ được chèn vào các trang public khi bật.</p>
+                <EditForm FormName="GoogleAdSenseConfig" Model="_googleAdSenseConfig" OnValidSubmit="SaveGoogleAdSenseConfig">
+                    <DataAnnotationsValidator />
+                    <div class="vnpay-form">
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <InputCheckbox id="enabled" class="form-checkbox" @bind-Value="_googleAdSenseConfig.Enabled" />
+                                <span>Bật AdSense</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="publisherId">Publisher ID</label>
+                            <InputText id="publisherId" class="form-control" @bind-Value="_googleAdSenseConfig.PublisherId" 
+                                       disabled="@(!_googleAdSenseConfig.Enabled)" placeholder="ca-pub-XXXXXXXXXXXXXXX" />
+                            <ValidationMessage For="() => _googleAdSenseConfig.PublisherId" />
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-save" disabled="@(_isSavingGoogleAdSense || _isResettingGoogleAdSense)">
+                                <span class="material-symbols-outlined">save</span>
+                                @(_isSavingGoogleAdSense ? "Đang lưu..." : "Lưu")
+                            </button>
+                            <button type="button" class="btn-reset" @onclick="ResetGoogleAdSenseConfig" disabled="@(_isSavingGoogleAdSense || _isResettingGoogleAdSense)">
+                                <span class="material-symbols-outlined">refresh</span>
+                                @(_isResettingGoogleAdSense ? "Đang reset..." : "Reset")
+                            </button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </section>
     </div>
 </div>
 
@@ -91,10 +128,15 @@
     private bool _isResetting;
     [SupplyParameterFromForm(FormName = "VnpayConfig")]
     public VnPayConfigModel _vnpayConfig { get; set; } = new();
+    [SupplyParameterFromForm(FormName = "GoogleAdSenseConfig")]
+    public GoogleAdSenseConfigModel _googleAdSenseConfig { get; set; } = new();
+    private bool _isSavingGoogleAdSense;
+    private bool _isResettingGoogleAdSense;
 
     protected override void OnInitialized()
     {
         LoadVnPayConfig();
+        LoadGoogleAdSenseConfig();
     }
 
     private void LoadVnPayConfig()
@@ -198,6 +240,114 @@
         }
     }
 
+    private void LoadGoogleAdSenseConfig()
+    {
+        var googleAdSenseSection = Configuration.GetSection("GoogleAdSense");
+        var enabled = googleAdSenseSection["Enabled"] ?? "";
+        var publisherId = googleAdSenseSection["PublisherId"] ?? "";
+
+        _googleAdSenseConfig = new GoogleAdSenseConfigModel
+        {
+            Enabled = bool.TryParse(enabled, out var isEnabled) && isEnabled,
+            PublisherId = publisherId
+        };
+    }
+
+    private async Task SaveGoogleAdSenseConfig()
+    {
+        var confirmed = await ConfirmDialog.ShowAsync(
+            "Lưu cấu hình",
+            "Bạn có chắc muốn lưu cấu hình Google AdSense?",
+            "Lưu",
+            false);
+
+        if (!confirmed)
+            return;
+
+        _isSavingGoogleAdSense = true;
+        try
+        {
+            var googleAdSenseConfig = new Dictionary<string, object>
+            {
+                ["Enabled"] = _googleAdSenseConfig.Enabled.ToString().ToLower(),
+                ["PublisherId"] = _googleAdSenseConfig.PublisherId
+            };
+            await MergeAndSaveGoogleAdSenseConfig(googleAdSenseConfig, isReset: false);
+            ToastService.Show("success", "Đã lưu cấu hình Google AdSense");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi lưu: {ex.Message}");
+        }
+        finally
+        {
+            _isSavingGoogleAdSense = false;
+        }
+    }
+
+    private async Task ResetGoogleAdSenseConfig()
+    {
+        var confirmed = await ConfirmDialog.ShowAsync(
+            "Khôi phục mặc định",
+            "Bạn có chắc muốn khôi phục về giá trị mặc định từ appsettings?",
+            "Khôi phục",
+            true);
+
+        if (!confirmed)
+            return;
+
+        _isResettingGoogleAdSense = true;
+        try
+        {
+            var defaultGoogleAdSense = GetDefaultGoogleAdSenseFromAppsettings();
+            await MergeAndSaveGoogleAdSenseConfig(defaultGoogleAdSense, isReset: true);
+            LoadGoogleAdSenseConfig();
+            ToastService.Show("info", "Đã khôi phục về mặc định. Vui lòng F5.");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi khôi phục: {ex.Message}");
+        }
+        finally
+        {
+            _isResettingGoogleAdSense = false;
+        }
+    }
+
+    private Dictionary<string, object>? GetDefaultGoogleAdSenseFromAppsettings()
+    {
+        try
+        {
+            var appsettingsPath = Path.Combine(Env.ContentRootPath, "appsettings.json");
+            var json = File.ReadAllText(appsettingsPath);
+            var config = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+            if (config != null && config.TryGetValue("GoogleAdSense", out var googleAdSense))
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(
+                    googleAdSense.ToString() ?? "") ?? new();
+            }
+        }
+        catch { }
+        return new();
+    }
+
+    private async Task MergeAndSaveGoogleAdSenseConfig(Dictionary<string, object> googleAdSenseConfig, bool isReset)
+    {
+        var existingConfig = GetExistingConfigJson() ?? new();
+        var newConfig = new Dictionary<string, object>(existingConfig)
+        {
+            ["GoogleAdSense"] = googleAdSenseConfig
+        };
+
+        var configPath = Path.Combine(Env.ContentRootPath, "config.json");
+        var json = System.Text.Json.JsonSerializer.Serialize(newConfig, new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        await File.WriteAllTextAsync(configPath, json);
+    }
+
     private async Task CreateSeedData()
     {
         _isCreatingSeed = true;
@@ -268,6 +418,15 @@
         [Required(ErrorMessage = "Domain là bắt buộc")]
         [Url(ErrorMessage = "Domain không hợp lệ")]
         public string Domain { get; set; } = "";
+    }
+
+    public class GoogleAdSenseConfigModel
+    {
+        public bool Enabled { get; set; }
+
+        [Required(ErrorMessage = "Publisher ID là bắt buộc")]
+        [RegularExpression(@"^ca-pub-\d{16}$", ErrorMessage = "Publisher ID phải có dạng ca-pub-XXXXXXXXXXXXXXX")]
+        public string PublisherId { get; set; } = "";
     }
 
     private Dictionary<string, object>? GetDefaultVnPayFromAppsettings()
