@@ -155,6 +155,55 @@
                 </div>
             </div>
         </section>
+
+        <section class="config-card full-width">
+            <div class="card-header">
+                <span class="material-symbols-outlined">contact_phone</span>
+                <h3>Liên hệ tư vấn</h3>
+            </div>
+            <div class="card-body">
+                <p class="seed-description">Cấu hình hiển thị link Facebook và Zalo trong sidebar.</p>
+                <EditForm FormName="ConsultationConfig" Model="_consultationConfig" OnValidSubmit="SaveConsultationConfig">
+                    <DataAnnotationsValidator />
+                    <div class="vnpay-form">
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <InputCheckbox id="facebookEnabled" class="form-checkbox" @bind-Value="_consultationConfig.FacebookEnabled" />
+                                <span>Hiển thị link Facebook</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="facebookUrl">Link Facebook</label>
+                            <InputText id="facebookUrl" class="form-control" @bind-Value="_consultationConfig.FacebookUrl" 
+                                       disabled="@(!_consultationConfig.FacebookEnabled)" placeholder="https://facebook.com/yourpage" />
+                            <ValidationMessage For="() => _consultationConfig.FacebookUrl" />
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <InputCheckbox id="zaloEnabled" class="form-checkbox" @bind-Value="_consultationConfig.ZaloEnabled" />
+                                <span>Hiển thị link Zalo</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="zaloUrl">Link Zalo</label>
+                            <InputText id="zaloUrl" class="form-control" @bind-Value="_consultationConfig.ZaloUrl" 
+                                       disabled="@(!_consultationConfig.ZaloEnabled)" placeholder="https://zalo.me/yourid" />
+                            <ValidationMessage For="() => _consultationConfig.ZaloUrl" />
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-save" disabled="@(_isSavingConsultation || _isResettingConsultation)">
+                                <span class="material-symbols-outlined">save</span>
+                                @(_isSavingConsultation ? "Đang lưu..." : "Lưu")
+                            </button>
+                            <button type="button" class="btn-reset" @onclick="ResetConsultationConfig" disabled="@(_isSavingConsultation || _isResettingConsultation)">
+                                <span class="material-symbols-outlined">refresh</span>
+                                @(_isResettingConsultation ? "Đang reset..." : "Reset")
+                            </button>
+                        </div>
+                    </div>
+                </EditForm>
+            </div>
+        </section>
     </div>
 </div>
 
@@ -174,12 +223,17 @@
     private bool _isCleaningUp;
     [SupplyParameterFromForm(FormName = "FreeUsageLimitConfig")]
     public FreeUsageLimitConfigModel _freeUsageLimitConfig { get; set; } = new();
+    private bool _isSavingConsultation;
+    private bool _isResettingConsultation;
+    [SupplyParameterFromForm(FormName = "ConsultationConfig")]
+    public ConsultationConfigModel _consultationConfig { get; set; } = new();
 
     protected override void OnInitialized()
     {
         LoadVnPayConfig();
         LoadGoogleAdSenseConfig();
         LoadFreeUsageLimitConfig();
+        LoadConsultationConfig();
     }
 
     private void LoadVnPayConfig()
@@ -665,5 +719,122 @@
     {
         [Required(ErrorMessage = "DailyLimit là bắt buộc")]
         public int DailyLimit { get; set; } = 5;
+    }
+
+    private void LoadConsultationConfig()
+    {
+        var section = Configuration.GetSection("Consultation");
+        _consultationConfig = new ConsultationConfigModel
+        {
+            FacebookEnabled = bool.TryParse(section["FacebookEnabled"], out var fb) && fb,
+            FacebookUrl = section["FacebookUrl"] ?? "",
+            ZaloEnabled = bool.TryParse(section["ZaloEnabled"], out var zl) && zl,
+            ZaloUrl = section["ZaloUrl"] ?? ""
+        };
+    }
+
+    private async Task SaveConsultationConfig()
+    {
+        var confirmed = await ConfirmDialog.ShowAsync(
+            "Lưu cấu hình",
+            "Bạn có chắc muốn lưu cấu hình liên hệ tư vấn?",
+            "Lưu",
+            false);
+
+        if (!confirmed)
+            return;
+
+        _isSavingConsultation = true;
+        try
+        {
+            var consultationConfig = new Dictionary<string, object>
+            {
+                ["FacebookEnabled"] = _consultationConfig.FacebookEnabled.ToString().ToLower(),
+                ["FacebookUrl"] = _consultationConfig.FacebookUrl,
+                ["ZaloEnabled"] = _consultationConfig.ZaloEnabled.ToString().ToLower(),
+                ["ZaloUrl"] = _consultationConfig.ZaloUrl
+            };
+            await MergeAndSaveConsultationConfig(consultationConfig);
+            ToastService.Show("success", "Đã lưu cấu hình liên hệ tư vấn");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi lưu: {ex.Message}");
+        }
+        finally
+        {
+            _isSavingConsultation = false;
+        }
+    }
+
+    private async Task ResetConsultationConfig()
+    {
+        var confirmed = await ConfirmDialog.ShowAsync(
+            "Khôi phục mặc định",
+            "Bạn có chắc muốn khôi phục về giá trị mặc định từ appsettings?",
+            "Khôi phục",
+            true);
+
+        if (!confirmed)
+            return;
+
+        _isResettingConsultation = true;
+        try
+        {
+            var defaultConfig = GetDefaultConsultationFromAppsettings();
+            await MergeAndSaveConsultationConfig(defaultConfig);
+            LoadConsultationConfig();
+            ToastService.Show("info", "Đã khôi phục về mặc định. Vui lòng F5.");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi khôi phục: {ex.Message}");
+        }
+        finally
+        {
+            _isResettingConsultation = false;
+        }
+    }
+
+    private Dictionary<string, object>? GetDefaultConsultationFromAppsettings()
+    {
+        try
+        {
+            var appsettingsPath = Path.Combine(Env.ContentRootPath, "appsettings.json");
+            var json = File.ReadAllText(appsettingsPath);
+            var config = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+            if (config != null && config.TryGetValue("Consultation", out var consultation))
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(
+                    consultation.ToString() ?? "") ?? new();
+            }
+        }
+        catch { }
+        return new();
+    }
+
+    private async Task MergeAndSaveConsultationConfig(Dictionary<string, object> consultationConfig)
+    {
+        var existingConfig = GetExistingConfigJson() ?? new();
+        var newConfig = new Dictionary<string, object>(existingConfig)
+        {
+            ["Consultation"] = consultationConfig
+        };
+
+        var configPath = Path.Combine(Env.ContentRootPath, "config.json");
+        var json = System.Text.Json.JsonSerializer.Serialize(newConfig, new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        await File.WriteAllTextAsync(configPath, json);
+    }
+
+    public class ConsultationConfigModel
+    {
+        public bool FacebookEnabled { get; set; }
+        public string FacebookUrl { get; set; } = "";
+        public bool ZaloEnabled { get; set; }
+        public string ZaloUrl { get; set; } = "";
     }
 }

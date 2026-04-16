@@ -41,6 +41,31 @@
                                     <h4 class="text-primary-container font-headline text-lg mb-2">Hạn (Periods)</h4>
                                     <p class="text-on-surface-variant text-sm leading-relaxed font-light">Đại vận 10 năm và tiểu vận hàng năm giúp dự đoán các biến cố và thời cơ trong cuộc sống.</p>
                                 </div>
+                                @if (_facebookEnabled || _zaloEnabled)
+                                {
+                                    <div class="mt-8 pt-8 border-t border-outline-variant">
+                                        <span class="label-sm uppercase tracking-widest text-primary font-label text-[10px] mb-4 block">Liên hệ</span>
+                                        <h3 class="font-headline text-2xl text-primary mb-6 italic">Tư vấn chuyên sâu</h3>
+                                        <div class="flex gap-4">
+                                            @if (_facebookEnabled && !string.IsNullOrEmpty(_facebookUrl))
+                                            {
+                                                <a href="@_facebookUrl" target="_blank" rel="noopener noreferrer" 
+                                                   class="flex items-center gap-2 text-primary-container hover:text-primary transition-colors">
+                                                    <span class="material-symbols-outlined">chat</span>
+                                                    <span class="text-sm">Facebook</span>
+                                                </a>
+                                            }
+                                            @if (_zaloEnabled && !string.IsNullOrEmpty(_zaloUrl))
+                                            {
+                                                <a href="@_zaloUrl" target="_blank" rel="noopener noreferrer"
+                                                   class="flex items-center gap-2 text-primary-container hover:text-primary transition-colors">
+                                                    <span class="material-symbols-outlined">chat</span>
+                                                    <span class="text-sm">Zalo</span>
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
                             </div>
                         </div>
                     </div>
@@ -112,10 +137,15 @@
     private List<Post> _recentPosts;
     private bool _adSenseEnabled;
     private string _adSensePublisherId = "";
+    private bool _facebookEnabled;
+    private string _facebookUrl = "";
+    private bool _zaloEnabled;
+    private string _zaloUrl = "";
 
     protected override async Task OnInitializedAsync()
     {
         LoadGoogleAdSenseConfig();
+        LoadConsultationConfig();
 
         using var context = DbFactory.CreateDbContext();
         _recentPosts = await context.Posts
@@ -133,6 +163,15 @@
 
         _adSenseEnabled = bool.TryParse(enabled, out var isEnabled) && isEnabled;
         _adSensePublisherId = publisherId;
+    }
+
+    private void LoadConsultationConfig()
+    {
+        var section = Configuration.GetSection("Consultation");
+        _facebookEnabled = bool.TryParse(section["FacebookEnabled"], out var fb) && fb;
+        _facebookUrl = section["FacebookUrl"] ?? "";
+        _zaloEnabled = bool.TryParse(section["ZaloEnabled"], out var zl) && zl;
+        _zaloUrl = section["ZaloUrl"] ?? "";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
