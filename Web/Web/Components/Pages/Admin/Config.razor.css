@@ -548,3 +548,41 @@
     accent-color: var(--primary);
     cursor: pointer;
 }
+
+.form-hint {
+    font-size: 0.75rem;
+    color: var(--outline);
+    margin-top: 0.25rem;
+}
+
+.cleanup-section {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(197, 197, 211, 0.15);
+}
+
+.btn-cleanup {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.5rem;
+    border: 1px solid rgba(197, 197, 211, 0.3);
+    border-radius: 0.375rem;
+    background-color: var(--surface-container-high);
+    color: var(--on-surface);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+    .btn-cleanup:hover:not(:disabled) {
+        background-color: var(--error-container);
+        color: var(--primary);
+        border-color: var(--error);
+    }
+
+.btn-cleanup:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

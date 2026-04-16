@@ -118,6 +118,43 @@
                 </EditForm>
             </div>
         </section>
+
+        <section class="config-card full-width">
+            <div class="card-header">
+                <span class="material-symbols-outlined">history</span>
+                <h3>Giới hạn sử dụng miễn phí</h3>
+            </div>
+            <div class="card-body">
+                <p class="seed-description">Cấu hình số lần gọi lá số miễn phí mỗi ngày. Đặt -1 để không giới hạn.</p>
+                <EditForm FormName="FreeUsageLimitConfig" Model="_freeUsageLimitConfig" OnValidSubmit="SaveFreeUsageLimitConfig">
+                    <DataAnnotationsValidator />
+                    <div class="vnpay-form">
+                        <div class="form-group">
+                            <label for="dailyLimit">Số lần miễn phí/ngày</label>
+                            <InputNumber id="dailyLimit" class="form-control" @bind-Value="_freeUsageLimitConfig.DailyLimit" />
+                            <ValidationMessage For="() => _freeUsageLimitConfig.DailyLimit" />
+                            <small class="form-hint">Nhập -1 để không giới hạn</small>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-save" disabled="@(_isSavingFreeUsageLimit || _isResettingFreeUsageLimit)">
+                                <span class="material-symbols-outlined">save</span>
+                                @(_isSavingFreeUsageLimit ? "Đang lưu..." : "Lưu")
+                            </button>
+                            <button type="button" class="btn-reset" @onclick="ResetFreeUsageLimitConfig" disabled="@(_isSavingFreeUsageLimit || _isResettingFreeUsageLimit)">
+                                <span class="material-symbols-outlined">refresh</span>
+                                @(_isResettingFreeUsageLimit ? "Đang reset..." : "Reset")
+                            </button>
+                        </div>
+                    </div>
+                </EditForm>
+                <div class="cleanup-section">
+                    <button type="button" class="btn-cleanup" @onclick="CleanupOldUsageData" disabled="@_isCleaningUp">
+                        <span class="material-symbols-outlined">delete_sweep</span>
+                        @(_isCleaningUp ? "Đang xóa..." : "Xóa dữ liệu > 30 ngày")
+                    </button>
+                </div>
+            </div>
+        </section>
     </div>
 </div>
 
@@ -132,11 +169,17 @@
     public GoogleAdSenseConfigModel _googleAdSenseConfig { get; set; } = new();
     private bool _isSavingGoogleAdSense;
     private bool _isResettingGoogleAdSense;
+    private bool _isSavingFreeUsageLimit;
+    private bool _isResettingFreeUsageLimit;
+    private bool _isCleaningUp;
+    [SupplyParameterFromForm(FormName = "FreeUsageLimitConfig")]
+    public FreeUsageLimitConfigModel _freeUsageLimitConfig { get; set; } = new();
 
     protected override void OnInitialized()
     {
         LoadVnPayConfig();
         LoadGoogleAdSenseConfig();
+        LoadFreeUsageLimitConfig();
     }
 
     private void LoadVnPayConfig()
@@ -476,5 +519,151 @@
         });
 
         await File.WriteAllTextAsync(configPath, json);
+    }
+
+    private void LoadFreeUsageLimitConfig()
+    {
+        var freeUsageSection = Configuration.GetSection("FreeUsageLimit");
+        var dailyLimit = freeUsageSection["DailyLimit"] ?? "";
+
+        _freeUsageLimitConfig = new FreeUsageLimitConfigModel
+        {
+            DailyLimit = int.TryParse(dailyLimit, out var limit) ? limit : 5
+        };
+    }
+
+    private async Task SaveFreeUsageLimitConfig()
+    {
+        var confirmed = await ConfirmDialog.ShowAsync(
+            "Lưu cấu hình",
+            "Bạn có chắc muốn lưu cấu hình giới hạn sử dụng miễn phí?",
+            "Lưu",
+            false);
+
+        if (!confirmed)
+            return;
+
+        _isSavingFreeUsageLimit = true;
+        try
+        {
+            var freeUsageConfig = new Dictionary<string, object>
+            {
+                ["DailyLimit"] = _freeUsageLimitConfig.DailyLimit.ToString()
+            };
+            await MergeAndSaveFreeUsageLimitConfig(freeUsageConfig, isReset: false);
+            ToastService.Show("success", "Đã lưu cấu hình giới hạn sử dụng miễn phí");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi lưu: {ex.Message}");
+        }
+        finally
+        {
+            _isSavingFreeUsageLimit = false;
+        }
+    }
+
+    private async Task ResetFreeUsageLimitConfig()
+    {
+        var confirmed = await ConfirmDialog.ShowAsync(
+            "Khôi phục mặc định",
+            "Bạn có chắc muốn khôi phục về giá trị mặc định từ appsettings?",
+            "Khôi phục",
+            true);
+
+        if (!confirmed)
+            return;
+
+        _isResettingFreeUsageLimit = true;
+        try
+        {
+            var defaultFreeUsage = GetDefaultFreeUsageLimitFromAppsettings();
+            await MergeAndSaveFreeUsageLimitConfig(defaultFreeUsage, isReset: true);
+            LoadFreeUsageLimitConfig();
+            ToastService.Show("info", "Đã khôi phục về mặc định. Vui lòng F5.");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi khôi phục: {ex.Message}");
+        }
+        finally
+        {
+            _isResettingFreeUsageLimit = false;
+        }
+    }
+
+    private Dictionary<string, object>? GetDefaultFreeUsageLimitFromAppsettings()
+    {
+        try
+        {
+            var appsettingsPath = Path.Combine(Env.ContentRootPath, "appsettings.json");
+            var json = File.ReadAllText(appsettingsPath);
+            var config = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+            if (config != null && config.TryGetValue("FreeUsageLimit", out var freeUsage))
+            {
+                return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(
+                    freeUsage.ToString() ?? "") ?? new();
+            }
+        }
+        catch { }
+        return new();
+    }
+
+    private async Task MergeAndSaveFreeUsageLimitConfig(Dictionary<string, object> freeUsageConfig, bool isReset)
+    {
+        var existingConfig = GetExistingConfigJson() ?? new();
+        var newConfig = new Dictionary<string, object>(existingConfig)
+        {
+            ["FreeUsageLimit"] = freeUsageConfig
+        };
+
+        var configPath = Path.Combine(Env.ContentRootPath, "config.json");
+        var json = System.Text.Json.JsonSerializer.Serialize(newConfig, new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        await File.WriteAllTextAsync(configPath, json);
+    }
+
+    private async Task CleanupOldUsageData()
+    {
+        var confirmed = await ConfirmDialog.ShowAsync(
+            "Xóa dữ liệu cũ",
+            "Bạn có chắc muốn xóa dữ liệu sử dụng > 30 ngày?",
+            "Xóa",
+            true);
+
+        if (!confirmed)
+            return;
+
+        _isCleaningUp = true;
+        try
+        {
+            using var context = DbFactory.CreateDbContext();
+            var cutoffDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30));
+            var oldRecords = await context.DailyUsageStats
+                .Where(s => s.Date < cutoffDate)
+                .ToListAsync();
+            
+            context.DailyUsageStats.RemoveRange(oldRecords);
+            var deletedCount = await context.SaveChangesAsync();
+            
+            ToastService.Show("success", $"Đã xóa {deletedCount} bản ghi dữ liệu cũ");
+        }
+        catch (Exception ex)
+        {
+            ToastService.Show("error", $"Lỗi khi xóa: {ex.Message}");
+        }
+        finally
+        {
+            _isCleaningUp = false;
+        }
+    }
+
+    public class FreeUsageLimitConfigModel
+    {
+        [Required(ErrorMessage = "DailyLimit là bắt buộc")]
+        public int DailyLimit { get; set; } = 5;
     }
 }

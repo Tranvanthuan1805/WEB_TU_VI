@@ -1,5 +1,8 @@
 @page "/"
 @attribute [StreamRendering]
+@inject IJSRuntime JS
+@inject IConfiguration Configuration
+@inject ToastService ToastService
 
 <PageTitle>Trang chủ | Lá Số Tử Vi</PageTitle>
 
@@ -229,6 +232,48 @@
                     await context.SaveChangesAsync();
                     ticketValid = true;
                 }
+            }
+
+            if (!ticketValid)
+            {
+                var anonId = await JS.InvokeAsync<string>("getOrCreateAnonId");
+                var today = DateOnly.FromDateTime(DateTime.Now);
+                
+                using var context = DbFactory.CreateDbContext();
+                
+                var dailyLimitSection = Configuration.GetSection("FreeUsageLimit");
+                var dailyLimit = int.TryParse(dailyLimitSection["DailyLimit"], out var limit) ? limit : 5;
+                
+                var usageStats = await context.DailyUsageStats
+                    .FirstOrDefaultAsync(s => s.Date == today && s.AnonymousId == anonId);
+                
+                if (usageStats != null)
+                {
+                    if (dailyLimit != -1 && usageStats.FreeUsageCount >= dailyLimit)
+                    {
+                        ToastService.Show("warning", "Bạn đã sử dụng quá số lần miễn phí hôm nay");
+                        return;
+                    }
+                    usageStats.FreeUsageCount += 1;
+                    usageStats.LastUsedAt = DateTime.Now;
+                }
+                else
+                {
+                    if (dailyLimit != -1 && 1 > dailyLimit)
+                    {
+                        ToastService.Show("warning", "Bạn đã sử dụng quá số lần miễn phí hôm nay");
+                        return;
+                    }
+                    context.DailyUsageStats.Add(new DailyUsageStats
+                    {
+                        Date = today,
+                        AnonymousId = anonId,
+                        FreeUsageCount = 1,
+                        LastUsedAt = DateTime.Now
+                    });
+                }
+                
+                await context.SaveChangesAsync();
             }
 
             await Task.Delay(10000);

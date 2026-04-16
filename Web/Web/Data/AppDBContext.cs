@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection.Emit;
 using Web.Data;
@@ -13,6 +13,7 @@ namespace Web.Data
         public DbSet<Ticket> Tickets { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<Contact> Contacts { get; set; }
+        public DbSet<DailyUsageStats> DailyUsageStats { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
