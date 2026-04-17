@@ -21,6 +21,9 @@ namespace Web.Models
         [Display(Name = "Số lần dùng miễn phí")]
         public int FreeUsageCount { set; get; }
 
+        [Display(Name = "Số lần dùng Premium")]
+        public int PremiumUsageCount { set; get; }
+
         [Display(Name = "Lần cuối dùng")]
         public DateTime LastUsedAt { set; get; }
     }

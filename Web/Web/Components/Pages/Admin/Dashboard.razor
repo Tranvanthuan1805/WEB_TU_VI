@@ -1,11 +1,17 @@
 @page "/admin"
 @attribute [StreamRendering]
+@rendermode InteractiveServer
 
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components
 @using Web.Data
+@using System
+@using System.Globalization
+@using Microsoft.JSInterop
+@inject IJSRuntime JSRuntime
 
 @attribute [Authorize(Roles = RoleName.Administrator)]
+@implements IAsyncDisposable
 
 <PageTitle>Dashboard - Precision Admin</PageTitle>
 
@@ -13,7 +19,7 @@
     <div class="dashboard-header">
         <h2>Workspace Overview</h2>
         <div class="dashboard-header-meta">
-            <span>Analytics for March 2026</span>
+            <span>Last 30 days</span>
             <span class="live-badge">Live Updates</span>
         </div>
     </div>
@@ -21,38 +27,34 @@
     <div class="stats-grid">
         <div class="stat-card">
             <div class="stat-card-header">
-                <span class="material-symbols-outlined stat-icon">group</span>
-                <span class="stat-trend positive">+12%</span>
+                <span class="material-symbols-outlined stat-icon">shopping_cart</span>
             </div>
-            <p class="stat-label">Total Users</p>
-            <h3 class="stat-value">@totalUsers.ToString("N0")</h3>
+            <p class="stat-label">Total Orders (30d)</p>
+            <h3 class="stat-value">@totalOrders.ToString("N0")</h3>
         </div>
 
         <div class="stat-card">
             <div class="stat-card-header">
-                <span class="material-symbols-outlined stat-icon">article</span>
-                <span class="stat-trend positive">+5.2%</span>
+                <span class="material-symbols-outlined stat-icon">payments</span>
             </div>
-            <p class="stat-label">Total Articles</p>
-            <h3 class="stat-value">@totalArticles.ToString("N0")</h3>
+            <p class="stat-label">Revenue (30d)</p>
+            <h3 class="stat-value">@revenue.ToString("N0", new CultureInfo("vi-VN")) ₫</h3>
         </div>
 
         <div class="stat-card">
             <div class="stat-card-header">
-                <span class="material-symbols-outlined stat-icon">visibility</span>
-                <span class="stat-trend negative">-1.4%</span>
+                <span class="material-symbols-outlined stat-icon">contact_mail</span>
             </div>
-            <p class="stat-label">Monthly Views</p>
-            <h3 class="stat-value">@monthlyViews</h3>
+            <p class="stat-label">Total Contacts (30d)</p>
+            <h3 class="stat-value">@totalContacts.ToString("N0")</h3>
         </div>
 
         <div class="stat-card">
             <div class="stat-card-header">
-                <span class="material-symbols-outlined stat-icon">bolt</span>
-                <span class="stat-trend positive">+24%</span>
+                <span class="material-symbols-outlined stat-icon">mark_email_unread</span>
             </div>
-            <p class="stat-label">Active Sessions</p>
-            <h3 class="stat-value">@activeSessions.ToString("N0")</h3>
+            <p class="stat-label">New Contacts (24h)</p>
+            <h3 class="stat-value">@newContacts.ToString("N0")</h3>
         </div>
     </div>
 
@@ -60,203 +62,366 @@
         <div class="chart-section">
             <div class="section-header">
                 <div>
-                    <h4>Traffic Analysis</h4>
-                    <p>View frequency and engagement over last 30 days</p>
-                </div>
-                <div class="chart-toggle">
-                    <button class="toggle-btn @(_chartMode == "views" ? "active" : "")" @onclick="SetChartModeViews">Views</button>
-                    <button class="toggle-btn @(_chartMode == "users" ? "active" : "")" @onclick="SetChartModeUsers">Users</button>
+                    <h4>Orders & Revenue</h4>
+                    <p>Daily orders and revenue over last 30 days</p>
                 </div>
             </div>
             <div class="chart-container">
-                <canvas id="trafficChart"></canvas>
-            </div>
-            <div class="chart-labels">
-                <span>Mar 1</span>
-                <span>Mar 10</span>
-                <span>Mar 20</span>
-                <span>Mar 31</span>
+                @if (chartData.Any())
+                {
+                    <canvas id="trafficChart"></canvas>
+                }
+                else
+                {
+                    <div class="chart-empty">Không có dữ liệu</div>
+                }
             </div>
         </div>
 
         <div class="side-panel">
-            <div class="notification-panel">
-                <div class="notification-content">
-                    <div class="notification-header">
-                        <span class="material-symbols-outlined">info</span>
-                        <h4>System Update</h4>
-                    </div>
-                    <p>Version 2.4 deployment scheduled for 02:00 AM UTC. Expect 15 mins of intermittent latency.</p>
-                    <button class="dismiss-btn">Dismiss Alert</button>
-                </div>
-            </div>
 
             <div class="activity-panel">
                 <div class="section-header">
-                    <h4>Recent Activity</h4>
-                    <span class="material-symbols-outlined">more_horiz</span>
+                    <h4>Recent Contacts</h4>
+                    
                 </div>
                 <div class="activity-list">
-                    <div class="activity-item">
-                        <span class="activity-dot primary"></span>
-                        <div class="activity-content">
-                            <p>New user signup: <span class="highlight">Elena Vance</span></p>
-                            <span class="activity-time">2 minutes ago</span>
+                    @foreach (var contact in recentContacts)
+                    {
+                        <div class="activity-item">
+                            <span class="activity-dot @GetStatusDotClass(contact.Status)"></span>
+                            <div class="activity-content">
+                                <p>@contact.Type: <span class="highlight">@contact.Email</span></p>
+                                <span class="activity-time">@contact.DateCreated.ToString("g")</span>
+                            </div>
                         </div>
-                    </div>
-                    <div class="activity-item">
-                        <span class="activity-dot secondary"></span>
-                        <div class="activity-content">
-                            <p>Article <span class="highlight">"Design Systems"</span> approved</p>
-                            <span class="activity-time">1 hour ago</span>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <span class="activity-dot tertiary"></span>
-                        <div class="activity-content">
-                            <p>Comment flagged for review by <span class="highlight">Bot_Filter</span></p>
-                            <span class="activity-time">3 hours ago</span>
-                        </div>
-                    </div>
-                    <div class="activity-item">
-                        <span class="activity-dot primary"></span>
-                        <div class="activity-content">
-                            <p>New registration: <span class="highlight">Marcus Thorne</span></p>
-                            <span class="activity-time">5 hours ago</span>
-                        </div>
-                    </div>
+                    }
                 </div>
-                <button class="view-all-btn">View All History</button>
+                <a class="view-all-btn" href="/admin/contacts">View All Contacts</a>
             </div>
         </div>
     </div>
 
-    <div class="users-table-section">
+    <div class="users-table-section" data-theme="admin">
         <div class="table-header">
-            <h4>System Users</h4>
-            <a href="/admin/users" class="manage-link">
-                Manage Users
-                <span class="material-symbols-outlined">arrow_forward</span>
-            </a>
+            <h4>Daily Usage Stats</h4>
         </div>
-        <table class="users-table">
-            <thead>
-                <tr>
-                    <th>Member</th>
-                    <th>Role</th>
-                    <th>Status</th>
-                    <th>Activity</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var user in users)
-                {
+        <div class="data-table-wrapper">
+            <table class="data-table">
+                <thead>
                     <tr>
-                        <td>
-                            <div class="user-cell">
-                                <img src="@user.Avatar" alt="@user.Name" />
-                                <div>
-                                    <p class="user-name">@user.Name</p>
-                                    <span class="user-email">@user.Email</span>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="role-cell">@user.Role</td>
-                        <td>
-                            <span class="status-badge @user.Status.ToLower()">@user.Status</span>
-                        </td>
-                        <td class="activity-cell">@user.LastActivity</td>
-                        <td class="actions-cell">
-                            <button class="action-btn">
-                                <span class="material-symbols-outlined">edit_square</span>
-                            </button>
-                        </td>
+                        <th>Date</th>
+                        <th>Anonymous ID</th>
+                        <th>Free Usage</th>
+                        <th>Premium Usage</th>
+                        <th>Last Used</th>
                     </tr>
-                }
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    @if (_pagedUsageStats == null)
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-8 text-on-surface-variant">
+                                Đang tải...
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        foreach (var stat in _pagedUsageStats)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="date-text">@stat.Date.ToString("dd/MM/yyyy")</span>
+                                </td>
+                                <td>
+                                    <span class="stat-id">@(string.IsNullOrEmpty(stat.AnonymousId) ? "-" : stat.AnonymousId)</span>
+                                </td>
+                                <td>
+                                    <span class="stat-count">@stat.FreeUsageCount</span>
+                                </td>
+                                <td>
+                                    <span class="stat-count premium">@stat.PremiumUsageCount</span>
+                                </td>
+                                <td>
+                                    <span class="date-text">@stat.LastUsedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                </td>
+                            </tr>
+                        }
+                        if (!_pagedUsageStats.Any())
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center py-8 text-on-surface-variant">
+                                    Không có dữ liệu.
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_totalPages > 1)
+        {
+            <div class="table-footer w-full overflow-auto">
+                <div class="page-size-control">
+                    <label class="text-xs text-on-surface-variant">Số dòng:</label>
+                    <input type="number"
+                           class="page-size-input"
+                           min="1"
+                           @bind="_pageSize"
+                           @bind:after="UpdatePagedUsageStats" />
+                </div>
+                <span class="showing-text">Hiển thị @_startItem-@_endItem của @_totalFiltered</span>
+                <div class="pagination">
+                    <button class="page-btn" disabled="@(_currentPage == 1)" @onclick="() => GoToPage(_currentPage - 1)">
+                        <span class="material-symbols-outlined">chevron_left</span>
+                    </button>
+                    @foreach (var item in GetVisiblePages())
+                    {
+                        if (item is int pageNum)
+                        {
+                            <button class="page-btn @(_currentPage == pageNum ? "active" : "")" @onclick="() => GoToPage(pageNum)">@pageNum</button>
+                        }
+                        else
+                        {
+                            <span class="page-ellipsis">...</span>
+                        }
+                    }
+                    <button class="page-btn" disabled="@(_currentPage == _totalPages)" @onclick="() => GoToPage(_currentPage + 1)">
+                        <span class="material-symbols-outlined">chevron_right</span>
+                    </button>
+                </div>
+                <div class="page-jump">
+                    <label class="text-xs text-on-surface-variant">Tới trang:</label>
+                    <input type="number"
+                           class="page-jump-input"
+                           min="1" max="@_totalPages"
+                           @bind="_jumpToPage"
+                           @bind:after="JumpToPage" />
+                </div>
+            </div>
+        }
     </div>
+
 </div>
 
 @code {
-    private int totalUsers = 42892;
-    private int totalArticles = 1402;
-    private string monthlyViews = "2.4M";
-    private int activeSessions = 1894;
-    private string _chartMode = "views";
+    private int totalOrders;
+    private decimal revenue;
+    private int uniqueUsers;
+    private int totalContacts;
+    private int newContacts;
+    private string _chartMode = "orders";
 
-    private List<UserItem> users = new()
-    {
-        new UserItem { Name = "Julian Vance", Email = "julian@precision.io", Role = "Editor", Status = "Active", LastActivity = "2m ago", Avatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuBA8boL-xt4HD5f8PJzfCLydSenwvy0oRtY-aF4xMBJpRO6B5719Db39hRTRmcpN18yzM321d3RL7eHCK_B9n3r4ZlIZv-yPLTUXtOdRWokVTjcNMqbAPszn4hk3qZMjiFMFKh7CQcJxCzJQVr3VvnruzNe7sOMrWzt77DUcDyn92aAOxRFeWFsU8FtZUfbwUnO93YIqjnwfN_nh9z4FU6brjXOEUq0t-Lv1AH5hRH3UL6Xa6zE2OAIKBRtA6ZwNFrUebGVgdSmxFQQ" },
-        new UserItem { Name = "Sarah Connor", Email = "sarah.c@workspace.com", Role = "Viewer", Status = "Idle", LastActivity = "15h ago", Avatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuA489CqF_-BdO380Co-UcXO4c1TlEkxEm0VK5MdxS0YVypAc5m19HL32aqjACXG2R8SbiksOF8A2Pz9E9PAa_5QeptsPTBI9bQ4ESMpwSEF4L_vYeYriylSpzraUFCKyQWI3z3LPK7W46n0SVckcBHq_TjAxwCgwWHAb6suYMTLPg6YP1rEr9j9garuI66a0KjSK4cVvW-z3uOjx8HE42T7O0kM73a_2zRBiG_S5_EvPT-Ux90ThmNktqHMN2puQuntl0OGUYpi_NSE" }
-    };
+    private List<DailyChartData> chartData = new();
+    private List<Contact> recentContacts = new();
+    private List<DailyUsageStats> dailyUsageStats = new();
+    private List<DailyUsageStats> _pagedUsageStats = new();
+    private int _currentPage = 1;
+    private int _pageSize = 10;
+    private int _totalPages = 1;
+    private int _totalFiltered = 0;
+    private int _startItem = 0;
+    private int _endItem = 0;
+    private int _jumpToPage = 1;
+    private bool _chartInitialized = false;
 
-    protected override void OnAfterRender(bool firstRender)
+    protected override async Task OnInitializedAsync()
     {
-        if (firstRender)
+        await LoadDataAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_chartInitialized && chartData.Any())
         {
-            InitializeChart();
+            _chartInitialized = true;
+            await InitializeChart();
         }
     }
 
-    private void InitializeChart()
+    private async Task LoadDataAsync()
     {
+        using var context = DbFactory.CreateDbContext();
+
+        var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+        var twentyFourHoursAgo = DateTime.UtcNow.AddHours(-24);
+
+        totalOrders = await context.Orders
+            .Where(o => o.DateCreated >= thirtyDaysAgo)
+            .CountAsync();
+
+        revenue = await context.Orders
+            .Where(o => o.Status == OrderStatus.Paid && o.DateCreated >= thirtyDaysAgo)
+            .SumAsync(o => o.TotalAmount);
+
+        uniqueUsers = await context.DailyUsageStats
+            .Where(d => d.Date >= DateOnly.FromDateTime(thirtyDaysAgo))
+            .Select(d => d.AnonymousId)
+            .Distinct()
+            .CountAsync();
+
+        totalContacts = await context.Contacts
+            .Where(c => c.DateCreated >= thirtyDaysAgo)
+            .CountAsync();
+
+        newContacts = await context.Contacts
+            .Where(c => c.DateCreated >= twentyFourHoursAgo)
+            .CountAsync();
+
+        recentContacts = await context.Contacts
+            .OrderByDescending(c => c.DateCreated)
+            .Take(5)
+            .ToListAsync();
+
+        _totalFiltered = await context.DailyUsageStats.CountAsync();
+        _totalPages = (int)Math.Ceiling((double)_totalFiltered / _pageSize);
+        _totalPages = Math.Max(1, _totalPages);
+
+        if (_currentPage > _totalPages) _currentPage = _totalPages;
+
+        _pagedUsageStats = await context.DailyUsageStats
+            .OrderByDescending(d => d.Date)
+            .ThenByDescending(d => d.AnonymousId)
+            .Skip((_currentPage - 1) * _pageSize)
+            .Take(_pageSize)
+            .ToListAsync();
+
+        _startItem = (_currentPage - 1) * _pageSize + 1;
+        _endItem = _currentPage * _pageSize;
+        if (_endItem > _totalFiltered) _endItem = _totalFiltered;
+        _jumpToPage = _currentPage;
+
+        var ordersByDate = await context.Orders
+            .Where(o => o.DateCreated >= thirtyDaysAgo)
+            .GroupBy(o => o.DateCreated.Date)
+            .Select(g => new
+            {
+                Date = g.Key,
+                Count = g.Count(),
+                Revenue = g.Where(o => o.Status == OrderStatus.Paid).Sum(o => o.TotalAmount)
+            })
+            .OrderBy(x => x.Date)
+            .ToListAsync();
+
+        chartData = ordersByDate.Select(x => new DailyChartData
+        {
+            Date = x.Date.ToString("MMM dd"),
+            Orders = x.Count,
+            Revenue = x.Revenue
+        }).ToList();
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page < 1 || page > _totalPages) return;
+        _currentPage = page;
+        await UpdatePagedUsageStats();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task UpdatePagedUsageStats()
+    {
+        using var context = DbFactory.CreateDbContext();
+        _totalFiltered = await context.DailyUsageStats.CountAsync();
+        _totalPages = (int)Math.Ceiling((double)_totalFiltered / _pageSize);
+        _totalPages = Math.Max(1, _totalPages);
+
+        if (_currentPage > _totalPages) _currentPage = _totalPages;
+
+        _pagedUsageStats = await context.DailyUsageStats
+            .OrderByDescending(d => d.Date)
+            .ThenByDescending(d => d.AnonymousId)
+            .Skip((_currentPage - 1) * _pageSize)
+            .Take(_pageSize)
+            .ToListAsync();
+
+        _startItem = (_currentPage - 1) * _pageSize + 1;
+        _endItem = _currentPage * _pageSize;
+        if (_endItem > _totalFiltered) _endItem = _totalFiltered;
+        _jumpToPage = _currentPage;
+    }
+
+    private async Task JumpToPage()
+    {
+        if (_jumpToPage < 1) _jumpToPage = 1;
+        if (_jumpToPage > _totalPages) _jumpToPage = _totalPages;
+        await GoToPage(_jumpToPage);
+    }
+
+    private IEnumerable<object> GetVisiblePages()
+    {
+        var pages = new List<object>();
+        const int maxVisible = 5;
+        var start = Math.Max(1, _currentPage - 2);
+        var end = Math.Min(_totalPages, start + maxVisible - 1);
+        start = Math.Max(1, end - maxVisible + 1);
+
+        for (var i = start; i <= end; i++)
+        {
+            pages.Add(i);
+        }
+
+        if (start > 1)
+        {
+            pages.Insert(0, "...");
+        }
+        if (end < _totalPages)
+        {
+            pages.Add("...");
+        }
+
+        return pages;
+    }
+
+    private class DailyChartData
+    {
+        public string Date { get; set; } = "";
+        public int Orders { get; set; }
+        public decimal Revenue { get; set; }
+    }
+
+    private async Task InitializeChart()
+    {
+        if (!chartData.Any())
+        {
+            return;
+        }
+
         try
         {
-            var chartData = _chartMode == "views" 
-                ? new[] { 40, 55, 45, 70, 65, 85, 60, 40, 55, 95, 70, 50 }
-                : new[] { 30, 40, 35, 50, 45, 60, 45, 35, 45, 70, 55, 40 };
+            var labels = chartData.Select(x => x.Date).ToArray();
+            var ordersData = chartData.Select(x => x.Orders).ToArray();
+            var revenueData = chartData.Select(x => (double)x.Revenue / 1000000).ToArray();
 
-            var label = _chartMode == "views" ? "Views" : "Users";
-            var dataStr = string.Join(",", chartData);
-
-            var script = $@"
-                if (window.adminTrafficChart) {{
-                    window.adminTrafficChart.destroy();
-                }}
-                var ctx = document.getElementById('trafficChart');
-                if (ctx) {{
-                    window.adminTrafficChart = new Chart(ctx, {{
-                        type: 'bar',
-                        data: {{
-                            labels: ['Mar 1', 'Mar 3', 'Mar 5', 'Mar 7', 'Mar 9', 'Mar 11', 'Mar 13', 'Mar 15', 'Mar 17', 'Mar 19', 'Mar 21', 'Mar 23'],
-                            datasets: [{{
-                                label: '{label}',
-                                data: [{dataStr}],
-                                backgroundColor: '#1e3a8a',
-                                borderRadius: 4,
-                                borderSkipped: false,
-                            }}]
-                        }},
-                        options: {{
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {{ legend: {{ display: false }} }},
-                            scales: {{
-                                y: {{ beginAtZero: true, grid: {{ color: 'rgba(197,197,211,0.1)' }} }},
-                                x: {{ grid: {{ display: false }} }}
-                            }}
-                        }}
-                    }});
-                }}
-            ";
+            await JSRuntime.InvokeVoidAsync("initDashboardChart", "trafficChart", labels, ordersData, revenueData);
         }
         catch
         {
         }
     }
 
-    private void SetChartModeViews() => _chartMode = "views";
-    private void SetChartModeUsers() => _chartMode = "users";
-
-    private class UserItem
+    public ValueTask DisposeAsync()
     {
-        public string Name { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Role { get; set; } = "";
-        public string Status { get; set; } = "";
-        public string LastActivity { get; set; } = "";
-        public string Avatar { get; set; } = "";
+        _chartInitialized = false;
+        try
+        {
+            JSRuntime.InvokeVoidAsync("destroyDashboardChart");
+        }
+        catch { }
+        return ValueTask.CompletedTask;
     }
+
+    private void SetChartModeOrders() => _chartMode = "orders";
+
+    private string GetStatusDotClass(ContactStatus status) => status switch
+    {
+        ContactStatus.Moi => "new",
+        ContactStatus.DaDoc => "read",
+        ContactStatus.DaXuLy => "processed",
+        ContactStatus.BoQua => "skipped",
+        _ => "new"
+    };
+
 }
