@@ -239,18 +239,6 @@
         }
       }
     },
-    "/api/payments/vnpay/return": {
-      "get": {
-        "tags": [
-          "Payment"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/payments/vnpay/ipn": {
       "get": {
         "tags": [

@@ -1,11 +1,15 @@
 @page "/"
+@rendermode InteractiveServer
+
+@using System.ComponentModel.DataAnnotations
 @attribute [StreamRendering]
 @inject IJSRuntime JS
 @inject IConfiguration Configuration
 @inject ToastService ToastService
+@inject TuViExcelService TuViExcelService
+@inject IDbContextFactory<AppDBContext> DbFactory
 
 <PageTitle>Trang chủ | Lá Số Tử Vi</PageTitle>
-
 
 
 
@@ -14,26 +18,25 @@
             <p class="text-on-surface-variant font-body text-lg font-light leading-relaxed">Khám phá bản đồ định mệnh của bạn thông qua thuật toán cổ truyền kết hợp trí tuệ số. Hãy nhập chính xác thông tin để khai mở Manuscript.</p>
         </header>
         
-        <form class="space-y-10">
-            <!-- Name Input -->
-            
+        <EditForm Model="@formModel" OnValidSubmit="@HandleSubmit" class="space-y-10">
+            <DataAnnotationsValidator />
             <!-- Option Checkbox -->
             <div class="relative group">
                 <label class="text-on-surface font-medium">Chọn loại lá số</label>
                 <div class="flex gap-6 mt-3">
                     <label class="flex items-center gap-3 cursor-pointer group text-on-surface-variant font-medium">
                         <input class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" 
-                               name="option" type="radio" value="1" checked="@(selectedOption == "1")" @onchange='() => selectedOption = "1"' />
+                               name="option" type="radio" value="1" checked="@(formModel.SelectedOption == "1")" @onchange='() => formModel.SelectedOption = "1"' />
                         <span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Option 1</span>
                     </label>
                     <label class="flex items-center gap-3 cursor-pointer group text-on-surface-variant font-medium">
                         <input class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" 
-                               name="option" type="radio" value="2" checked="@(selectedOption == "2")" @onchange='() => selectedOption = "2"' />
+                               name="option" type="radio" value="2" checked="@(formModel.SelectedOption == "2")" @onchange='() => formModel.SelectedOption = "2"' />
                         <span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Option 2</span>
                     </label>
                     <label class="flex items-center gap-3 cursor-pointer group text-on-surface-variant font-medium">
                         <input class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" 
-                               name="option" type="radio" value="3" checked="@(selectedOption == "3")" @onchange='() => selectedOption = "3"' />
+                               name="option" type="radio" value="3" checked="@(formModel.SelectedOption == "3")" @onchange='() => formModel.SelectedOption = "3"' />
                         <span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Option 3</span>
                     </label>
                 </div>
@@ -43,24 +46,53 @@
             <div class="relative group">
                 <label class="text-on-surface font-medium">Mã vé (tuỳ chọn)</label>
                 <input class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all" 
-                       type="text" @bind="ticketCode" placeholder="Nhập mã vé nếu có" />
+                       type="text" @bind="formModel.TicketCode" placeholder="Nhập mã vé nếu có" />
             </div>
             
-            <!-- Date and Calendar Toggle -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <!-- Birth: Ngay/Thang/Nam -->
+            <div class="grid grid-cols-3 gap-4">
                 <div class="relative group">
-                    <label class="text-on-surface font-medium">Ngày tháng năm sinh</label>
-                    <input class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0  text-on-surface-variant focus:border-primary-container text-lg font-body transition-all" 
-                           type="date" @bind="birthInfo.BirthDate" />
+                    <label class="text-on-surface font-medium">Ngày sinh</label>
+                    <input class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all" 
+                           type="number" min="1" max="@formModel.MaxDayInMonth" @bind="formModel.BirthDay" @oninput="OnBirthDayChanged" />
                 </div>
+                <div class="relative group">
+                    <label class="text-on-surface font-medium">Tháng sinh</label>
+                    <input class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all" 
+                           type="number" min="1" max="12" @bind="formModel.BirthMonth" @oninput="OnBirthMonthChanged" />
+                </div>
+                <div class="relative group">
+                    <label class="text-on-surface font-medium">Năm sinh</label>
+                    <input class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all" 
+                           type="number" min="1900" max="2099" @bind="formModel.BirthYear" @oninput="OnBirthYearChanged" />
+                </div>
+            </div>
+            
+            <!-- Nam Xem -->
+            <div class="relative group">
+                <label class="text-on-surface font-medium">Năm xem</label>
+                <input class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all" 
+                       type="number" min="1900" max="2100" @bind="formModel.ViewYear" />
             </div>
             
             <!-- Time and Gender -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div class="relative group">
                     <label class="text-on-surface font-medium">Giờ sinh</label>
+                    
+                    <!-- Slider -->
+                    <input type="range" min="0" max="23" step="1" 
+                           class="w-full h-2 bg-surface-container rounded-lg appearance-none cursor-pointer mb-2"
+                           @bind="formModel.BirthHour24" @oninput="OnSliderChanged" />
+                    <div class="flex justify-between text-xs text-on-surface-variant mb-1">
+                        <span>0h</span>
+                        <span class="text-primary-container font-medium">@formModel.BirthHour24h</span>
+                        <span>23h</span>
+                    </div>
+                    
+                    <!-- Select -->
                     <select class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all appearance-none" 
-                            @bind="birthInfo.BirthHour">
+                            @bind="formModel.BirthHour" @oninput="OnSelectChanged">
                         <option class="bg-surface" value="Ty">Tý (23h - 01h)</option>
                         <option class="bg-surface" value="Suu">Sửu (01h - 03h)</option>
                         <option class="bg-surface" value="Dan">Dần (03h - 05h)</option>
@@ -80,21 +112,29 @@
                     <div class="flex gap-6">
                         <label class="flex items-center gap-3 cursor-pointer group text-on-surface-variant font-medium">
                             <input class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" 
-                                   name="gender" type="radio" value="Nam" checked="@(birthInfo.Gender == "Nam")" @onchange='() => birthInfo.Gender = "Nam"' />
+                                   name="gender" type="radio" value="Nam" checked="@(formModel.Gender == "Nam")" @onchange='() => formModel.Gender = "Nam"' />
                             <span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Nam</span>
                         </label>
                         <label class="flex items-center gap-3 cursor-pointer group text-on-surface-variant font-medium">
                             <input class="w-4 h-4 text-primary-container bg-transparent border-outline focus:ring-offset-background focus:ring-primary-container" 
-                                   name="gender" type="radio" value="Nu" checked="@(birthInfo.Gender == "Nữ")" @onchange='() => birthInfo.Gender = "Nữ"' />
+                                   name="gender" type="radio" value="Nu" checked="@(formModel.Gender == "Nữ")" @onchange='() => formModel.Gender = "Nữ"' />
                             <span class="text-sm font-label uppercase tracking-widest group-hover:text-primary-container transition-colors">Nữ</span>
                         </label>
                     </div>
                 </div>
             </div>
             
+            <!-- Free Usage Hint -->
+            @if (freeUsageHintVisible)
+            {
+                <div class="text-sm text-on-surface-variant font-medium">
+                    @freeUsageHint
+                </div>
+            }
+            
             <div class="pt-8">
                 <button class="group relative w-full py-5 bg-gradient-to-r from-primary-container to-[#e9c400] text-on-primary-container font-label font-extrabold uppercase tracking-[0.3em] text-sm overflow-hidden hover:opacity-90 transition-all active:scale-[0.98]" 
-                        type="button" @onclick="HandleSubmit" disabled="@isLoading">
+                        type="submit" disabled="@isLoading">
                     <span class="relative z-10 flex items-center justify-center gap-3">
                         @if (isLoading)
                         {
@@ -108,65 +148,62 @@
                     </span>
                 </button>
             </div>
-        </form>
+        </EditForm>
         
         @if (hasResult)
         {
             <!-- Result Section -->
             <div class="mt-20 border-t border-outline-variant/10 pt-20">
-                <div class="relative aspect-square w-full max-w-2xl mx-auto flex items-center justify-center p-8 bg-surface-container-lowest rounded-full border border-primary-container/10 group overflow-hidden">
-                    <div class="absolute inset-0 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
-                        <img class="w-full h-full object-cover" data-alt="intricate circular bagua diagram" 
-                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_F64g2DvaLGkjxU3JDZpj_xWzrs1NjdhXdmWPFDslW5v26X08CRPQVNhPC0nP0fwOSWsfk23mSXzceJz73jb5PpXNkcAivg7hGtw2ffqjp8vwwaaC-W7dXfxywNV3Hzbyd4MhsHM3bFNI9ZRLkyOB2fU9S6hk3WCIOilYe0_GlGoM1gv50fEBJbMobEMhZ-oOuNmS-SiR__8MSfNPh3pOxPAt9kQcYaNrq-G3jc82EM_E9MfP8-7nnUamcuUn05-J3CrdW0fWsa4" />
-                    </div>
-                    <div class="text-center z-10 p-12 glass-panel border border-primary-container/20 rounded-xl max-w-sm">
-                        <span class="material-symbols-outlined text-5xl text-primary-container mb-6 block" style="font-variation-settings: 'FILL' 0, 'wght' 100;">temple_hindu</span>
-                        <h3 class="font-headline text-2xl text-primary mb-4 italic">Bản Đồ Mệnh Cách</h3>
-                        @if (usedTicket)
-                        {
-                            <div class="text-on-surface font-body text-sm leading-relaxed">
-                                <p class="mb-2"><strong>Họ tên:</strong> @mockResult.FullName</p>
-                                <p class="mb-2"><strong>Ngày sinh:</strong> @mockResult.BirthDate?.ToString("dd/MM/yyyy")</p>
-                                <p class="mb-2"><strong>Giờ sinh:</strong> @mockResult.BirthHour</p>
-                                <p class="mb-2"><strong>Giới tính:</strong> @mockResult.Gender</p>
-                                <p class="mb-2"><strong>Cung mệnh:</strong> @mockResult.CungMenh</p>
-                                <p class="mb-2"><strong>Cung xung:</strong> @mockResult.CungXung</p>
-                                <p class="mb-2"><strong>Vận hạn:</strong> @mockResult.VanHan</p>
-                            </div>
-                        }
-                        else
-                        {
-                            <p class="text-on-surface-variant font-light text-sm leading-relaxed mb-4">
-                                Để xem đầy đủ, xin vui lòng dùng vé của bạn.
-                            </p>
-                            <a href="/san-pham" class="inline-block px-4 py-2 bg-primary-container text-on-primary-container font-label text-sm uppercase tracking-widest hover:opacity-90 transition-opacity">
-                                Mua vé ngay
-                            </a>
-                        }
-                    </div>
+                <div class="text-center mb-8">
+                    <h3 class="font-headline text-2xl text-primary mb-2 italic">Bản Đồ Mệnh Cách</h3>
+                    <p class="text-on-surface-variant">@($"Ngày sinh: {formModel.BirthDay}/{formModel.BirthMonth}/{formModel.BirthYear} - {formModel.BirthHour}")</p>
                 </div>
-            </div>
-        }
-        else
-        {
-            <!-- Bagua Placeholder Section -->
-            <div class="mt-20 border-t border-outline-variant/10 pt-20">
-                <div class="relative aspect-square w-full max-w-2xl mx-auto flex items-center justify-center p-8 bg-surface-container-lowest rounded-full border border-primary-container/10 group overflow-hidden">
-                    <div class="absolute inset-0 opacity-10 pointer-events-none group-hover:scale-110 transition-transform duration-1000">
-                        <img class="w-full h-full object-cover" data-alt="intricate circular bagua diagram" 
-                             src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_F64g2DvaLGkjxU3JDZpj_xWzrs1NjdhXdmWPFDslW5v26X08CRPQVNhPC0nP0fwOSWsfk23mSXzceJz73jb5PpXNkcAivg7hGtw2ffqjp8vwwaaC-W7dXfxywNV3Hzbyd4MhsHM3bFNI9ZRLkyOB2fU9S6hk3WCIOilYe0_GlGoM1gv50fEBJbMobEMhZ-oOuNmS-SiR__8MSfNPh3pOxPAt9kQcYaNrq-G3jc82EM_E9MfP8-7nnUamcuUn05-J3CrdW0fWsa4" />
-                    </div>
-                    <div class="text-center z-10 p-12 glass-panel border border-primary-container/20 rounded-xl max-w-sm">
-                        <span class="material-symbols-outlined text-5xl text-primary-container mb-6 block" style="font-variation-settings: 'FILL' 0, 'wght' 100;">temple_hindu</span>
-                        <h3 class="font-headline text-2xl text-primary mb-4 italic">Bản Đồ Mệnh Cách</h3>
-                        <p class="text-on-surface-variant font-light text-sm leading-relaxed mb-8">Lá số của bạn sẽ được hiển thị tại đây sau khi nhấn nút an lá số.</p>
-                        <div class="flex justify-center gap-4 opacity-40">
-                            <span class="w-2 h-2 rounded-full bg-primary-container"></span>
-                            <span class="w-2 h-2 rounded-full bg-primary-container"></span>
-                            <span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                
+                <!-- Accordion: Thể Cách -->
+                <div class="border border-outline rounded-lg mb-4">
+                    <button class="w-full flex items-center justify-between p-4 bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer"
+                            @onclick="() => showTheCach = !showTheCach">
+                        <span class="font-headline text-lg text-primary">Thể Cách</span>
+                        <span class="material-symbols-outlined text-primary transition-transform @(showTheCach ? "rotate-180" : "")">
+                            expand_more
+                        </span>
+                    </button>
+                    @if (showTheCach && !string.IsNullOrEmpty(tuViResult.TheCachHtml))
+                    {
+                        <div class="border-t border-outline">
+                            @((MarkupString)tuViResult.TheCachHtml)
                         </div>
-                    </div>
+                    }
                 </div>
+                
+                <!-- Accordion: Tử Vi -->
+                <div class="border border-outline rounded-lg">
+                    <button class="w-full flex items-center justify-between p-4 bg-surface-container hover:bg-surface-container-high transition-colors cursor-pointer"
+                            @onclick="() => showTuVi = !showTuVi">
+                        <span class="font-headline text-lg text-primary">Tử Vi</span>
+                        <span class="material-symbols-outlined text-primary transition-transform @(showTuVi ? "rotate-180" : "")">
+                            expand_more
+                        </span>
+                    </button>
+                    @if (showTuVi && !string.IsNullOrEmpty(tuViResult.TuViHtml))
+                    {
+                        <div class="border-t border-outline">
+                            @((MarkupString)tuViResult.TuViHtml)
+                        </div>
+                    }
+                </div>
+                
+                @if (!usedTicket)
+                {
+                    <div class="mt-8 p-4 bg-surface-container rounded-lg text-center">
+                        <p class="text-on-surface-variant mb-4">
+                            Để xem đầy đủ, xin vui lòng sử dụng vé của bạn.
+                        </p>
+                        <a href="/san-pham" class="inline-block px-6 py-2 bg-primary-container text-on-primary-container rounded-lg hover:opacity-90 transition-opacity">
+                            Mua vé ngay
+                        </a>
+                    </div>
+                }
             </div>
         }
 
@@ -179,35 +216,206 @@
     .material-symbols-outlined {
         font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
     }
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #e9c400;
+        cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #e9c400;
+        cursor: pointer;
+        border: none;
+    }
+    .rotate-180 {
+        transform: rotate(180deg);
+    }
+    .gap-0\.5 {
+        gap: 0.125rem;
+    }
+    [data-grid] {
+        display: grid;
+    }
+    [data-cell] {
+        min-width: 0;
+    }
 </style>
 
 @code {
-    private BirthInfo birthInfo = new();
-    private string selectedOption = "1";
-    private string ticketCode = "";
+    private HomeFormModel formModel = new();
     private bool isLoading = false;
     private bool hasResult = false;
     private bool usedTicket = false;
-    private MockResult? mockResult;
+    private bool showTheCach = true;
+    private bool showTuVi = false;
+    private TuViResult? tuViResult;
+    
+    // Free usage tracking
+    private bool freeUsageHintVisible = true;
+    private string freeUsageHint = "";
+    private int currentFreeUsage = 0;
+    private int dailyFreeLimit = 5;
 
-    private class BirthInfo
+    private static readonly Dictionary<int, string> Hour24ToCanh = new()
     {
-        public string FullName { get; set; } = "";
-        public DateTime BirthDate { get; set; } = DateTime.Today;
-        public string CalendarType { get; set; } = "Duong Lich";
+        [0] = "Ty", [1] = "Suu", [2] = "Suu", [3] = "Dan", [4] = "Dan", [5] = "Mao",
+        [6] = "Mao", [7] = "Thin", [8] = "Thin", [9] = "Ty2", [10] = "Ty2", [11] = "Ngo",
+        [12] = "Ngo", [13] = "Mui", [14] = "Mui", [15] = "Than", [16] = "Than", [17] = "Dau",
+        [18] = "Dau", [19] = "Tuat", [20] = "Tuat", [21] = "Hoi", [22] = "Hoi", [23] = "Ty"
+    };
+
+    private static readonly Dictionary<string, int> CanhToHour24 = new()
+    {
+        ["Ty"] = 23, ["Suu"] = 1, ["Dan"] = 3, ["Mao"] = 5, ["Thin"] = 7, ["Ty2"] = 9,
+        ["Ngo"] = 11, ["Mui"] = 13, ["Than"] = 15, ["Dau"] = 17, ["Tuat"] = 19, ["Hoi"] = 21
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadFreeUsageHint();
+    }
+
+    private async Task LoadFreeUsageHint()
+    {
+        try
+        {
+            var anonId = await JS.InvokeAsync<string>("getOrCreateAnonId");
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            
+            using var context = DbFactory.CreateDbContext();
+            
+            var dailyLimitSection = Configuration.GetSection("FreeUsageLimit");
+            dailyFreeLimit = int.TryParse(dailyLimitSection["DailyLimit"], out var limit) ? limit : 5;
+            
+            var usageStats = await context.DailyUsageStats
+                .FirstOrDefaultAsync(s => s.Date == today && s.AnonymousId == anonId);
+            
+            currentFreeUsage = usageStats?.FreeUsageCount ?? 0;
+            
+            if (dailyFreeLimit == -1)
+            {
+                freeUsageHint = $"Xem miễn phí: {currentFreeUsage}/∞ lượt/ngày";
+            }
+            else
+            {
+                freeUsageHint = $"Xem miễn phí: {currentFreeUsage}/{dailyFreeLimit} lượt/ngày";
+            }
+        }
+        catch
+        {
+            freeUsageHint = "Xem miễn phí";
+        }
+    }
+
+    private void OnSliderChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var hour24))
+        {
+            formModel.BirthHour24 = hour24;
+            formModel.BirthHour = Hour24ToCanh.TryGetValue(hour24, out var canh) ? canh : "Ty";
+        }
+    }
+
+    private void OnSelectChanged(ChangeEventArgs e)
+    {
+        var canh = e.Value?.ToString() ?? "Ty";
+        formModel.BirthHour = canh;
+        
+        if (CanhToHour24.TryGetValue(canh, out var hour24))
+        {
+            formModel.BirthHour24 = hour24;
+        }
+    }
+
+    private class HomeFormModel
+    {
+        [Required(ErrorMessage = "Vui lòng chọn loại lá số")]
+        public string SelectedOption { get; set; } = "1";
+        
+        public string TicketCode { get; set; } = "";
+
+        private int _birthDay = DateTime.Now.Day;
+        private int _birthMonth = DateTime.Now.Month;
+        private int _birthYear = DateTime.Now.Year;
+
+        [Required(ErrorMessage = "Ngày sinh không được để trống")]
+        public int BirthDay
+        {
+            get => _birthDay;
+            set => _birthDay = value;
+        }
+
+        [Required(ErrorMessage = "Tháng sinh không được để trống")]
+        public int BirthMonth
+        {
+            get => _birthMonth;
+            set => _birthMonth = value;
+        }
+
+        [Required(ErrorMessage = "Năm sinh không được để trống")]
+        public int BirthYear
+        {
+            get => _birthYear;
+            set => _birthYear = value;
+        }
+
+        private bool IsLeapYear(int year) => (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0);
+
+        public int MaxDayInMonth => BirthMonth switch
+        {
+            1 or 3 or 5 or 7 or 8 or 10 or 12 => 31,
+            4 or 6 or 9 or 11 => 30,
+            2 => IsLeapYear(BirthYear) ? 29 : 28,
+            _ => 30
+        };
+
+        [Required(ErrorMessage = "Năm xem không được để trống")]
+        public int ViewYear { get; set; } = DateTime.Now.Year;
+        
+        public int BirthHour24 { get; set; } = 0;
         public string BirthHour { get; set; } = "Ty";
+        public string BirthHour24h => $"{BirthHour24}h";
+        
+        [Required(ErrorMessage = "Vui lòng chọn giới tính")]
         public string Gender { get; set; } = "Nam";
     }
 
-    private class MockResult
+    private void OnBirthDayChanged(ChangeEventArgs e)
     {
-        public string FullName { get; set; } = "";
-        public DateTime? BirthDate { get; set; }
-        public string BirthHour { get; set; } = "";
-        public string Gender { get; set; } = "";
-        public string CungMenh { get; set; } = "";
-        public string CungXung { get; set; } = "";
-        public string VanHan { get; set; } = "";
+        if (int.TryParse(e.Value?.ToString(), out var day) && day > 0 && day <= 31)
+        {
+            formModel.BirthDay = day;
+        }
+    }
+
+    private void OnBirthMonthChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var month) && month > 0 && month <= 12)
+        {
+            formModel.BirthMonth = month;
+            if (formModel.BirthDay > formModel.MaxDayInMonth)
+            {
+                formModel.BirthDay = formModel.MaxDayInMonth;
+            }
+        }
+    }
+
+    private void OnBirthYearChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var year) && year >= 1900 && year <= 2099)
+        {
+            formModel.BirthYear = year;
+            if (formModel.BirthDay > formModel.MaxDayInMonth)
+            {
+                formModel.BirthDay = formModel.MaxDayInMonth;
+            }
+        }
     }
 
     private async Task HandleSubmit()
@@ -221,47 +429,78 @@
         {
             bool ticketValid = false;
 
-            if (!string.IsNullOrWhiteSpace(ticketCode))
+            // Check ticket first
+            if (!string.IsNullOrWhiteSpace(formModel.TicketCode))
             {
                 using var context = DbFactory.CreateDbContext();
-                var ticket = await Task.Run(() => context.Tickets.FirstOrDefault(t => t.Code == ticketCode));
+                var ticket = await Task.Run(() => context.Tickets.FirstOrDefault(t => t.Code == formModel.TicketCode));
 
                 if (ticket != null && ticket.IsAvailable)
                 {
                     ticket.QuantityUsed += 1;
                     await context.SaveChangesAsync();
                     ticketValid = true;
+                    
+                    // Track premium usage
+                    var anonId = await JS.InvokeAsync<string>("getOrCreateAnonId");
+                    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                    
+                    var usageStats = await context.DailyUsageStats
+                        .FirstOrDefaultAsync(s => s.Date == today && s.AnonymousId == anonId);
+                    
+                    if (usageStats != null)
+                    {
+                        usageStats.PremiumUsageCount += 1;
+                        usageStats.LastUsedAt = DateTime.UtcNow;
+                    }
+                    else
+                    {
+                        context.DailyUsageStats.Add(new DailyUsageStats
+                        {
+                            Date = today,
+                            AnonymousId = anonId,
+                            PremiumUsageCount = 1,
+                            LastUsedAt = DateTime.UtcNow
+                        });
+                    }
+                    
+                    await context.SaveChangesAsync();
                 }
             }
 
             if (!ticketValid)
             {
                 var anonId = await JS.InvokeAsync<string>("getOrCreateAnonId");
-                var today = DateOnly.FromDateTime(DateTime.Now);
+                var today = DateOnly.FromDateTime(DateTime.UtcNow);
                 
                 using var context = DbFactory.CreateDbContext();
                 
                 var dailyLimitSection = Configuration.GetSection("FreeUsageLimit");
-                var dailyLimit = int.TryParse(dailyLimitSection["DailyLimit"], out var limit) ? limit : 5;
+                dailyFreeLimit = int.TryParse(dailyLimitSection["DailyLimit"], out var limit) ? limit : 5;
                 
                 var usageStats = await context.DailyUsageStats
                     .FirstOrDefaultAsync(s => s.Date == today && s.AnonymousId == anonId);
                 
                 if (usageStats != null)
                 {
-                    if (dailyLimit != -1 && usageStats.FreeUsageCount >= dailyLimit)
+                    if (dailyFreeLimit != -1 && usageStats.FreeUsageCount >= dailyFreeLimit)
                     {
-                        ToastService.Show("warning", "Bạn đã sử dụng quá số lần miễn phí hôm nay");
+                        // Free limit reached - show hint with link
+                        hasResult = true;
+                        usedTicket = false;
+                        await LoadFreeUsageHint();
                         return;
                     }
                     usageStats.FreeUsageCount += 1;
-                    usageStats.LastUsedAt = DateTime.Now;
+                    usageStats.LastUsedAt = DateTime.UtcNow;
                 }
                 else
                 {
-                    if (dailyLimit != -1 && 1 > dailyLimit)
+                    if (dailyFreeLimit != -1 && 1 > dailyFreeLimit)
                     {
-                        ToastService.Show("warning", "Bạn đã sử dụng quá số lần miễn phí hôm nay");
+                        hasResult = true;
+                        usedTicket = false;
+                        await LoadFreeUsageHint();
                         return;
                     }
                     context.DailyUsageStats.Add(new DailyUsageStats
@@ -269,30 +508,35 @@
                         Date = today,
                         AnonymousId = anonId,
                         FreeUsageCount = 1,
-                        LastUsedAt = DateTime.Now
+                        LastUsedAt = DateTime.UtcNow
                     });
                 }
                 
                 await context.SaveChangesAsync();
             }
 
-            await Task.Delay(10000);
+            // Calculate using Excel service
+            var input = new TuViInput
+            {
+                Gender = formModel.Gender,
+                Day = formModel.BirthDay,
+                Month = formModel.BirthMonth,
+                Year = formModel.BirthYear,
+                Hour = usedTicket ? formModel.BirthHour24.ToString() : formModel.BirthHour,
+                Use24HourFormat = usedTicket,
+                ViewYear = formModel.ViewYear
+            };
+
+            tuViResult = await TuViExcelService.CalculateTuViAsync(input);
 
             usedTicket = ticketValid;
-            mockResult = new MockResult
-            {
-                FullName = birthInfo.FullName,
-                BirthDate = birthInfo.BirthDate,
-                BirthHour = birthInfo.BirthHour,
-                Gender = birthInfo.Gender,
-                CungMenh = "Càn",
-                CungXung = "Khôn",
-                VanHan = "Vận 2024 - 2025: Tài lộc hanh thông"
-            };
             hasResult = true;
+            
+            await LoadFreeUsageHint();
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            ToastService.ShowError("Có lỗi xảy ra: " + ex.Message);
         }
         finally
         {

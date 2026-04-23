@@ -1,0 +1,221 @@
+@implements IDisposable
+@inject IJSRuntime JS
+
+@if (!string.IsNullOrEmpty(Label))
+{
+    <label class="text-on-surface font-medium">@Label</label>
+}
+
+<input id="@_elementId"
+       class="@InputClass"
+       type="text"
+       placeholder="@GetPlaceholder()"
+       disabled="@Disabled"
+       @onchange="OnInputChanged" />
+
+@code {
+    private string _elementId = $"flatpickr_{Guid.NewGuid():N}";
+    private bool _isInitializing;
+    private DateTime? _previousValue;
+
+    [Parameter]
+    public DateTime? Value { get; set; }
+
+    [Parameter]
+    public EventCallback<DateTime?> ValueChanged { get; set; }
+
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    [Parameter]
+    public string Placeholder { get; set; } = "dd/mm/yyyy";
+
+    [Parameter]
+    public string MonthYearPlaceholder { get; set; } = "mm/yyyy";
+
+    [Parameter]
+    public string YearPlaceholder { get; set; } = "yyyy";
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
+    [Parameter]
+    public DateOnly? MinDate { get; set; }
+
+    [Parameter]
+    public DateOnly? MaxDate { get; set; }
+
+    [Parameter]
+    public string CssClass { get; set; } = string.Empty;
+
+    [Parameter]
+    public string InputClass { get; set; } = "w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all";
+
+    [Parameter]
+    public string ViewMode { get; set; } = "single"; // "single" | "months" | "years"
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_isInitializing)
+        {
+            _isInitializing = true;
+            await InitializeFlatpickr();
+        }
+    }
+
+    private string GetPlaceholder() => ViewMode switch
+    {
+        "months" => MonthYearPlaceholder,
+        "years" => YearPlaceholder,
+        _ => Placeholder
+    };
+
+    private async Task InitializeFlatpickr()
+    {
+        var config = new Dictionary<string, object?>
+        {
+            ["allowInput"] = true,
+            ["locale"] = "vn",
+            ["disableMobile"] = true
+        };
+
+        if (ViewMode == "months")
+        {
+            config["dateFormat"] = "m/Y";
+            config["view"] = "months";
+        }
+        else if (ViewMode == "years")
+        {
+            config["dateFormat"] = "Y";
+            config["view"] = "years";
+        }
+        else
+        {
+            config["dateFormat"] = "d/m/Y";
+        }
+
+        if (MinDate.HasValue)
+        {
+            config["minDate"] = MinDate.Value.ToString("dd/MM/yyyy");
+        }
+
+        if (MaxDate.HasValue)
+        {
+            config["maxDate"] = MaxDate.Value.ToString("dd/MM/yyyy");
+        }
+
+        await JS.InvokeVoidAsync("flatpickrInterop.init", _elementId, config);
+
+        if (Value.HasValue)
+        {
+            var dateStr = Value.Value.ToString("dd/MM/yyyy");
+            await JS.InvokeVoidAsync("flatpickrInterop.setValue", _elementId, dateStr);
+        }
+
+        _previousValue = Value;
+
+        await JS.InvokeVoidAsync("flatpickrInterop.setupFlatpickrListener", _elementId, DotNetObjectReference.Create(this));
+    }
+
+    [JSInvokable]
+    public async Task OnFlatpickrChange(string dateStr)
+    {
+        if (string.IsNullOrWhiteSpace(dateStr))
+        {
+            if (Value != null)
+            {
+                Value = null;
+                await ValueChanged.InvokeAsync(Value);
+            }
+            return;
+        }
+
+        string format = ViewMode switch
+        {
+            "months" => "M/yyyy",
+            "years" => "yyyy",
+            _ => "dd/MM/yyyy"
+        };
+
+        if (DateTime.TryParseExact(dateStr, format, null, System.Globalization.DateTimeStyles.None, out var parsedDate))
+        {
+            if (parsedDate != _previousValue)
+            {
+                Value = parsedDate;
+                _previousValue = Value;
+                await ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+
+    private async Task OnInputChanged(ChangeEventArgs e)
+    {
+        var inputValue = e.Value?.ToString() ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(inputValue))
+        {
+            if (Value != null)
+            {
+                Value = null;
+                _previousValue = null;
+                await ValueChanged.InvokeAsync(Value);
+            }
+            return;
+        }
+
+        if (DateTime.TryParseExact(inputValue, "dd/MM/yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedDate))
+        {
+            if (parsedDate != _previousValue)
+            {
+                Value = parsedDate;
+                _previousValue = Value;
+                await ValueChanged.InvokeAsync(Value);
+            }
+        }
+    }
+
+    public async Task SetValueAsync(DateTime? newValue)
+    {
+        if (newValue != _previousValue)
+        {
+            Value = newValue;
+            _previousValue = newValue;
+
+            if (newValue.HasValue)
+            {
+                var dateStr = ViewMode switch
+                {
+                    "months" => newValue.Value.ToString("MM/yyyy"),
+                    "years" => newValue.Value.Year.ToString(),
+                    _ => newValue.Value.ToString("dd/MM/yyyy")
+                };
+                await JS.InvokeVoidAsync("flatpickrInterop.setValue", _elementId, dateStr);
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("flatpickrInterop.clear", _elementId);
+            }
+        }
+    }
+
+    public async Task SetMinDateAsync(DateOnly? date)
+    {
+        if (date.HasValue)
+        {
+            await JS.InvokeVoidAsync("flatpickrInterop.setMinDate", _elementId, date.Value.ToString("dd/MM/yyyy"));
+        }
+    }
+
+    public async Task SetMaxDateAsync(DateOnly? date)
+    {
+        if (date.HasValue)
+        {
+            await JS.InvokeVoidAsync("flatpickrInterop.setMaxDate", _elementId, date.Value.ToString("dd/MM/yyyy"));
+        }
+    }
+
+    public void Dispose()
+    {
+        _ = JS.InvokeVoidAsync("flatpickrInterop.destroy", _elementId);
+    }
+}

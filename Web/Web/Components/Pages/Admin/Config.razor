@@ -43,7 +43,7 @@
                 <h3>VNPay</h3>
             </div>
             <div class="card-body">
-                <p class="seed-description">Cấu hình VNPay.Domain sẽ tự động thêm /api/payments/vnpay/return và /api/payments/vnpay/ipn</p>
+                <p class="seed-description">Cấu hình VNPay.Domain sẽ tự động thêm /vnpay-return và /payments/vnpay/ipn</p>
                 <EditForm FormName="VnpayConfig" Model="_vnpayConfig" OnValidSubmit="SaveVnPayConfig">
                     <DataAnnotationsValidator />
                     <div class="vnpay-form">
@@ -239,28 +239,29 @@
     private void LoadVnPayConfig()
     {
         var vnpaySection = Configuration.GetSection("VnPay");
-        var tmnCode = vnpaySection["TmnCode"] ?? "";
-        var hashSecret = vnpaySection["HashSecret"] ?? "";
-        var paymentUrl = vnpaySection["PaymentUrl"] ?? "";
         var returnUrl = vnpaySection["ReturnUrl"] ?? "";
-        var ipnUrl = vnpaySection["IpnUrl"] ?? "";
 
         _vnpayConfig = new VnPayConfigModel
         {
-            TmnCode = tmnCode,
-            HashSecret = hashSecret,
-            PaymentUrl = paymentUrl,
-            Domain = ExtractDomain(returnUrl)
+            TmnCode = vnpaySection["TmnCode"] ?? "",
+            HashSecret = vnpaySection["HashSecret"] ?? "",
+            PaymentUrl = vnpaySection["PaymentUrl"] ?? "",
+            Domain = ExtractBaseDomain(returnUrl)
         };
     }
 
-    private string ExtractDomain(string url)
+    private string ExtractBaseDomain(string url)
     {
         if (string.IsNullOrEmpty(url))
             return "";
 
         try
         {
+            if (url.Contains("/vnpay-return"))
+                url = url.Replace("/vnpay-return", "");
+            else if (url.Contains("/payments/vnpay/ipn"))
+                url = url.Replace("/payments/vnpay/ipn", "");
+
             var uri = new Uri(url);
             return $"{uri.Scheme}://{uri.Host}";
         }
@@ -284,8 +285,8 @@
         _isSaving = true;
         try
         {
-            var returnUrl = _vnpayConfig.Domain.TrimEnd('/') + "/api/payments/vnpay/return";
-            var ipnUrl = _vnpayConfig.Domain.TrimEnd('/') + "/api/payments/vnpay/ipn";
+            var returnUrl = _vnpayConfig.Domain.TrimEnd('/') + "/vnpay-return";
+            var ipnUrl = _vnpayConfig.Domain.TrimEnd('/') + "/payments/vnpay/ipn";
 
             var vnpayConfig = new Dictionary<string, object>
             {

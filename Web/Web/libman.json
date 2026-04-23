@@ -21,6 +21,10 @@
     {
       "library": "tinymce@8.1.2",
       "destination": "wwwroot/lib/tinymce/"
+    },
+    {
+      "library": "flatpickr@4.6.13",
+      "destination": "wwwroot/lib/flatpickr/"
     }
   ]
 }

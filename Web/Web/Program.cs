@@ -1,4 +1,4 @@
-﻿
+
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -79,6 +79,7 @@ builder.Services.AddScoped<ToastService>();
 builder.Services.AddScoped<ConfirmDialogService>();
 builder.Services.AddScoped<VnpayService>();
 builder.Services.AddScoped<OrderService>();
+builder.Services.AddScoped<TuViExcelService>();
 
 builder.Services.AddHttpContextAccessor();
 

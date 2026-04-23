@@ -58,13 +58,6 @@ namespace Web.Controllers
             }
         }
 
-        [HttpGet("payments/vnpay/return")]
-        public IActionResult VnpayReturn()
-        {
-            var queryString = Request.QueryString.HasValue ? Request.QueryString.Value : "";
-            return Redirect($"/vnpay-return{queryString}");
-        }
-
         [HttpGet("payments/vnpay/ipn")]
         public async Task<IActionResult> VnpayIpn()
         {
