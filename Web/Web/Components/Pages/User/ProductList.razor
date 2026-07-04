@@ -8,22 +8,22 @@
 
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-16">
     <div class="mb-8 md:mb-12">
-        <h1 class="font-headline text-3xl sm:text-4xl md:text-5xl text-primary mb-4 italic">Sản Phẩm</h1>
-        <p class="text-on-surface-variant font-body text-lg font-light">Khám phá các sản phẩm của chúng tôi.</p>
+        <h1 class="font-headline text-3xl sm:text-4xl md:text-5xl text-primary font-bold mb-4 italic">Sản Phẩm</h1>
+        <p class="text-on-surface-variant font-body text-lg font-light">Khám phá các sản phẩm và dịch vụ luận giải của chúng tôi.</p>
     </div>
 
-    <div class="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+    <div class="mb-8 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
         <div class="relative w-full sm:w-80">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/75 text-lg">search</span>
             <input type="text"
-                   class="w-full bg-surface-container border border-outline-variant rounded-lg pl-10 pr-4 py-3 text-on-surface placeholder-on-surface-variant focus:border-primary-container focus:ring-1 focus:ring-primary-container"
+                   class="ivory-input pl-10 py-2.5 shadow-sm text-sm"
                    placeholder="Tìm kiếm sản phẩm..."
                    @bind="searchQuery"
                    @oninput="OnSearchChanged" />
         </div>
-        <div class="flex items-center gap-2 w-full sm:w-auto">
-            <label class="text-sm text-on-surface-variant whitespace-nowrap">Sắp xếp:</label>
-            <select class="bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface"
+        <div class="flex items-center gap-2.5 w-full sm:w-auto">
+            <label class="text-sm font-bold text-on-surface-variant whitespace-nowrap">Sắp xếp:</label>
+            <select class="ivory-input py-2 px-3 shadow-sm text-sm cursor-pointer"
                     @bind="sortOption"
                     @bind:after="OnSortChanged">
                 <option value="Name">Tên</option>
@@ -37,61 +37,70 @@
 
     @if (_products == null)
     {
-        <div class="text-center py-12 text-on-surface-variant">
-            <span class="material-symbols-outlined text-4xl mb-4">inventory_2</span>
-            <p>Đang tải...</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (int i = 0; i < 6; i++)
+            {
+                <div class="bg-white border border-outline-variant/40 rounded-2xl p-6 shadow-sm flex flex-col gap-4 animate-pulse">
+                    <div class="h-6 bg-[--color-outline-variant]/30 rounded-lg w-3/4"></div>
+                    <div class="h-4 bg-[--color-outline-variant]/30 rounded-lg w-1/2 mt-2"></div>
+                    <div class="h-20 bg-[--color-outline-variant]/30 rounded-lg w-full mt-4"></div>
+                    <div class="h-10 bg-[--color-outline-variant]/30 rounded-lg w-full mt-auto"></div>
+                </div>
+            }
         </div>
     }
     else
     {
-        <div class="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach (var product in _pagedProducts)
-            {
-                if (!product.IsAvailable) continue;
-                <div class="bg-surface-container border border-outline-variant/30 rounded-lg p-5 hover:border-primary-container/50 hover:bg-surface-container-high transition-all flex flex-col">
-                    <h2 class="font-headline text-lg text-primary mb-3 italic line-clamp-2">@product.Name</h2>
-                    
-                    <div class="mb-3">
-                        @if (product.Discount > 0)
-                        {
-                            <div class="flex items-baseline gap-2 flex-wrap">
-                                <del class="text-sm text-on-surface-variant">@product.OriginPrice.ToString("N0")₫</del>
-                                <p class="text-xs bg-error text-on-error px-2 py-0.5 rounded-full">-@((int)product.Discount)%</p>
-                                <p class="text-xl font-semibold text-primary">@product.Price.ToString("N0")₫</p>
-                                
-                            </div>
-                        }
-                        else
-                        {
-                            <span class="text-xl font-semibold text-primary">@product.Price.ToString("N0")₫</span>
-                        }
-                    </div>
-                    
-                    <div class="space-y-1 text-sm text-on-surface-variant mb-4">
-                        @if (product.Quantity == -1)
-                        {
-                            <p><span class="font-medium">Còn:</span> ∞ (Không giới hạn)</p>
-                        }
-                        else
-                        {
-                            <p><span class="font-medium">Còn:</span> @((product.Quantity - product.QuantitySold).ToString("N0"))</p>
-                        }
-                        <p><span class="font-medium">Đã bán:</span> @product.QuantitySold.ToString("N0")</p>
-                        <p><span class="font-medium">Vé/sp:</span> @product.NumberofTickets.ToString("N0")</p>
-                    </div>
-                    <button class="w-full py-2 bg-[#C81A1A] hover:bg-[#B01818] text-white font-medium rounded-lg transition-colors mt-auto"
-                            @onclick="() => GoToCheckout(product.ProductId)">
-                        Mua ngay
-                    </button>
-                </div>
-            }
-        </div>
-
-        @if (!_pagedProducts.Any())
+        if (!_filteredProducts.Any())
         {
-            <div class="text-center py-12 text-on-surface-variant">
-                <span class="material-symbols-outlined text-4xl mb-4">inventory_2</span>
-                <p>Chưa có sản phẩm nào.</p>
+            <div class="flex flex-col items-center justify-center py-16 gap-3 text-[--color-on-surface-variant]">
+                <span class="material-symbols-outlined text-5xl text-[--color-primary]">storefront</span>
+                <p class="text-lg font-semibold font-[Noto_Serif]">Chưa có sản phẩm</p>
+                <p class="text-sm">Quay lại sau nhé</p>
+            </div>
+        }
+        else
+        {
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                @foreach (var product in _pagedProducts)
+                {
+                    if (!product.IsAvailable) continue;
+                    <div class="bg-white border border-outline-variant/60 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-primary/50 transition-all flex flex-col duration-300">
+                        <h2 class="font-headline text-lg font-bold text-on-surface hover:text-primary transition-colors mb-3 italic line-clamp-2 leading-snug">@product.Name</h2>
+                        
+                        <div class="mb-3">
+                            @if (product.Discount > 0)
+                            {
+                                <div class="flex items-baseline gap-2 flex-wrap">
+                                    <del class="text-xs text-on-surface-variant/80 font-medium">@product.OriginPrice.ToString("N0")₫</del>
+                                    <span class="text-[10px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full font-bold border border-red-200/50">-@((int)product.Discount)%</span>
+                                    <p class="text-xl font-bold text-primary">@product.Price.ToString("N0")₫</p>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-xl font-bold text-primary">@product.Price.ToString("N0")₫</span>
+                            }
+                        </div>
+                        
+                        <div class="space-y-1.5 text-xs text-on-surface-variant font-medium py-3 border-y border-outline-variant/20 mb-5 mt-3">
+                            @if (product.Quantity == -1)
+                            {
+                                <p class="flex justify-between"><span>Còn lại:</span> <span class="font-bold text-on-surface">∞ (Không giới hạn)</span></p>
+                            }
+                            else
+                            {
+                                <p class="flex justify-between"><span>Còn lại:</span> <span class="font-bold text-on-surface">@((product.Quantity - product.QuantitySold).ToString("N0"))</span></p>
+                            }
+                            <p class="flex justify-between"><span>Đã bán:</span> <span class="font-bold text-on-surface">@product.QuantitySold.ToString("N0")</span></p>
+                            <p class="flex justify-between"><span>Số lượng vé luận giải:</span> <span class="font-bold text-primary">@product.NumberofTickets.ToString("N0") vé</span></p>
+                        </div>
+                        <button class="w-full py-2.5 btn-gold text-xs font-bold rounded-xl transition-all mt-auto cursor-pointer"
+                                @onclick="() => GoToCheckout(product.ProductId)">
+                            Mua ngay
+                        </button>
+                    </div>
+                }
             </div>
         }
     }

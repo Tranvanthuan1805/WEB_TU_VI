@@ -88,15 +88,15 @@
                             Sản phẩm
                             @GetSortIcon(nameof(Product.Name))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Ticket.Code))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Ticket.Code))" class="sortable hidden md:table-cell">
                             Mã vé
                             @GetSortIcon(nameof(Ticket.Code))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Order.Quantity))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Order.Quantity))" class="sortable hidden md:table-cell">
                             Số lượng
                             @GetSortIcon(nameof(Order.Quantity))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Order.UnitPrice))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Order.UnitPrice))" class="sortable hidden md:table-cell">
                             Đơn giá
                             @GetSortIcon(nameof(Order.UnitPrice))
                         </th>
@@ -105,12 +105,12 @@
                             @GetSortIcon(nameof(Order.TotalAmount))
                         </th>
                         <th>Trạng thái</th>
-                        <th>Mã VNPay</th>
-                        <th @onclick="() => ToggleSort(nameof(Order.DateCreated))" class="sortable">
+                        <th class="hidden md:table-cell">Mã VNPay</th>
+                        <th @onclick="() => ToggleSort(nameof(Order.DateCreated))" class="sortable hidden md:table-cell">
                             Ngày tạo
                             @GetSortIcon(nameof(Order.DateCreated))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Order.DateUpdated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Order.DateUpdated))" class="sortable hidden md:table-cell">
                             Ngày cập nhật
                             @GetSortIcon(nameof(Order.DateUpdated))
                         </th>
@@ -118,13 +118,16 @@
                     </tr>
                 </thead>
                 <tbody>
-@if (_pagedOrders == null)
+                    @if (_pagedOrders == null)
                     {
-                        <tr>
-                            <td colspan="11" class="text-center py-8 text-on-surface-variant">
-                                Đang tải...
-                            </td>
-                        </tr>
+                        @for (int i = 0; i < 5; i++)
+                        {
+                            <tr>
+                                <td colspan="11" class="py-4">
+                                    <div class="animate-pulse rounded-xl bg-[--color-outline-variant]/30 h-10 w-full"></div>
+                                </td>
+                            </tr>
+                        }
                     }
                     else
                     {
@@ -139,13 +142,13 @@
                                         @AppUtilities.TruncateMiddle(order.Product?.Name ?? "-", 25)
                                     </span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="ticket-code" title="@order.Ticket?.Code">@AppUtilities.TruncateMiddle(order.Ticket?.Code ?? "-", 15)</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="quantity-text">@order.Quantity</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="price-text">@order.UnitPrice.ToString("N0")₫</span>
                                 </td>
                                 <td>
@@ -154,13 +157,13 @@
                                 <td>
                                     <span class="status-tag @GetStatusClass(order.Status)">@GetStatusText(order.Status)</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="vnp-text">@(order.VnpayTransactionNo ?? "-")</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="date-text">@order.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="date-text">@order.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
                                 <td>
@@ -175,8 +178,12 @@
                         if (!_pagedOrders.Any())
                         {
                             <tr>
-                                <td colspan="11" class="text-center py-8 text-on-surface-variant">
-                                    Không có đơn hàng nào.
+                                <td colspan="11" class="py-4">
+                                    <div class="flex flex-col items-center justify-center py-16 gap-3 text-[--color-on-surface-variant]">
+                                        <span class="material-symbols-outlined text-5xl">shopping_bag</span>
+                                        <p class="text-lg font-semibold font-[Noto_Serif]">Chưa có đơn hàng</p>
+                                        <p class="text-sm">Khách hàng chưa đặt dịch vụ nào</p>
+                                    </div>
                                 </td>
                             </tr>
                         }

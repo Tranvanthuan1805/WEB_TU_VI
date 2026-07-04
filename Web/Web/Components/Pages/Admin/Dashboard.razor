@@ -25,37 +25,48 @@
     </div>
 
     <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <span class="material-symbols-outlined stat-icon">shopping_cart</span>
+        @if (_isLoading)
+        {
+            @for (int i = 0; i < 4; i++)
+            {
+                <div class="animate-pulse rounded-xl bg-[--color-outline-variant]/30 h-32">
+                </div>
+            }
+        }
+        else
+        {
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="material-symbols-outlined stat-icon">shopping_cart</span>
+                </div>
+                <p class="stat-label">Total Orders (30d)</p>
+                <h3 class="stat-value">@totalOrders.ToString("N0")</h3>
             </div>
-            <p class="stat-label">Total Orders (30d)</p>
-            <h3 class="stat-value">@totalOrders.ToString("N0")</h3>
-        </div>
 
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <span class="material-symbols-outlined stat-icon">payments</span>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="material-symbols-outlined stat-icon">payments</span>
+                </div>
+                <p class="stat-label">Revenue (30d)</p>
+                <h3 class="stat-value">@revenue.ToString("N0", new CultureInfo("vi-VN")) ₫</h3>
             </div>
-            <p class="stat-label">Revenue (30d)</p>
-            <h3 class="stat-value">@revenue.ToString("N0", new CultureInfo("vi-VN")) ₫</h3>
-        </div>
 
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <span class="material-symbols-outlined stat-icon">contact_mail</span>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="material-symbols-outlined stat-icon">contact_mail</span>
+                </div>
+                <p class="stat-label">Total Contacts (30d)</p>
+                <h3 class="stat-value">@totalContacts.ToString("N0")</h3>
             </div>
-            <p class="stat-label">Total Contacts (30d)</p>
-            <h3 class="stat-value">@totalContacts.ToString("N0")</h3>
-        </div>
 
-        <div class="stat-card">
-            <div class="stat-card-header">
-                <span class="material-symbols-outlined stat-icon">mark_email_unread</span>
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="material-symbols-outlined stat-icon">mark_email_unread</span>
+                </div>
+                <p class="stat-label">New Contacts (24h)</p>
+                <h3 class="stat-value">@newContacts.ToString("N0")</h3>
             </div>
-            <p class="stat-label">New Contacts (24h)</p>
-            <h3 class="stat-value">@newContacts.ToString("N0")</h3>
-        </div>
+        }
     </div>
 
     <div class="dashboard-main-grid">
@@ -111,10 +122,10 @@
                 <thead>
                     <tr>
                         <th>Date</th>
-                        <th>Anonymous ID</th>
+                        <th class="hidden md:table-cell">Anonymous ID</th>
                         <th>Free Usage</th>
                         <th>Premium Usage</th>
-                        <th>Last Used</th>
+                        <th class="hidden md:table-cell">Last Used</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -134,7 +145,7 @@
                                 <td>
                                     <span class="date-text">@stat.Date.ToString("dd/MM/yyyy")</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="stat-id">@(string.IsNullOrEmpty(stat.AnonymousId) ? "-" : stat.AnonymousId)</span>
                                 </td>
                                 <td>
@@ -143,7 +154,7 @@
                                 <td>
                                     <span class="stat-count premium">@stat.PremiumUsageCount</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="date-text">@stat.LastUsedAt.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
                             </tr>
@@ -207,6 +218,7 @@
 </div>
 
 @code {
+    private bool _isLoading = true;
     private int totalOrders;
     private decimal revenue;
     private int uniqueUsers;
@@ -243,6 +255,7 @@
 
     private async Task LoadDataAsync()
     {
+        _isLoading = true;
         using var context = DbFactory.CreateDbContext();
 
         var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
@@ -311,6 +324,7 @@
             Orders = x.Count,
             Revenue = x.Revenue
         }).ToList();
+        _isLoading = false;
     }
 
     private async Task GoToPage(int page)

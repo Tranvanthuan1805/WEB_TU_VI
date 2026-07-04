@@ -84,17 +84,17 @@
                             Số lượng
                             @GetSortIcon(nameof(Models.Ticket.Quantity))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Models.Ticket.QuantityUsed))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Models.Ticket.QuantityUsed))" class="sortable hidden md:table-cell">
                             Đã dùng
                             @GetSortIcon(nameof(Models.Ticket.QuantityUsed))
                         </th>
                         <th>Còn lại</th>
                         <th>Trạng thái</th>
-                        <th @onclick="() => ToggleSort(nameof(Models.Ticket.DateCreated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Models.Ticket.DateCreated))" class="sortable hidden md:table-cell">
                             Ngày tạo
                             @GetSortIcon(nameof(Models.Ticket.DateCreated))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Models.Ticket.DateUpdated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Models.Ticket.DateUpdated))" class="sortable hidden md:table-cell">
                             Ngày cập nhật
                             @GetSortIcon(nameof(Models.Ticket.DateUpdated))
                         </th>
@@ -122,7 +122,7 @@
                                 <td>
                                     <span class="quantity-text">@ticket.Quantity.ToString("N0")</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="quantity-text">@ticket.QuantityUsed.ToString("N0")</span>
                                 </td>
                                 <td>
@@ -131,10 +131,10 @@
                                 <td>
                                     <span class="status-tag @(isUsedUp ? "usedup" : (ticket.Published ? "published" : "draft"))">@(isUsedUp ? "Hết lượt" : (ticket.Published ? "Hoạt động" : "Không hoạt động"))</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="date-text">@ticket.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="date-text">@ticket.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
                                 <td>
@@ -152,8 +152,13 @@
                         if (!_pagedTickets.Any())
                         {
                             <tr>
-                                <td colspan="8" class="text-center py-8 text-on-surface-variant">
-                                    Không có vé nào.
+                                <td colspan="8" class="py-4">
+                                    <div class="flex flex-col items-center justify-center py-16 gap-3 text-[--color-on-surface-variant]">
+                                        <span class="material-symbols-outlined text-5xl">confirmation_number</span>
+                                        <p class="text-lg font-semibold font-[Noto_Serif]">Chưa có vé nào</p>
+                                        <p class="text-sm">Tạo vé mới để bắt đầu</p>
+                                        <button class="btn-gold mt-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer" @onclick="ShowCreateForm">Tạo vé</button>
+                                    </div>
                                 </td>
                             </tr>
                         }

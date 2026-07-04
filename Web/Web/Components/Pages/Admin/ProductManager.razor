@@ -79,7 +79,7 @@
                             Tên sản phẩm
                             @GetSortIcon(nameof(Product.Name))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Product.OriginPrice))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Product.OriginPrice))" class="sortable hidden md:table-cell">
                             Giá gốc
                             @GetSortIcon(nameof(Product.OriginPrice))
                         </th>
@@ -87,7 +87,7 @@
                             Giá
                             @GetSortIcon(nameof(Product.Price))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Product.Discount))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Product.Discount))" class="sortable hidden md:table-cell">
                             Giảm giá
                             @GetSortIcon(nameof(Product.Discount))
                         </th>
@@ -95,16 +95,16 @@
                             Số lượng
                             @GetSortIcon(nameof(Product.Quantity))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Product.QuantitySold))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Product.QuantitySold))" class="sortable hidden md:table-cell">
                             Đã bán
                             @GetSortIcon(nameof(Product.QuantitySold))
                         </th>
                         <th>Trạng thái</th>
-                        <th @onclick="() => ToggleSort(nameof(Product.DateCreated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Product.DateCreated))" class="sortable hidden md:table-cell">
                             Ngày tạo
                             @GetSortIcon(nameof(Product.DateCreated))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Product.DateUpdated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Product.DateUpdated))" class="sortable hidden md:table-cell">
                             Ngày cập nhật
                             @GetSortIcon(nameof(Product.DateUpdated))
                         </th>
@@ -131,28 +131,28 @@
                                         <span class="article-title">@product.Name</span>
                                     </div>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="price-text">@product.OriginPrice.ToString("N0")₫</span>
                                 </td>
                                 <td>
                                     <span class="price-text">@product.Price.ToString("N0")₫</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="discount-text">@product.Discount.ToString("0")%</span>
                                 </td>
                                 <td>
                                     <span class="quantity-text">@(product.Quantity < 0 ? "∞" : product.Quantity.ToString("N0"))</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="quantity-text">@product.QuantitySold.ToString("N0")</span>
                                 </td>
                                 <td>
                                     <span class="status-tag @(isOutOfStock ? "usedup" : (product.Published ? "published" : "draft"))">@(isOutOfStock ? "Hết hàng" : (product.Published ? "Xuất bản" : "Nháp"))</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="date-text">@product.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="date-text">@product.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
                                 <td>
@@ -170,8 +170,13 @@
                         if (!_pagedProducts.Any())
                         {
                             <tr>
-                                <td colspan="10" class="text-center py-8 text-on-surface-variant">
-                                    Không có sản phẩm nào.
+                                <td colspan="10" class="py-4">
+                                    <div class="flex flex-col items-center justify-center py-16 gap-3 text-[--color-on-surface-variant]">
+                                        <span class="material-symbols-outlined text-5xl">inventory_2</span>
+                                        <p class="text-lg font-semibold font-[Noto_Serif]">Chưa có sản phẩm</p>
+                                        <p class="text-sm">Thêm sản phẩm đầu tiên</p>
+                                        <button class="btn-gold mt-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer" @onclick="ShowCreateForm">Thêm sản phẩm</button>
+                                    </div>
                                 </td>
                             </tr>
                         }

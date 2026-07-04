@@ -11,61 +11,64 @@
     <meta name="description" content="Liên hệ với Lá Số Tử Vi - Góp ý hoặc báo lỗi để chúng tôi cải thiện dịch vụ." />
 </head>
 
-<div class="max-w-xl mx-auto py-12">
-    <header class="text-center space-y-4 mb-12">
-        <h1 class="font-headline text-4xl md:text-5xl text-primary leading-tight italic">Liên hệ</h1>
-        <p class="text-on-surface-variant font-light">Góp ý hoặc báo lỗi để chúng tôi cải thiện dịch vụ tốt hơn.</p>
-    </header>
+<div class="max-w-xl mx-auto py-8">
+    <div class="bg-white border border-outline-variant/40 shadow-md rounded-3xl p-8 md:p-10 space-y-8">
+        <header class="text-center space-y-3 mb-6">
+            <h1 class="font-headline text-4xl text-primary font-bold italic leading-tight">Liên hệ</h1>
+            <p class="text-on-surface-variant font-medium text-sm">Góp ý hoặc báo lỗi để chúng tôi cải thiện dịch vụ tốt hơn.</p>
+        </header>
 
-    <EditForm Model="_contactModel" OnValidSubmit="HandleSubmit" FormName="contact" method="post">
-        <DataAnnotationsValidator />
-        <div class="space-y-6">
-            <div class="relative group">
-                <label class="text-on-surface font-medium block mb-2">Loại liên hệ</label>
-                <InputSelect class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all appearance-none"
-                            @bind-Value="_contactModel.ContactType">
-                    <option class="bg-surface" value="GopY">Góp ý</option>
-                    <option class="bg-surface" value="BaoLoi">Báo lỗi</option>
-                </InputSelect>
+        <EditForm Model="_contactModel" OnValidSubmit="HandleSubmit" FormName="contact" method="post">
+            <DataAnnotationsValidator />
+            <div class="space-y-5">
+                <div class="relative">
+                    <label class="block text-xs font-bold text-on-surface uppercase tracking-wider mb-1">Loại liên hệ</label>
+                    <InputSelect class="ivory-input mt-1 cursor-pointer bg-white"
+                                @bind-Value="_contactModel.ContactType">
+                        <option value="GopY">Góp ý</option>
+                        <option value="BaoLoi">Báo lỗi</option>
+                    </InputSelect>
+                </div>
+
+                <div class="relative">
+                    <label class="block text-xs font-bold text-on-surface uppercase tracking-wider mb-1">Nội dung <span class="text-red-500">*</span></label>
+                    <InputTextArea class="ivory-input mt-1 min-h-[150px] resize-none"
+                                  @bind-Value="_contactModel.Content" placeholder="Nhập nội dung liên hệ..." />
+                    <ValidationMessage For="() => _contactModel.Content" />
+                </div>
+
+                <div class="relative">
+                    <label class="block text-xs font-bold text-on-surface uppercase tracking-wider mb-1">Email của bạn</label>
+                    <InputText class="ivory-input mt-1"
+                               type="email" @bind-Value="_contactModel.Email" placeholder="Nhập email của bạn" />
+                    <ValidationMessage For="() => _contactModel.Email" />
+                    <p class="text-on-surface-variant/80 text-[11px] font-medium mt-1">Nếu bạn muốn nhận phản hồi, vui lòng để lại email chính xác.</p>
+                </div>
+
+                <div class="pt-4">
+                    <button class="btn-gold py-4 w-full flex items-center justify-center gap-2 cursor-pointer shadow-md text-xs"
+                            type="submit" disabled="@isSubmitting">
+                        @if (isSubmitting)
+                        {
+                            <span class="font-bold">Đang gửi liên hệ...</span>
+                        }
+                        else
+                        {
+                            <span class="font-bold tracking-widest">Gửi liên hệ</span>
+                            <span class="material-symbols-outlined text-sm">send</span>
+                        }
+                    </button>
+                </div>
             </div>
+        </EditForm>
 
-            <div class="relative group">
-                <label class="text-on-surface font-medium block mb-2">Nội dung <span class="text-red-400">*</span></label>
-                <InputTextArea class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all min-h-[150px]"
-                              @bind-Value="_contactModel.Content" placeholder="Nhập nội dung liên hệ..." />
-                <ValidationMessage For="() => _contactModel.Content" />
+        @if (showSuccess)
+        {
+            <div class="mt-6 p-4 bg-green-50 border border-green-200 rounded-xl text-center shadow-sm">
+                <p class="text-green-700 font-bold text-sm">Đã gửi liên hệ thành công! Cảm ơn ý kiến đóng góp của bạn.</p>
             </div>
-
-            <div class="relative group">
-                <label class="text-on-surface font-medium block mb-2">Email</label>
-                <InputText class="w-full bg-transparent border-t-0 border-x-0 border-b border-outline py-3 focus:ring-0 text-on-surface-variant focus:border-primary-container text-lg font-body transition-all"
-                           type="email" @bind-Value="_contactModel.Email" placeholder="Nhập email của bạn" />
-                <ValidationMessage For="() => _contactModel.Email" />
-                <p class="text-on-surface-variant text-sm mt-1">Nếu bạn muốn nhận phản hồi, vui lòng để lại email.</p>
-            </div>
-
-            <div class="pt-4">
-                <button class="w-full py-4 bg-primary-container text-on-primary-container font-label font-extrabold uppercase tracking-[0.3em] text-sm hover:opacity-90 transition-all"
-                        type="submit" disabled="@isSubmitting">
-                    @if (isSubmitting)
-                    {
-                        <span>Đang gửi...</span>
-                    }
-                    else
-                    {
-                        <span>Gửi liên hệ</span>
-                    }
-                </button>
-            </div>
-        </div>
-    </EditForm>
-
-    @if (showSuccess)
-    {
-        <div class="mt-6 p-4 bg-green-900/30 border border-green-500/50 rounded-lg text-center">
-            <p class="text-green-400">Đã gửi liên hệ thành công!</p>
-        </div>
-    }
+        }
+    </div>
 </div>
 
 <style>

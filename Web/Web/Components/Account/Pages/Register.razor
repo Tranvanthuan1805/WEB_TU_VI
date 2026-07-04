@@ -1,4 +1,4 @@
-﻿@page "/Account/Register"
+@page "/Account/Register"
 
 @using System.ComponentModel.DataAnnotations
 @using System.Text
@@ -17,42 +17,42 @@
 
 <PageTitle>Register</PageTitle>
 
-<h1>Register</h1>
+<h2 class="font-[Noto_Serif] text-2xl font-semibold text-center text-[--color-primary] mb-6 italic">Đăng Ký Tài Khoản</h2>
 
-<div class="row">
-    <div class="col-lg-6">
-        <StatusMessage Message="@Message" />
-        <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
-            <DataAnnotationsValidator />
-            <h2>Create a new account.</h2>
-            <hr />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label for="Input.Email">Email</label>
-                <ValidationMessage For="() => Input.Email" class="text-danger" />
-            </div>
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.Password">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger" />
-            </div>
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="Input.ConfirmPassword">Confirm Password</label>
-                <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </EditForm>
+<StatusMessage Message="@Message" />
+
+<EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register" class="space-y-4">
+    <DataAnnotationsValidator />
+    
+    <div class="relative flex flex-col gap-1.5">
+        <label for="Input.Email" class="text-sm font-semibold text-[--color-on-surface-variant]">Email</label>
+        <InputText @bind-Value="Input.Email" id="Input.Email" class="ivory-input" autocomplete="username" aria-required="true" placeholder="name@example.com" />
+        <ValidationMessage For="() => Input.Email" />
     </div>
-    <div class="col-lg-4 col-lg-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
+    
+    <div class="relative flex flex-col gap-1.5">
+        <label for="Input.Password" class="text-sm font-semibold text-[--color-on-surface-variant]">Mật khẩu</label>
+        <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="ivory-input" autocomplete="new-password" aria-required="true" placeholder="••••••••" />
+        <ValidationMessage For="() => Input.Password" />
     </div>
-</div>
+    
+    <div class="relative flex flex-col gap-1.5">
+        <label for="Input.ConfirmPassword" class="text-sm font-semibold text-[--color-on-surface-variant]">Xác nhận mật khẩu</label>
+        <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="ivory-input" autocomplete="new-password" aria-required="true" placeholder="••••••••" />
+        <ValidationMessage For="() => Input.ConfirmPassword" />
+    </div>
+    
+    <div class="pt-4">
+        <button type="submit" class="btn-gold w-full py-3 flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.005] active:scale-[0.995]">
+            <span class="font-bold tracking-widest">Đăng Ký</span>
+            <span class="material-symbols-outlined text-lg">person_add</span>
+        </button>
+    </div>
+
+    <div class="text-center pt-4 text-sm text-[--color-on-surface-variant]">
+        Đã có tài khoản? <a href="Account/Login" class="text-[--color-primary] font-semibold hover:underline">Đăng nhập ngay</a>
+    </div>
+</EditForm>
 
 @code {
     private IEnumerable<IdentityError>? identityErrors;

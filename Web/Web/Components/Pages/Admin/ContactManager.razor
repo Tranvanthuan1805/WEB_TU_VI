@@ -80,7 +80,7 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th class="hidden md:table-cell">ID</th>
                         <th @onclick="() => ToggleSort(nameof(Contact.Type))" class="sortable">
                             Loại
                             @GetSortIcon(nameof(Contact.Type))
@@ -94,11 +94,11 @@
                             @GetSortIcon(nameof(Contact.Content))
                         </th>
                         <th>Trạng thái</th>
-                        <th @onclick="() => ToggleSort(nameof(Contact.DateCreated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Contact.DateCreated))" class="sortable hidden md:table-cell">
                             Ngày tạo
                             @GetSortIcon(nameof(Contact.DateCreated))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Contact.DateUpdated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Contact.DateUpdated))" class="sortable hidden md:table-cell">
                             Ngày cập nhật
                             @GetSortIcon(nameof(Contact.DateUpdated))
                         </th>
@@ -119,7 +119,7 @@
                         foreach (var contact in _pagedContacts)
                         {
                             <tr>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="contact-id">@contact.ContactId</span>
                                 </td>
                                 <td>
@@ -134,10 +134,10 @@
                                 <td>
                                     <span class="status-tag @GetStatusClass(contact.Status)">@GetStatusText(contact.Status)</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="date-text">@contact.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="date-text">@contact.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
                                 <td>

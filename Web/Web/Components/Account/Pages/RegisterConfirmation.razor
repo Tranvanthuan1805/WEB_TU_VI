@@ -1,4 +1,4 @@
-﻿@page "/Account/RegisterConfirmation"
+@page "/Account/RegisterConfirmation"
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
@@ -10,23 +10,37 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register confirmation</PageTitle>
+<PageTitle>Xác Nhận Đăng Ký | Lá Số Tử Vi</PageTitle>
 
-<h1>Register confirmation</h1>
+<h2 class="font-[Noto_Serif] text-2xl font-semibold text-center text-[--color-primary] mb-4 italic">Xác Nhận Đăng Ký</h2>
 
-<StatusMessage Message="@statusMessage" />
+<div class="text-center py-4 space-y-4 font-[Manrope]">
+    <StatusMessage Message="@statusMessage" />
 
-@if (emailConfirmationLink is not null)
-{
-    <p>
-        This app does not currently have a real email sender registered, see <a href="https://aka.ms/aspaccountconf">these docs</a> for how to configure a real email sender.
-        Normally this would be emailed: <a href="@emailConfirmationLink">Click here to confirm your account</a>
-    </p>
-}
-else
-{
-    <p role="alert">Please check your email to confirm your account.</p>
-}
+    @if (emailConfirmationLink is not null)
+    {
+        <div class="bg-[--color-primary-container]/10 border border-[--color-primary]/25 rounded-xl p-4 text-sm text-[--color-on-surface] leading-relaxed space-y-3">
+            <p>
+                Ứng dụng hiện tại chưa cấu hình dịch vụ gửi email thực tế.
+            </p>
+            <p>
+                Để kiểm tra luồng xác minh, bạn có thể click trực tiếp:
+            </p>
+            <div class="pt-2">
+                <a href="@emailConfirmationLink" class="btn-gold px-6 py-2.5 inline-flex items-center gap-2 no-underline text-xs text-[--color-on-primary]">
+                    <span>Xác Nhận Tài Khoản</span>
+                    <span class="material-symbols-outlined text-sm">verified_user</span>
+                </a>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="text-sm text-[--color-on-surface-variant] leading-relaxed">
+            Vui lòng kiểm tra email của bạn để hoàn tất việc xác nhận tài khoản.
+        </p>
+    }
+</div>
 
 @code {
     private string? emailConfirmationLink;

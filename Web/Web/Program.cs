@@ -80,6 +80,7 @@ builder.Services.AddScoped<ConfirmDialogService>();
 builder.Services.AddScoped<VnpayService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddScoped<TuViExcelService>();
+builder.Services.AddScoped<FengShuiService>();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -132,5 +133,7 @@ app.MapRazorComponents<App>()
     .AddAdditionalAssemblies(typeof(Web.Client.Components._Imports).Assembly);
 
 app.MapAdditionalIdentityEndpoints();
+
+app.MapFallbackToFile("index.html");
 
 app.Run();

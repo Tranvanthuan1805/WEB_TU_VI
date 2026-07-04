@@ -1,4 +1,4 @@
-﻿@page "/Account/ConfirmEmail"
+@page "/Account/ConfirmEmail"
 
 @using System.Text
 @using Microsoft.AspNetCore.Identity
@@ -8,10 +8,18 @@
 @inject UserManager<User> UserManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Confirm email</PageTitle>
+<h2 class="font-[Noto_Serif] text-2xl font-semibold text-center text-[--color-primary] mb-4 italic">Xác Nhận Email</h2>
 
-<h1>Confirm email</h1>
-<StatusMessage Message="@statusMessage" />
+<div class="text-center py-4 space-y-4">
+    <StatusMessage Message="@statusMessage" />
+    
+    <div class="pt-4">
+        <a href="Account/Login" class="btn-gold px-8 py-3 inline-flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.005] active:scale-[0.995] no-underline text-[--color-on-primary]">
+            <span class="font-bold tracking-widest text-xs">Đăng Nhập Ngay</span>
+            <span class="material-symbols-outlined text-sm">login</span>
+        </a>
+    </div>
+</div>
 
 @code {
     private string? statusMessage;

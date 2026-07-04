@@ -1,4 +1,4 @@
-﻿@page "/Account/Login"
+@page "/Account/Login"
 
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
@@ -15,66 +15,44 @@
 
 <PageTitle>Log in</PageTitle>
 
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-5 col-lg-4">
-            <div class="tuvi-card p-4">
-                <h4 class="tuvi-card-title text-center mb-4">Đăng Nhập Admin</h4>
+<h2 class="font-[Noto_Serif] text-2xl font-semibold text-center text-[--color-primary] mb-6 italic">Đăng Nhập Admin</h2>
 
-                <section>
-                    <StatusMessage Message="@errorMessage" />
-                    <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary class="text-danger" role="alert" />
-                        <div class="form-floating mb-3">
-                            <InputText @bind-Value="Input.Email" id="Input.Email" class="form-control" autocomplete="username webauthn" aria-required="true" placeholder="name@example.com" />
-                            <label for="Input.Email" class="form-label">Email</label>
-                            <ValidationMessage For="() => Input.Email" class="text-danger" />
-                        </div>
-                        <div class="form-floating mb-3">
-                            <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                            <label for="Input.Password" class="form-label">Password</label>
-                            <ValidationMessage For="() => Input.Password" class="text-danger" />
-                        </div>
-                        <div class="checkbox mb-3">
-                            <label class="form-label">
-                                <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
-                                Remember me
-                            </label>
-                        </div>
-                        <div>
-                            <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                        </div>
-                        @* <hr />
-                <div class="d-flex flex-column">
-                    <span class="text-secondary mx-auto mt-2">OR</span>
-                    <PasskeySubmit Operation="PasskeyOperation.Request" Name="Input.Passkey" EmailName="Input.Email" class="btn btn-link mx-auto">Log in with a passkey</PasskeySubmit>
-                </div>
-                <hr /> *@
-                        @* <div>
-                    <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div> *@
-                    </EditForm>
-                </section>
-            </div>
-        </div>
+<StatusMessage Message="@errorMessage" />
+
+<EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login" class="space-y-4">
+    <DataAnnotationsValidator />
+    
+    <div class="relative flex flex-col gap-1.5">
+        <label for="Input.Email" class="text-sm font-semibold text-[--color-on-surface-variant]">Email</label>
+        <InputText @bind-Value="Input.Email" id="Input.Email" class="ivory-input" autocomplete="username webauthn" aria-required="true" placeholder="name@example.com" />
+        <ValidationMessage For="() => Input.Email" />
     </div>
-    @* <div class="col-lg-4 col-lg-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
-    </div> *@
-</div>
+    
+    <div class="relative flex flex-col gap-1.5">
+        <label for="Input.Password" class="text-sm font-semibold text-[--color-on-surface-variant]">Mật khẩu</label>
+        <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="ivory-input" autocomplete="current-password" aria-required="true" placeholder="••••••••" />
+        <ValidationMessage For="() => Input.Password" />
+    </div>
+    
+    <div class="flex items-center justify-between pt-1">
+        <label class="flex items-center gap-2 text-sm font-medium text-[--color-on-surface-variant] cursor-pointer">
+            <InputCheckbox @bind-Value="Input.RememberMe" class="rounded border-[--color-outline-variant] text-[--color-primary] focus:ring-[--color-primary] h-4 w-4" />
+            <span>Ghi nhớ đăng nhập</span>
+        </label>
+        <a href="Account/ForgotPassword" class="text-sm text-[--color-primary] hover:underline">Quên mật khẩu?</a>
+    </div>
+    
+    <div class="pt-4">
+        <button type="submit" class="btn-gold w-full py-3 flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.005] active:scale-[0.995]">
+            <span class="font-bold tracking-widest">Đăng Nhập</span>
+            <span class="material-symbols-outlined text-lg">login</span>
+        </button>
+    </div>
+
+    <div class="text-center pt-4 text-sm text-[--color-on-surface-variant]">
+        Chưa có tài khoản? <a href="Account/Register" class="text-[--color-primary] font-semibold hover:underline">Đăng ký ngay</a>
+    </div>
+</EditForm>
 
 @code {
     private string? errorMessage;

@@ -75,11 +75,11 @@
                             @GetSortIcon(nameof(Models.Post.Title))
                         </th>
                         <th>Trạng thái</th>
-                        <th @onclick="() => ToggleSort(nameof(Post.DateCreated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Post.DateCreated))" class="sortable hidden md:table-cell">
                             Ngày tạo
                             @GetSortIcon(nameof(Models.Post.DateCreated))
                         </th>
-                        <th @onclick="() => ToggleSort(nameof(Post.DateUpdated))" class="sortable">
+                        <th @onclick="() => ToggleSort(nameof(Post.DateUpdated))" class="sortable hidden md:table-cell">
                             Ngày cập nhật
                             @GetSortIcon(nameof(Models.Post.DateUpdated))
                         </th>
@@ -108,10 +108,10 @@
                                 <td>
                                     <span class="status-tag @(post.Published ? "published" : "draft")">@(post.Published ? "Xuất bản" : "Nháp")</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="date-text">@post.DateCreated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
-                                <td>
+                                <td class="hidden md:table-cell">
                                     <span class="date-text">@post.DateUpdated.ToString("dd/MM/yyyy HH:mm")</span>
                                 </td>
                                 <td>
@@ -129,8 +129,13 @@
                         if (!_pagedPosts.Any())
                         {
                             <tr>
-                                <td colspan="5" class="text-center py-8 text-on-surface-variant">
-                                    Không có bài viết nào.
+                                <td colspan="5" class="py-4">
+                                    <div class="flex flex-col items-center justify-center py-16 gap-3 text-[--color-on-surface-variant]">
+                                        <span class="material-symbols-outlined text-5xl">article</span>
+                                        <p class="text-lg font-semibold font-[Noto_Serif]">Chưa có bài viết</p>
+                                        <p class="text-sm">Bắt đầu viết bài đầu tiên</p>
+                                        <button class="btn-gold mt-2 px-4 py-2 rounded-xl text-sm font-semibold cursor-pointer" @onclick="ShowCreateForm">Tạo bài viết</button>
+                                    </div>
                                 </td>
                             </tr>
                         }

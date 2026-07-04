@@ -25,10 +25,11 @@
     <div class="space-y-6">
         @if (_pagedPosts == null)
         {
-            <div class="text-center py-12 text-on-surface-variant">
-                <span class="material-symbols-outlined text-4xl mb-4">article</span>
-                <p>Đang tải...</p>
-            </div>
+            @for (int i = 0; i < 5; i++)
+            {
+                <div class="animate-pulse rounded-xl bg-[--color-outline-variant]/30 h-28">
+                </div>
+            }
         }
         else
         {
@@ -42,9 +43,10 @@
             }
             @if (!_pagedPosts.Any())
             {
-                <div class="text-center py-12 text-on-surface-variant">
-                    <span class="material-symbols-outlined text-4xl mb-4">article</span>
-                    <p>Chưa có bài viết nào.</p>
+                <div class="flex flex-col items-center justify-center py-16 gap-3 text-[--color-on-surface-variant]">
+                    <span class="material-symbols-outlined text-5xl">search</span>
+                    <p class="text-lg font-semibold font-[Noto_Serif]">Không tìm thấy bài viết</p>
+                    <p class="text-sm">Thử từ khóa khác</p>
                 </div>
             }
         }
