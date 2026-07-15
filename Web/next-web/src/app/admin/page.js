@@ -40,6 +40,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!authorized) return;
+    setItems([]); // Clear previous tab's array data to prevent mapping crash
     if (activeTab === "dashboard") {
       loadDashboardStats();
     } else {
@@ -62,9 +63,21 @@ export default function AdminDashboard() {
   const loadTabItems = (tab) => {
     setLoading(true);
     fetch(`/api/admin/${tab}`)
-      .then(res => res.json())
-      .then(data => setItems(data || []))
-      .catch(() => {})
+      .then(res => {
+        if (!res.ok) throw new Error("Lỗi tải dữ liệu");
+        return res.json();
+      })
+      .then(data => {
+        if (tab === "config") {
+          setFormData(data || {});
+          setItems([]);
+        } else {
+          setItems(Array.isArray(data) ? data : []);
+        }
+      })
+      .catch(() => {
+        setItems([]);
+      })
       .finally(() => setLoading(false));
   };
 
@@ -518,6 +531,70 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
+                {/* Cover Image Upload Section */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Ảnh đại diện (Cover Image)</label>
+                  <div className="flex gap-4 items-center">
+                    <input
+                      type="text"
+                      name="coverImage"
+                      value={formData.coverImage || ""}
+                      onChange={handleFormChange}
+                      placeholder="Đường dẫn ảnh đại diện (hoặc bấm chọn tải lên ở bên phải)"
+                      className="ivory-input flex-grow"
+                    />
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          
+                          const uploadData = new FormData();
+                          uploadData.append('file', file);
+                          
+                          try {
+                            const response = await fetch('/api/tinymce/upload-image', {
+                              method: 'POST',
+                              body: uploadData
+                            });
+                            const result = await response.json();
+                            if (result.location) {
+                              setFormData(prev => ({ ...prev, coverImage: result.location }));
+                            } else {
+                              alert("Tải ảnh thất bại: " + (result.error || "Lỗi không xác định"));
+                            }
+                          } catch (err) {
+                            alert("Lỗi kết nối tải ảnh: " + err.message);
+                          }
+                        }}
+                        className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                        title="Chọn file ảnh"
+                      />
+                      <button 
+                        type="button" 
+                        className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors shadow-sm inline-flex items-center gap-1.5"
+                      >
+                        Tải ảnh lên
+                      </button>
+                    </div>
+                  </div>
+                  {formData.coverImage && (
+                    <div className="mt-2 relative w-32 h-20 rounded-xl overflow-hidden border border-slate-200">
+                      <img src={formData.coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => setFormData(prev => ({ ...prev, coverImage: "" }))}
+                        className="absolute top-1 right-1 p-1 bg-black/60 hover:bg-black/85 text-white rounded-full cursor-pointer text-[10px]"
+                        title="Xóa ảnh"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Mô tả ngắn</label>
                   <textarea
@@ -584,7 +661,16 @@ export default function AdminDashboard() {
                   <tbody className="bg-white divide-y divide-slate-100/55">
                     {items.map(post => (
                       <tr key={post.postId} className="hover:bg-slate-50/50">
-                        <td className="px-4 py-3 font-semibold text-slate-800 max-w-xs truncate">{post.title}</td>
+                        <td className="px-4 py-3 font-semibold text-slate-800 max-w-xs truncate">
+                          <div className="flex items-center gap-3">
+                            {post.coverImage ? (
+                              <img src={post.coverImage} alt="" className="w-10 h-7 rounded object-cover border border-slate-200 flex-shrink-0" />
+                            ) : (
+                              <div className="w-10 h-7 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-[9px] text-slate-400 font-bold flex-shrink-0">NO IMG</div>
+                            )}
+                            <span className="truncate">{post.title}</span>
+                          </div>
+                        </td>
                         <td className="px-4 py-3 font-mono text-slate-400">{post.slug}</td>
                         <td className="px-4 py-3">{new Date(post.dateUpdated).toLocaleDateString('vi-VN')}</td>
                         <td className="px-4 py-3">

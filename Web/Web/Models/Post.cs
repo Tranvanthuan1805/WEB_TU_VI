@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Web.Models
@@ -28,6 +28,9 @@ namespace Web.Models
 
         [Display(Name = "Xuất bản")]
         public bool Published { set; get; }
+
+        [Display(Name = "Ảnh đại diện")]
+        public string? CoverImage { get; set; }
 
         [Display(Name = "Ngày tạo")]
         public DateTime DateCreated { set; get; }

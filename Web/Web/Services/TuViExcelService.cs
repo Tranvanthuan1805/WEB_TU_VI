@@ -53,7 +53,8 @@ namespace Web.Services
                 if (tuviSheet != null)
                 {
                     tuviSheet.Cell("G23").Value = input.ViewYear;
-                    FillEmptyCells(tuviSheet, "A11:L40");
+                    tuviSheet.Cell("G24").Value = "Có";
+                    tuviSheet.Cell("F13").Value = "Mệnh Chủ";
                 }
 
                 var setupSheet = workbook.Worksheet("Setup");
@@ -66,10 +67,187 @@ namespace Web.Services
                 workbook.RecalculateAllFormulas();
 
                 result.TheCachHtml = GenerateTableHtml(workbook.Worksheet("Thể Cách"), "B2:T11", "thecach");
-                result.TuViHtml = GenerateTableHtml(tuviSheet, "A11:L40", "tuvi");
+                result.TuViHtml = GenerateTuViGridHtml(tuviSheet);
             });
 
             return result;
+        }
+
+        private string GenerateTuViGridHtml(IXLWorksheet? sheet)
+        {
+            if (sheet == null) return string.Empty;
+
+            var sb = new System.Text.StringBuilder();
+
+            sb.Append("<div class=\"tuvi-chart-container\" style=\"width: 100%; max-width: 1020px; margin: 0 auto; overflow-x: auto; padding: 4px; background: #ffffff;\">");
+            
+            sb.Append("<style>");
+            sb.Append("  .excel-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-family: sans-serif; background: #ffffff; }");
+            sb.Append("  .excel-cell { padding: 2px 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11.5px; }");
+            sb.Append("  @media print {");
+            sb.Append("    .tuvi-chart-container { padding: 0; }");
+            sb.Append("  }");
+            sb.Append("</style>");
+
+            sb.Append("<table class=\"excel-table\">");
+            
+            sb.Append("<colgroup>");
+            sb.Append("  <col style=\"width: 9%;\" />");
+            sb.Append("  <col style=\"width: 9%;\" />");
+            sb.Append("  <col style=\"width: 9%;\" />");
+            sb.Append("  <col style=\"width: 7.5%;\" />");
+            sb.Append("  <col style=\"width: 7.5%;\" />");
+            sb.Append("  <col style=\"width: 7.5%;\" />");
+            sb.Append("  <col style=\"width: 7.5%;\" />");
+            sb.Append("  <col style=\"width: 7.5%;\" />");
+            sb.Append("  <col style=\"width: 7.5%;\" />");
+            sb.Append("  <col style=\"width: 9%;\" />");
+            sb.Append("  <col style=\"width: 9%;\" />");
+            sb.Append("  <col style=\"width: 9%;\" />");
+            sb.Append("  <col style=\"width: 2%;\" />");
+            sb.Append("</colgroup>");
+            sb.Append("<tbody>");
+
+            for (int r = 1; r <= 41; r++)
+            {
+                sb.Append("<tr>");
+                for (int c = 1; c <= 13; c++)
+                {
+                    var cell = sheet.Cell(r, c);
+                    
+                    int rowspan = 1;
+                    int colspan = 1;
+                    bool isMerged = false;
+                    bool isTopLeftOfMerge = false;
+
+                    foreach (var mergedRange in sheet.MergedRanges)
+                    {
+                        if (mergedRange.Contains(cell))
+                        {
+                            isMerged = true;
+                            if (cell.Address.ToString() == mergedRange.RangeAddress.FirstAddress.ToString())
+                            {
+                                isTopLeftOfMerge = true;
+                                rowspan = mergedRange.Rows().Count();
+                                colspan = mergedRange.Columns().Count();
+                            }
+                            break;
+                        }
+                    }
+
+                    if (isMerged && !isTopLeftOfMerge)
+                    {
+                        continue;
+                    }
+
+                    var value = cell.GetString()?.Trim() ?? "";
+                    var style = GetCellCssStyle(cell);
+
+                    var borderStyles = new List<string>();
+                    
+                    if (cell.Style.Border.TopBorder != XLBorderStyleValues.None)
+                        borderStyles.Add("border-top: 2px solid #0f172a;");
+                    else
+                        borderStyles.Add("border-top: 1px solid #cbd5e1;");
+
+                    if (cell.Style.Border.BottomBorder != XLBorderStyleValues.None)
+                        borderStyles.Add("border-bottom: 2px solid #0f172a;");
+                    else
+                        borderStyles.Add("border-bottom: 1px solid #cbd5e1;");
+
+                    if (cell.Style.Border.LeftBorder != XLBorderStyleValues.None)
+                        borderStyles.Add("border-left: 2px solid #0f172a;");
+                    else
+                        borderStyles.Add("border-left: 1px solid #cbd5e1;");
+
+                    if (cell.Style.Border.RightBorder != XLBorderStyleValues.None)
+                        borderStyles.Add("border-right: 2px solid #0f172a;");
+                    else
+                        borderStyles.Add("border-right: 1px solid #cbd5e1;");
+
+                    var borderCss = string.Join(" ", borderStyles);
+
+                    try
+                    {
+                        var bg = cell.Style.Fill.BackgroundColor;
+                        if (bg == XLColor.Yellow || bg.Color.Name == "Yellow" || bg.Color.R == 255 && bg.Color.G == 255 && bg.Color.B == 0)
+                        {
+                            style += " background-color: #fef08a !important; border: 1px dashed #ca8a04 !important; font-weight: bold;";
+                        }
+                    }
+                    catch {}
+
+                    if (r == 41)
+                    {
+                        style += " background-color: #0284c7 !important; color: #ffffff !important; font-weight: bold; text-align: center;";
+                    }
+
+                    string spanAttr = "";
+                    if (rowspan > 1) spanAttr += $" rowspan=\"{rowspan}\"";
+                    if (colspan > 1) spanAttr += $" colspan=\"{colspan}\"";
+
+                    sb.Append($"<td class=\"excel-cell\"{spanAttr} style=\"{style} {borderCss}\" title=\"{value}\">");
+                    sb.Append(value);
+                    sb.Append("</td>");
+                }
+                sb.Append("</tr>");
+            }
+
+            sb.Append("</tbody>");
+            sb.Append("</table>");
+            sb.Append("</div>");
+
+            return sb.ToString();
+        }
+
+        private string GetCellCssStyle(IXLCell cell)
+        {
+            var styles = new List<string>();
+            
+            if (cell.Style.Font.Bold)
+                styles.Add("font-weight: bold;");
+            
+            var pt = cell.Style.Font.FontSize;
+            if (pt > 0)
+                styles.Add($"font-size: {Math.Max(8.0, pt * 0.95)}px;");
+                
+            var align = cell.Style.Alignment.Horizontal;
+            if (align == XLAlignmentHorizontalValues.Center)
+                styles.Add("text-align: center;");
+            else if (align == XLAlignmentHorizontalValues.Right)
+                styles.Add("text-align: right;");
+            else
+                styles.Add("text-align: left;");
+
+            try
+            {
+                var bg = cell.Style.Fill.BackgroundColor;
+                if (bg.ColorType == XLColorType.Color || bg.ColorType == XLColorType.Theme)
+                {
+                    var c = bg.Color;
+                    var rgb = $"{c.R:X2}{c.G:X2}{c.B:X2}";
+                    if (rgb != "FFFFFF" && rgb != "000000")
+                    {
+                        styles.Add($"background-color: #{rgb};");
+                    }
+                }
+            }
+            catch {}
+
+            try
+            {
+                var fontColor = cell.Style.Font.FontColor;
+                if (fontColor.ColorType == XLColorType.Color || fontColor.ColorType == XLColorType.Theme)
+                {
+                    var c = fontColor.Color;
+                    var rgb = $"{c.R:X2}{c.G:X2}{c.B:X2}";
+                    if (rgb == "000000") rgb = "1e293b";
+                    styles.Add($"color: #{rgb};");
+                }
+            }
+            catch { }
+
+            return string.Join(" ", styles);
         }
 
         private void ResolveCycles(IXLWorksheet sheet)
@@ -167,6 +345,57 @@ namespace Web.Services
                         sheet.Cell($"O{rowIdx}").Value = o[i];
                         sheet.Cell($"P{rowIdx}").Value = p[i];
                     }
+
+                    // 3. Solve Cycle 3 (AK4 to AK9) and Cycle 4 (AK10 to AK15)
+                    try
+                    {
+                        double ak4 = 1, ak5 = 1, ak6 = 1, ak7 = 1, ak8 = 1, ak9 = 1;
+                        string m23 = sheet.Cell("M23").GetString()?.Trim() ?? "";
+                        string m24 = sheet.Cell("M24").GetString()?.Trim() ?? "";
+                        string m25 = sheet.Cell("M25").GetString()?.Trim() ?? "";
+                        string m26 = sheet.Cell("M26").GetString()?.Trim() ?? "";
+                        string m27 = sheet.Cell("M27").GetString()?.Trim() ?? "";
+                        string m28 = sheet.Cell("M28").GetString()?.Trim() ?? "";
+
+                        for (int iter = 0; iter < 100; iter++)
+                        {
+                            ak4 = (m23 == "1") ? 1 : ak5 + 1;
+                            ak5 = (m24 == "1") ? 1 : ak6 + 1;
+                            ak6 = (m25 == "1") ? 1 : ak7 + 1;
+                            ak7 = (m26 == "1") ? 1 : ak8 + 1;
+                            ak8 = (m27 == "1") ? 1 : ak9 + 1;
+                            ak9 = (m28 == "1") ? 1 : ak4 + 1;
+                        }
+
+                        double ak10 = 1, ak11 = 1, ak12 = 1, ak13 = 1, ak14 = 1, ak15 = 1;
+                        for (int iter = 0; iter < 100; iter++)
+                        {
+                            ak10 = (ak7 == 1) ? 7 : ak11 + 1;
+                            ak11 = (ak8 == 1) ? 7 : ak12 + 1;
+                            ak12 = (ak9 == 1) ? 7 : ak13 + 1;
+                            ak13 = (ak4 == 1) ? 7 : ak14 + 1;
+                            ak14 = (ak5 == 1) ? 7 : ak15 + 1;
+                            ak15 = (ak6 == 1) ? 7 : ak10 + 1;
+                        }
+
+                        sheet.Cell("AK4").Value = ak4;
+                        sheet.Cell("AK5").Value = ak5;
+                        sheet.Cell("AK6").Value = ak6;
+                        sheet.Cell("AK7").Value = ak7;
+                        sheet.Cell("AK8").Value = ak8;
+                        sheet.Cell("AK9").Value = ak9;
+
+                        sheet.Cell("AK10").Value = ak10;
+                        sheet.Cell("AK11").Value = ak11;
+                        sheet.Cell("AK12").Value = ak12;
+                        sheet.Cell("AK13").Value = ak13;
+                        sheet.Cell("AK14").Value = ak14;
+                        sheet.Cell("AK15").Value = ak15;
+                    }
+                    catch (Exception loopEx)
+                    {
+                        _logger.LogError(loopEx, "Error resolving AK circular references");
+                    }
                 }
             }
             catch (Exception ex)
@@ -231,58 +460,98 @@ namespace Web.Services
         {
             if (sheet == null) return string.Empty;
 
-            var usedRange = sheet.Range(range);
-            var firstRow = usedRange.RangeAddress.FirstAddress.RowNumber;
-            var lastRow = usedRange.RangeAddress.LastAddress.RowNumber;
-            var firstColNum = usedRange.RangeAddress.FirstAddress.ColumnNumber;
-            var lastColNum = usedRange.RangeAddress.LastAddress.ColumnNumber;
-            var totalCols = lastColNum - firstColNum + 1;
+            var xlRange = sheet.Range(range);
+            var firstRow = xlRange.RangeAddress.FirstAddress.RowNumber;
+            var lastRow = xlRange.RangeAddress.LastAddress.RowNumber;
+            var firstColNum = xlRange.RangeAddress.FirstAddress.ColumnNumber;
+            var lastColNum = xlRange.RangeAddress.LastAddress.ColumnNumber;
 
             var sb = new System.Text.StringBuilder();
+
+            sb.Append("<div class=\"excel-table-container\" style=\"width: 100%; overflow-x: auto; padding: 4px; background: #ffffff;\">");
             
-            // Wrap in scrollable container to prevent grid squeezes on mobile/tablet viewports
-            sb.Append($"<div class=\"overflow-x-auto w-full rounded-2xl border border-outline-variant/50 shadow-inner bg-surface-container-lowest p-4\">");
-            sb.Append($"<div class=\"grid\" style=\"grid-template-columns: repeat({totalCols}, minmax(110px, 1fr)); gap: 4px; min-width: 100%; width: max-content;\">");
+            sb.Append("<style>");
+            sb.Append("  .thecach-table { border-collapse: collapse; table-layout: fixed; font-family: sans-serif; background: #ffffff; min-width: 950px; width: 100%; }");
+            sb.Append("  .thecach-cell { padding: 4px 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }");
+            sb.Append("</style>");
 
-            for (var row = firstRow; row <= lastRow; row++)
+            sb.Append("<table class=\"thecach-table\">");
+            sb.Append("<tbody>");
+
+            for (int r = firstRow; r <= lastRow; r++)
             {
-                for (var col = firstColNum; col <= lastColNum; col++)
+                sb.Append("<tr>");
+                for (int c = firstColNum; c <= lastColNum; c++)
                 {
-                    var cell = sheet.Cell(row, col);
-                    var value = cell.GetString()?.Trim();
-                    var hasValue = !string.IsNullOrEmpty(value);
+                    var cell = sheet.Cell(r, c);
+
+                    // Check if cell is merged
+                    int rowspan = 1;
+                    int colspan = 1;
+                    bool isMerged = false;
+                    bool isTopLeftOfMerge = false;
+
+                    foreach (var mergedRange in sheet.MergedRanges)
+                    {
+                        if (mergedRange.Contains(cell))
+                        {
+                            isMerged = true;
+                            if (cell.Address.ToString() == mergedRange.RangeAddress.FirstAddress.ToString())
+                            {
+                                isTopLeftOfMerge = true;
+                                rowspan = mergedRange.Rows().Count();
+                                colspan = mergedRange.Columns().Count();
+                            }
+                            break;
+                        }
+                    }
+
+                    if (isMerged && !isTopLeftOfMerge)
+                    {
+                        continue; // Skip rendering
+                    }
+
+                    var value = cell.GetFormattedString()?.Trim() ?? "";
+                    var style = GetCellCssStyle(cell);
+
+                    // Reconstruct gridlines
+                    var borderStyles = new List<string>();
                     
-                    // Style differently for headers vs data cells vs empty cells
-                    string cellClass;
-                    string cellStyle;
-
-                    if (!hasValue)
-                    {
-                        cellClass = "border border-outline-variant/30 text-center px-2 py-3 text-xs rounded-lg font-sans opacity-30 flex items-center justify-center min-h-[46px]";
-                        cellStyle = "background-color: var(--surface-container-low); color: var(--on-surface-variant);";
-                    }
+                    if (cell.Style.Border.TopBorder != XLBorderStyleValues.None)
+                        borderStyles.Add("border-top: 2px solid #0f172a;");
                     else
-                    {
-                        // Check if it's likely a header (first row, first column, or bold indicators)
-                        bool isHeader = row == firstRow || col == firstColNum;
-                        
-                        if (isHeader)
-                        {
-                            cellClass = "border border-primary/30 text-center px-2 py-3 text-xs font-bold rounded-lg font-headline flex items-center justify-center min-h-[46px] shadow-sm";
-                            cellStyle = "background-color: var(--surface-container-high); color: var(--primary);";
-                        }
-                        else
-                        {
-                            cellClass = "border border-outline-variant/50 text-center px-2 py-3 text-xs font-medium rounded-lg font-sans flex items-center justify-center min-h-[46px] shadow-sm hover:bg-primary/5 transition-colors duration-150";
-                            cellStyle = "background-color: var(--surface); color: var(--on-surface);";
-                        }
-                    }
+                        borderStyles.Add("border-top: 1px solid #cbd5e1;");
 
-                    sb.Append($"<div class=\"{cellClass}\" style=\"{cellStyle} min-width: 0;\">{value}</div>");
+                    if (cell.Style.Border.BottomBorder != XLBorderStyleValues.None)
+                        borderStyles.Add("border-bottom: 2px solid #0f172a;");
+                    else
+                        borderStyles.Add("border-bottom: 1px solid #cbd5e1;");
+
+                    if (cell.Style.Border.LeftBorder != XLBorderStyleValues.None)
+                        borderStyles.Add("border-left: 2px solid #0f172a;");
+                    else
+                        borderStyles.Add("border-left: 1px solid #cbd5e1;");
+
+                    if (cell.Style.Border.RightBorder != XLBorderStyleValues.None)
+                        borderStyles.Add("border-right: 2px solid #0f172a;");
+                    else
+                        borderStyles.Add("border-right: 1px solid #cbd5e1;");
+
+                    var borderCss = string.Join(" ", borderStyles);
+
+                    string spanAttr = "";
+                    if (rowspan > 1) spanAttr += $" rowspan=\"{rowspan}\"";
+                    if (colspan > 1) spanAttr += $" colspan=\"{colspan}\"";
+
+                    sb.Append($"<td class=\"thecach-cell\"{spanAttr} style=\"{style} {borderCss}\" title=\"{value}\">");
+                    sb.Append(value);
+                    sb.Append("</td>");
                 }
+                sb.Append("</tr>");
             }
 
-            sb.Append("</div>");
+            sb.Append("</tbody>");
+            sb.Append("</table>");
             sb.Append("</div>");
             return sb.ToString();
         }

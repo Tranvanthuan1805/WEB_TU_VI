@@ -93,6 +93,56 @@ builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
+// Auto-migrate database on startup
+using (var scope = app.Services.CreateScope())
+{
+    var factory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDBContext>>();
+    using var context = factory.CreateDbContext();
+    try
+    {
+        context.Database.EnsureCreated();
+        Console.WriteLine("=== Database ensured/created successfully ===");
+
+        // Seed default admin user
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>();
+        var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+
+        Task.Run(async () =>
+        {
+            if (!await roleManager.RoleExistsAsync("Admin"))
+            {
+                await roleManager.CreateAsync(new IdentityRole("Admin"));
+            }
+
+            var adminEmail = "admin@example.com";
+            var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            if (adminUser == null)
+            {
+                adminUser = new User
+                {
+                    UserName = "admin@example.com",
+                    Email = adminEmail,
+                    EmailConfirmed = true
+                };
+                var result = await userManager.CreateAsync(adminUser, "Admin@123");
+                if (result.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(adminUser, "Admin");
+                    Console.WriteLine("=== Default admin user seeded: admin@example.com / Admin@123 ===");
+                }
+                else
+                {
+                    Console.WriteLine("=== Lỗi tạo admin user: " + string.Join(", ", result.Errors.Select(e => e.Description)) + " ===");
+                }
+            }
+        }).GetAwaiter().GetResult();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("=== Lỗi tự động migrate database: " + ex.Message + " ===");
+    }
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

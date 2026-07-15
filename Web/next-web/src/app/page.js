@@ -245,115 +245,115 @@ export default function Home() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16">
+    <div className="max-w-6xl mx-auto w-full px-4 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         
-        {/* Left Form (7 columns) */}
-        <div className="lg:col-span-7 space-y-8">
-          <div className="bg-white border border-[#E5DDD0]/70 shadow-md rounded-3xl p-6 md:p-10 space-y-6">
-            <header className="mb-4">
-              <h1 className="font-serif text-3xl md:text-4xl text-[#C5A059] leading-tight mb-3 italic font-semibold">Lập Lá Số Tử Vi</h1>
-              <p className="text-slate-500 text-sm font-light leading-relaxed">
-                Khám phá bản đồ định mệnh của bạn thông qua thuật toán cổ truyền kết hợp trí tuệ số. Hãy nhập chính xác thông tin để khai mở.
-              </p>
-            </header>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Left Form (8 columns) */}
+        <div className="lg:col-span-8 w-full">
+          <div className="space-y-6 w-full">
+            <form onSubmit={handleSubmit} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_4px_30px_rgba(0,0,0,0.03)] p-6 md:p-8 space-y-6">
               
+              <div className="space-y-2 text-left">
+                <h2 className="text-3xl font-bold font-serif text-stone-800 tracking-tight">Lập Lá Số Tử Vi</h2>
+                <p className="text-slate-450 text-[13px] leading-relaxed">
+                  Khám phá bản đồ định mệnh của bạn thông qua thuật toán cổ truyền kết hợp trí tuệ số. Hãy nhập chính xác thông tin để khai mở Manuscript.
+                </p>
+              </div>
+
               {/* Type Select */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Chọn loại lá số</label>
-                <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-2 text-left">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chọn loại lá số</label>
+                <div className="grid grid-cols-3 gap-2">
                   {["1", "2", "3"].map(opt => (
                     <button
                       key={opt}
                       type="button"
                       onClick={() => setSelectedOption(opt)}
-                      className={`flex items-center justify-center p-3 border rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
+                      className={`py-3 px-1 text-[11px] font-bold rounded-xl border text-center transition-all cursor-pointer ${
                         selectedOption === opt 
-                          ? 'border-[#C5A059] bg-[#C5A059]/5 text-[#C5A059]' 
-                          : 'border-[#E5DDD0]/70 bg-white text-slate-500 hover:border-slate-400'
+                          ? 'border-amber-700 bg-amber-50/40 text-stone-850 shadow-sm' 
+                          : 'border-slate-200 bg-transparent text-slate-400 hover:border-slate-300 hover:text-slate-600'
                       }`}
                     >
-                      {opt === "1" ? "Cơ Bản" : opt === "2" ? "Vận Hạn" : "Trọn Đời"}
+                      {opt === "1" ? "CƠ BẢN" : opt === "2" ? "VẬN HẠN" : "TRỌN ĐỜI"}
                     </button>
                   ))}
                 </div>
               </div>
 
               {/* Input Mode Selection */}
-              <div className="space-y-2 pb-4 border-b border-[#E5DDD0]/30">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Phương thức nhập thông tin</label>
-                <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2 text-left pb-4 border-b border-slate-100">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Phương thức nhập thông tin</label>
+                <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => toggleInputMode(false)}
-                    className={`py-3 border rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
+                    className={`py-3 px-1 text-[11px] font-bold rounded-xl border text-center transition-all cursor-pointer ${
                       !useProfileSelect 
-                        ? 'border-[#C5A059] bg-[#C5A059]/5 text-[#C5A059]' 
-                        : 'border-[#E5DDD0]/70 bg-white text-slate-500 hover:border-slate-400'
+                        ? 'border-amber-700 bg-amber-50/40 text-stone-850 shadow-sm' 
+                        : 'border-slate-200 bg-transparent text-slate-400 hover:border-slate-300 hover:text-slate-600'
                     }`}
                   >
-                    Nhập thủ công
+                    NHẬP THỦ CÔNG
                   </button>
                   <button
                     type="button"
                     onClick={() => toggleInputMode(true)}
-                    className={`py-3 border rounded-xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
+                    className={`py-3 px-1 text-[11px] font-bold rounded-xl border text-center transition-all cursor-pointer ${
                       useProfileSelect 
-                        ? 'border-[#C5A059] bg-[#C5A059]/5 text-[#C5A059]' 
-                        : 'border-[#E5DDD0]/70 bg-white text-slate-500 hover:border-slate-400'
+                        ? 'border-amber-700 bg-amber-50/40 text-stone-850 shadow-sm' 
+                        : 'border-slate-200 bg-transparent text-slate-400 hover:border-slate-300 hover:text-slate-600'
                     }`}
                   >
-                    Chọn từ danh sách
+                    CHỌN TỪ DANH SÁCH
                   </button>
                 </div>
               </div>
 
               {useProfileSelect ? (
                 /* Search and select Profile */
-                <div className="space-y-2 relative">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Tìm kiếm người trong danh sách</label>
+                <div className="space-y-2 text-left relative">
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tìm kiếm người trong danh sách</label>
                   <div className="relative">
                     <input
                       type="text"
                       value={searchProfileQuery}
                       onChange={handleSearchProfileQueryChanged}
                       placeholder="Nhập tên để tìm kiếm..."
-                      className="ivory-input"
+                      className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-50 outline-none text-slate-700 font-semibold text-sm transition-all bg-slate-50/50 focus:bg-white"
                     />
                     {filteredProfiles.length > 0 && (
-                      <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-[#E5DDD0] rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                      <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
                         {filteredProfiles.map(p => (
                           <div
                             key={p.index}
                             onClick={() => handleSelectProfile(p)}
-                            className="px-4 py-2.5 hover:bg-[#C5A059]/5 cursor-pointer text-sm transition-colors border-b border-[#E5DDD0]/30 last:border-none"
+                            className="px-4 py-2.5 hover:bg-amber-50/40 cursor-pointer text-sm transition-colors border-b border-slate-100 last:border-none"
                           >
-                            <div className="font-bold text-[#C5A059]">{p.fullName} ({p.gender})</div>
+                            <div className="font-bold text-amber-750">{p.fullName} ({p.gender})</div>
                             <div className="text-xs text-slate-500">Sinh ngày: {p.day}/{p.month}/{p.year} - Giờ: {p.hour} {p.notes ? `| Ghi chú: ${p.notes}` : ''}</div>
                           </div>
                         ))}
                       </div>
                     )}
                     {searchProfileQuery && filteredProfiles.length === 0 && selectedProfile?.fullName !== searchProfileQuery && (
-                      <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-[#E5DDD0] rounded-xl shadow-lg p-4 text-center text-xs text-slate-500 italic">
+                      <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-lg p-4 text-center text-xs text-slate-500 italic">
                         Không tìm thấy tên tương thích
                       </div>
                     )}
                   </div>
                   {selectedProfile && (
-                    <div className="p-4 bg-[#C5A059]/5 border border-[#C5A059]/20 rounded-2xl text-xs space-y-2 shadow-sm">
+                    <div className="p-4 bg-amber-50/20 border border-amber-200/60 rounded-2xl text-xs space-y-2 shadow-sm">
                       <div className="flex items-center justify-between">
-                        <div>Đang chọn: <span className="font-bold text-[#C5A059] text-sm">{selectedProfile.fullName}</span> ({selectedProfile.gender})</div>
-                        <span className="px-2 py-0.5 bg-[#C5A059]/10 text-[#C5A059] rounded text-[10px] font-bold">Đã đồng bộ</span>
+                        <div>Đang chọn: <span className="font-bold text-amber-700 text-sm">{selectedProfile.fullName}</span> ({selectedProfile.gender})</div>
+                        <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 rounded text-[10px] font-bold">Đã đồng bộ</span>
                       </div>
                       <div className="grid grid-cols-2 gap-2 text-slate-500">
                         <div>Ngày sinh: <span className="font-semibold text-slate-700">{selectedProfile.day}/{selectedProfile.month}/{selectedProfile.year}</span></div>
                         <div>Giờ sinh: <span className="font-semibold text-slate-700">{selectedProfile.hour}</span></div>
                       </div>
                       {selectedProfile.notes && (
-                        <div className="text-slate-500/80 italic pt-1 border-t border-[#E5DDD0]/30">Ghi chú: {selectedProfile.notes}</div>
+                        <div className="text-slate-500/80 italic pt-1 border-t border-slate-100">Ghi chú: {selectedProfile.notes}</div>
                       )}
                     </div>
                   )}
@@ -361,46 +361,46 @@ export default function Home() {
               ) : (
                 /* Manual Inputs */
                 <>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-3 text-left">
                     <div className="space-y-2">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Ngày sinh</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Ngày sinh</label>
                       <input 
                         type="number" 
                         min="1" 
                         max={maxDayInMonth}
                         value={birthDay}
                         onChange={e => setBirthDay(Math.min(maxDayInMonth, Math.max(1, parseInt(e.target.value) || 1)))}
-                        className="ivory-input"
+                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-50 outline-none text-slate-700 font-semibold text-sm transition-all bg-slate-50/50 focus:bg-white"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Tháng sinh</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tháng sinh</label>
                       <input 
                         type="number" 
                         min="1" 
                         max="12"
                         value={birthMonth}
                         onChange={e => setBirthMonth(Math.min(12, Math.max(1, parseInt(e.target.value) || 1)))}
-                        className="ivory-input"
+                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-50 outline-none text-slate-700 font-semibold text-sm transition-all bg-slate-50/50 focus:bg-white"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Năm sinh</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Năm sinh</label>
                       <input 
                         type="number" 
                         min="1900" 
                         max="2099"
                         value={birthYear}
                         onChange={e => setBirthYear(Math.min(2099, Math.max(1900, parseInt(e.target.value) || 1900)))}
-                        className="ivory-input"
+                        className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-50 outline-none text-slate-700 font-semibold text-sm transition-all bg-slate-50/50 focus:bg-white"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                     <div className="space-y-2">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Giờ sinh</label>
-                      <div className="px-1 py-1.5">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Giờ sinh</label>
+                      <div className="relative pt-1 px-1">
                         <input 
                           type="range" 
                           min="0" 
@@ -408,46 +408,46 @@ export default function Home() {
                           step="1"
                           value={birthHour24}
                           onChange={handleSliderChange}
-                          className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer mb-2 accent-[#C5A059]"
+                          className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-amber-600 my-3"
                         />
-                        <div className="flex justify-between text-[11px] text-slate-500 font-semibold px-0.5">
+                        <div className="flex justify-between text-[10px] text-slate-400 font-semibold px-0.5">
                           <span>0h</span>
-                          <span className="text-[#C5A059] font-bold">{birthHour24}h</span>
+                          <span className="text-amber-600 font-bold">{birthHour24}h</span>
                           <span>23h</span>
                         </div>
                       </div>
                       <select 
                         value={birthHour} 
                         onChange={handleSelectChange}
-                        className="ivory-input cursor-pointer"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-amber-500 outline-none text-slate-700 font-semibold text-sm bg-slate-50/50 cursor-pointer transition-all"
                       >
-                        <option value="Ty">Tý (23h - 01h)</option>
-                        <option value="Suu">Sửu (01h - 03h)</option>
-                        <option value="Dan">Dần (03h - 05h)</option>
-                        <option value="Mao">Mão (05h - 07h)</option>
-                        <option value="Thin">Thìn (07h - 09h)</option>
-                        <option value="Ty2">Tỵ (09h - 11h)</option>
-                        <option value="Ngo">Ngọ (11h - 13h)</option>
-                        <option value="Mui">Mùi (13h - 15h)</option>
-                        <option value="Than">Thân (15h - 17h)</option>
-                        <option value="Dau">Dậu (17h - 19h)</option>
-                        <option value="Tuat">Tuất (19h - 21h)</option>
-                        <option value="Hoi">Hợi (21h - 23h)</option>
+                        <option value="Ty">00h · Tý (23h - 01h)</option>
+                        <option value="Suu">01h · Sửu (01h - 03h)</option>
+                        <option value="Dan">03h · Dần (03h - 05h)</option>
+                        <option value="Mao">05h · Mão (05h - 07h)</option>
+                        <option value="Thin">07h · Thìn (07h - 09h)</option>
+                        <option value="Ty2">09h · Tỵ (09h - 11h)</option>
+                        <option value="Ngo">11h · Ngọ (11h - 13h)</option>
+                        <option value="Mui">13h · Mùi (13h - 15h)</option>
+                        <option value="Than">15h · Thân (15h - 17h)</option>
+                        <option value="Dau">17h · Dậu (17h - 19h)</option>
+                        <option value="Tuat">19h · Tuất (19h - 21h)</option>
+                        <option value="Hoi">21h · Hợi (21h - 23h)</option>
                       </select>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Giới tính</label>
-                      <div className="grid grid-cols-2 gap-3">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Giới tính</label>
+                      <div className="grid grid-cols-2 gap-2 h-[106px] items-end">
                         {["Nam", "Nữ"].map(g => (
                           <button
                             key={g}
                             type="button"
                             onClick={() => setGender(g)}
-                            className={`py-3.5 border rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                            className={`py-3.5 px-4 rounded-xl border text-center font-bold text-sm transition-all cursor-pointer ${
                               gender === g 
-                                ? 'border-[#C5A059] bg-[#C5A059]/5 text-[#C5A059]' 
-                                : 'border-[#E5DDD0]/70 bg-white text-slate-500 hover:border-slate-400'
+                                ? 'border-amber-700 bg-amber-50/40 text-stone-850 shadow-sm' 
+                                : 'border-slate-200 bg-transparent text-slate-400 hover:border-slate-300 hover:text-slate-600'
                             }`}
                           >
                             {g}
@@ -460,53 +460,43 @@ export default function Home() {
               )}
 
               {/* View Year */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Năm xem</label>
+              <div className="space-y-2 text-left">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Năm xem</label>
                 <input 
                   type="number" 
                   min="1900" 
                   max="2100"
                   value={viewYear}
                   onChange={e => setViewYear(parseInt(e.target.value) || new Date().getFullYear())}
-                  className="ivory-input"
+                  className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-50 outline-none text-slate-700 font-semibold text-sm transition-all bg-slate-50/50 focus:bg-white"
                 />
               </div>
 
               {/* Ticket Input */}
-              <div className="space-y-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Mã vé VIP (tùy chọn)</label>
+              <div className="space-y-2 text-left">
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Mã vé VIP (tùy chọn)</label>
                 <input 
                   type="text" 
                   value={ticketCode}
                   onChange={e => setTicketCode(e.target.value)}
                   placeholder="Nhập mã vé nếu có để mở luận giải chi tiết"
-                  className="ivory-input"
+                  className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:border-amber-500 focus:ring-2 focus:ring-amber-50 outline-none text-slate-700 font-semibold text-sm transition-all bg-slate-50/50 focus:bg-white"
                 />
               </div>
 
               {/* Free usage hint */}
-              {freeUsageHint && (
-                <div className="text-xs text-[#C5A059] font-bold bg-[#C5A059]/5 border border-[#C5A059]/20 rounded-xl px-4 py-3 flex items-center gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  <span>{freeUsageHint}</span>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-2">
+                <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-bold bg-emerald-50 border border-emerald-100 rounded-lg px-2.5 py-1">
+                  <span>✓</span>
+                  <span>Mở khóa miễn phí 100%</span>
                 </div>
-              )}
-
-              {/* Submit Button */}
-              <div className="pt-2">
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="btn-gold py-4 w-full flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.005] active:scale-[0.995] disabled:opacity-70"
+                  className="px-8 py-3.5 text-white disabled:text-slate-400 font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-md hover:scale-[1.02] active:scale-95 shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #a68249, #8f6d39)' }}
                 >
-                  {isLoading ? (
-                    <span className="font-bold">Đang tính toán lá số...</span>
-                  ) : (
-                    <>
-                      <span className="font-bold tracking-widest">Lập Lá Số Ngay</span>
-                      <Sparkles className="w-5 h-5" />
-                    </>
-                  )}
+                  {isLoading ? "Đang tính toán..." : "Lập lá số ngay ❈"}
                 </button>
               </div>
 
@@ -514,100 +504,63 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Right Sidebar (5 columns) */}
-        <div className="lg:col-span-5 space-y-8">
+        {/* Right Sidebar (4 columns) */}
+        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-20 w-full">
           
           {/* Portrait Sidebar Card */}
-          <div className="bg-white border border-[#E5DDD0]/70 shadow-sm rounded-3xl p-6 space-y-6">
-            <div className="relative rounded-2xl overflow-hidden aspect-[16/10] shadow-sm">
+          <div className="bg-white rounded-3xl p-5 border border-slate-100 shadow-[0_4px_30px_rgba(0,0,0,0.02)] space-y-4">
+            <div className="rounded-2xl overflow-hidden aspect-[4/3] relative border border-slate-50">
               <img 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAm4UysmCrrtwbRhfFYYTqcrMv4VHb4TAgR4mIz_bBGFJY-GVLrg_dGtlH5HkOBJfnO5zwLxOn14ne2os0hYVk7fUSGEw1kJbJuXmcDH5c4XY3L8h8UKUr2v-8glPqWIpgCUQ6o7-e0_Rerm4W_qmf5Fru3ZqMsyqP6DpwsiKgYGlZle9wdJMgxZ9EXStQwhQB_dx0cEGGIsHcSQOkYkgdQRKm7b0mIkfbseXXwsWDh_o-vbhY8aIAKnW2kp_WWrxhOXP_EFhvYz4E" 
-                alt="Portrait"
-                className="w-full h-full object-cover sepia-[0.1] brightness-[0.95]"
+                src="/mystical_woman.png" 
+                alt="Mystical celestial woman"
+                className="object-cover w-full h-full"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent"></div>
-              <div className="absolute bottom-4 left-4 right-4 z-10">
-                <p className="text-xs italic text-[#C5A059] font-serif p-3 bg-black/60 backdrop-blur-md rounded-xl border border-[#3C3A35]/30 leading-relaxed shadow-sm">
-                  "Mệnh tốt không bằng Thân tốt, Thân tốt không bằng Hạn tốt."
-                </p>
-              </div>
             </div>
-
-            {config && (config.facebookEnabled || config.zaloEnabled) && (
-              <div className="pt-4 border-t border-[#E5DDD0]/50 space-y-3">
-                <span className="text-[10px] tracking-widest text-[#C5A059] font-bold uppercase block">Tư Vấn Trực Tiếp</span>
-                <h4 className="font-serif text-base text-slate-800 font-bold italic">Luận giải chuyên sâu cùng chuyên gia</h4>
-                <div className="flex flex-wrap gap-3">
-                  {config.facebookEnabled && config.facebookUrl && (
-                    <a 
-                      href={config.facebookUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="flex items-center gap-2 px-4 py-2 border border-[#E5DDD0] rounded-xl text-xs font-semibold text-slate-600 hover:text-[#C5A059] hover:border-[#C5A059] transition-colors"
-                    >
-                      <MessageCircle className="w-4 h-4 text-blue-600" />
-                      <span>Facebook</span>
-                    </a>
-                  )}
-                  {config.zaloEnabled && config.zaloUrl && (
-                    <a 
-                      href={config.zaloUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="flex items-center gap-2 px-4 py-2 border border-[#E5DDD0] rounded-xl text-xs font-semibold text-slate-600 hover:text-[#C5A059] hover:border-[#C5A059] transition-colors"
-                    >
-                      <MessageCircle className="w-4 h-4 text-teal-600" />
-                      <span>Zalo</span>
-                    </a>
-                  )}
-                </div>
-              </div>
-            )}
+            <div className="bg-slate-50/50 rounded-xl p-3.5 border border-slate-100 text-center">
+              <p className="text-xs italic text-stone-505 font-medium leading-relaxed">
+                &quot;Mệnh tốt không bằng Thân tốt, Thân tốt không bằng Hạn tốt.&quot;
+              </p>
+            </div>
           </div>
 
           {/* Horoscope Knowledge */}
-          <div className="bg-white border border-[#E5DDD0]/70 shadow-sm rounded-3xl p-6 space-y-5">
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_4px_30px_rgba(0,0,0,0.02)] space-y-5 text-left">
             <div>
-              <span className="text-[10px] tracking-widest text-[#C5A059] font-bold uppercase block mb-2">Kiến Thức Căn Bản</span>
-              <h3 className="font-serif text-xl text-[#C5A059] font-semibold mb-4 italic">Giải Mã Số Mệnh</h3>
-              <div className="space-y-4">
-                <div className="border-b border-[#E5DDD0]/40 pb-3 last:border-none last:pb-0">
-                  <h4 className="text-slate-800 font-bold text-sm mb-1">Cung Vị (12 Palaces)</h4>
-                  <p className="text-slate-500 text-xs font-light leading-relaxed">
-                    12 cung địa bàn đại diện cho 12 phương diện của cuộc đời như Mệnh, Phụ, Phúc, Điền, Quan...
-                  </p>
-                </div>
-                <div className="border-b border-[#E5DDD0]/40 pb-3 last:border-none last:pb-0">
-                  <h4 className="text-slate-800 font-bold text-sm mb-1">Sao Tọa Thủ (Stars)</h4>
-                  <p className="text-slate-500 text-xs font-light leading-relaxed">
-                    Hệ thống Chính tinh và Phụ tinh tương tác lẫn nhau, tạo nên các cách cục tốt xấu trong lá số.
-                  </p>
-                </div>
-                <div>
-                  <h4 className="text-slate-800 font-bold text-sm mb-1">Đại Tiểu Vận (Periods)</h4>
-                  <p className="text-slate-500 text-xs font-light leading-relaxed">
-                    Đại vận 10 năm và tiểu vận hàng năm giúp dự đoán các biến cố và thời cơ trong cuộc sống.
-                  </p>
-                </div>
+              <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest mb-1">Kiến thức tử vi</p>
+              <h3 className="text-xl font-bold font-serif text-stone-800">Giải Mã Thuật Ngữ</h3>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <p className="font-bold text-stone-800 text-sm">Cung (Palaces)</p>
+                <p className="text-slate-450 text-xs mt-1 leading-relaxed">
+                  12 cung địa bàn đại diện cho 12 phương diện của cuộc đời như Mệnh, Phụ, Phúc, Điền, Quan...
+                </p>
+              </div>
+              <div>
+                <p className="font-bold text-stone-800 text-sm">Sao (Stars)</p>
+                <p className="text-slate-450 text-xs mt-1 leading-relaxed">
+                  Hệ thống Chính tinh và Phụ tinh tương tác lẫn nhau, tạo nên các cách cục tốt xấu trong lá số.
+                </p>
+              </div>
+              <div>
+                <p className="font-bold text-stone-800 text-sm">Hạn (Periods)</p>
+                <p className="text-slate-450 text-xs mt-1 leading-relaxed">
+                  Đại vận 10 năm và tiểu vận hàng năm giúp dự đoán các biến cố và thời cơ trong cuộc sống.
+                </p>
               </div>
             </div>
           </div>
 
           {/* Recent Posts */}
-          <div className="bg-white border border-[#E5DDD0]/70 shadow-sm rounded-3xl p-6 space-y-4">
-            <h5 className="font-bold text-[10px] uppercase tracking-widest text-[#C5A059]">Bài viết mới nhất</h5>
+          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-[0_4px_30px_rgba(0,0,0,0.02)] space-y-3 text-left">
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bài viết mới nhất</p>
             {recentPosts.length === 0 ? (
               <p className="text-xs text-slate-400 italic">Không có bài viết nào.</p>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-2.5">
                 {recentPosts.map(post => (
-                  <Link key={post.postId} href={`/bai-viet/${post.slug}`} className="block group border-b border-[#E5DDD0]/30 pb-3 last:border-none last:pb-0">
-                    <p className="text-sm font-bold text-slate-800 group-hover:text-[#C5A059] transition-colors mb-1 leading-snug">
-                      {post.title}
-                    </p>
-                    <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed font-light">
-                      {post.description?.replace(/<[^>]*>/g, '')}
-                    </p>
+                  <Link key={post.postId} href={`/bai-viet/${post.slug}`} className="block text-xs font-semibold text-stone-700 hover:text-amber-600 transition-colors truncate">
+                    ✦ {post.title.toUpperCase()}
                   </Link>
                 ))}
               </div>
@@ -620,9 +573,9 @@ export default function Home() {
 
       {/* Results Section */}
       {hasResult && (
-        <div className="mt-12 border-t border-[#E5DDD0]/50 pt-10 space-y-8 animate-fade-in">
+        <div className="mt-12 border-t border-slate-150 pt-10 space-y-8 animate-fade-in">
           <div className="text-center mb-6 space-y-2">
-            <h3 className="font-serif text-3xl text-[#C5A059] font-bold italic">
+            <h3 className="font-serif text-3xl text-amber-800 font-bold">
               {selectedProfile ? `Bản Đồ Mệnh Cách - ${selectedProfile.fullName}` : 'Bản Đồ Mệnh Cách'}
             </h3>
             <p className="text-slate-500 text-sm font-medium">
@@ -635,15 +588,16 @@ export default function Home() {
 
           {isLimitReached || !result ? (
             /* Locked Block when limit is reached */
-            <div className="max-w-xl mx-auto mt-8 p-8 bg-[#C5A059]/5 border border-[#C5A059]/20 rounded-3xl text-center space-y-4 shadow-sm">
-              <Lock className="w-12 h-12 text-[#C5A059] mx-auto mb-2" />
-              <h4 className="font-serif text-xl font-bold text-[#C5A059]">Đã Hết Lượt Xem Miễn Phí</h4>
+            <div className="max-w-xl mx-auto mt-8 p-8 bg-amber-500/5 border border-amber-500/10 rounded-3xl text-center space-y-4 shadow-sm">
+              <Lock className="w-12 h-12 text-amber-600 mx-auto mb-2" />
+              <h4 className="font-serif text-xl font-bold text-amber-850">Đã Hết Lượt Xem Miễn Phí</h4>
               <p className="text-slate-600 font-medium text-sm">
                 {limitMsg || "Bạn đã sử dụng hết 5 lượt xem miễn phí hôm nay. Vui lòng nhập mã vé hoặc mua vé để tiếp tục xem lá số."}
               </p>
               <Link 
                 href="/san-pham" 
-                className="btn-gold px-8 py-3.5 inline-flex items-center justify-center gap-2 text-xs"
+                className="px-8 py-3.5 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-md hover:scale-[1.02] active:scale-95 inline-flex items-center justify-center gap-2"
+                style={{ background: 'linear-gradient(135deg, #a68249, #8f6d39)' }}
               >
                 Mua vé ngay
                 <ShoppingBag className="w-4 h-4" />
@@ -655,38 +609,38 @@ export default function Home() {
               <div className="grid grid-cols-1 gap-8">
                 
                 {/* Accordion 1: Thể Cách */}
-                <div className="border border-[#E5DDD0] rounded-2xl overflow-hidden bg-white shadow-sm">
+                <div className="border border-slate-100 rounded-3xl overflow-hidden bg-white shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
                   <button 
                     onClick={() => setShowTheCach(!showTheCach)}
-                    className="w-full flex items-center justify-between px-6 py-4 bg-slate-50 hover:bg-slate-100/70 transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-between px-6 py-4 bg-slate-50/50 hover:bg-slate-100/50 transition-colors cursor-pointer"
                   >
-                    <span className="font-serif text-lg font-bold text-[#C5A059]">Thể Cách Luận Giải</span>
+                    <span className="font-serif text-base font-bold text-stone-850">Thể Cách Luận Giải</span>
                     <span className={`transform transition-transform duration-300 ${showTheCach ? 'rotate-180' : ''}`}>
-                      <ChevronDown className="w-5 h-5 text-[#C5A059]" />
+                      <ChevronDown className="w-5 h-5 text-amber-600" />
                     </span>
                   </button>
                   {showTheCach && result.theCachHtml && (
                     <div 
-                      className="border-t border-[#E5DDD0]/70 p-6 overflow-x-auto"
+                      className="border-t border-slate-100 p-6 overflow-x-auto text-sm text-stone-700 leading-relaxed"
                       dangerouslySetInnerHTML={{ __html: result.theCachHtml }}
                     />
                   )}
                 </div>
 
                 {/* Accordion 2: Tử Vi */}
-                <div className="border border-[#E5DDD0] rounded-2xl overflow-hidden bg-white shadow-sm">
+                <div className="border border-slate-100 rounded-3xl overflow-hidden bg-white shadow-[0_4px_25px_rgba(0,0,0,0.02)]">
                   <button 
                     onClick={() => setShowTuVi(!showTuVi)}
-                    className="w-full flex items-center justify-between px-6 py-4 bg-slate-50 hover:bg-slate-100/70 transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-between px-6 py-4 bg-slate-50/50 hover:bg-slate-100/50 transition-colors cursor-pointer"
                   >
-                    <span className="font-serif text-lg font-bold text-[#C5A059]">Chi Tiết Lá Số Tử Vi</span>
+                    <span className="font-serif text-base font-bold text-stone-850">Chi Tiết Lá Số Tử Vi</span>
                     <span className={`transform transition-transform duration-300 ${showTuVi ? 'rotate-180' : ''}`}>
-                      <ChevronDown className="w-5 h-5 text-[#C5A059]" />
+                      <ChevronDown className="w-5 h-5 text-amber-600" />
                     </span>
                   </button>
                   {showTuVi && result.tuViHtml && (
                     <div 
-                      className="border-t border-[#E5DDD0]/70 p-6 overflow-x-auto"
+                      className="border-t border-slate-100 p-6 overflow-x-auto text-sm text-stone-700 leading-relaxed"
                       dangerouslySetInnerHTML={{ __html: result.tuViHtml }}
                     />
                   )}
@@ -695,13 +649,14 @@ export default function Home() {
               </div>
 
               {!result.usedTicket && (
-                <div className="max-w-xl mx-auto mt-8 p-8 bg-[#C5A059]/5 border border-[#C5A059]/20 rounded-3xl text-center space-y-4 shadow-sm">
+                <div className="max-w-xl mx-auto mt-8 p-8 bg-amber-500/5 border border-amber-500/10 rounded-3xl text-center space-y-4 shadow-sm">
                   <p className="text-slate-600 font-medium text-sm">
                     Để mở khóa các luận giải chuyên sâu chi tiết hơn, xin vui lòng mua vé VIP.
                   </p>
                   <Link 
                     href="/san-pham" 
-                    className="btn-gold px-8 py-3.5 inline-flex items-center justify-center gap-2 text-xs"
+                    className="px-8 py-3.5 text-white font-bold text-xs uppercase tracking-widest rounded-xl transition-all cursor-pointer shadow-md hover:scale-[1.02] active:scale-95 inline-flex items-center justify-center gap-2"
+                    style={{ background: 'linear-gradient(135deg, #a68249, #8f6d39)' }}
                   >
                     Mua vé ngay
                     <ShoppingBag className="w-4 h-4" />

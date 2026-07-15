@@ -32,90 +32,104 @@ export default function Navbar() {
   }, [pathname]);
 
   const navLinks = [
-    { href: '/', label: 'Lập Lá Số' },
-    { href: '/phong-thuy', label: 'Xem Phong Thủy' },
-    { href: '/bai-viet', label: 'Kinh Nghiệm' },
-    { href: '/san-pham', label: 'Mua Vé Luận Giải' },
-    { href: '/lien-he', label: 'Liên Hệ' },
+    { href: '/', label: 'Trang chủ' },
+    { href: '/bai-viet', label: 'Bài viết' },
+    { href: '/san-pham', label: 'Sản phẩm' },
+    { href: '/lien-he', label: 'Liên hệ' },
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-[#FDFCF7]/80 backdrop-blur-md border-b border-[#E5DDD0]/50 transition-all duration-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-20">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span className="text-[#C5A059] text-3xl font-serif italic font-semibold tracking-wider">Tử Vi Số Mệnh</span>
-          </Link>
-
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-8">
-            {navLinks.map(link => {
-              const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`font-medium text-sm tracking-wider uppercase transition-colors hover:text-[#C5A059] ${
-                    active ? 'text-[#C5A059] font-bold' : 'text-slate-600'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="flex items-center gap-1.5 px-4 py-2 border border-[#C5A059] rounded-full text-xs font-semibold uppercase tracking-wider text-[#C5A059] hover:bg-[#C5A059]/5 transition-colors"
-              >
-                <Lock className="w-3.5 h-3.5" />
-                Quản Trị
-              </Link>
-            )}
-          </nav>
-
-          {/* Mobile Menu Button */}
-          <div className="md:hidden">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-slate-600 hover:text-slate-900 p-2"
-              aria-label="Toggle Menu"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+    <header className="bg-white/95 backdrop-blur-sm border-b border-amber-100 shadow-sm sticky top-0 z-50">
+      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        {/* Logo & Title */}
+        <Link href="/" className="flex items-center gap-3 shrink-0 group">
+          <div className="relative w-10 h-10 overflow-hidden rounded-full border border-amber-200/60 shadow-sm bg-amber-50/20 p-0.5 flex items-center justify-center transition-all duration-500 group-hover:shadow-md group-hover:scale-105">
+            <img src="/logo.png" alt="Tử Vi Thần Toán Logo" className="w-full h-full object-contain animate-spin-slow" />
           </div>
-        </div>
-      </div>
+          <div className="flex flex-col justify-center">
+            <span className="font-sans font-black text-lg md:text-xl bg-gradient-to-r from-amber-700 via-amber-500 to-amber-800 bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient tracking-wide drop-shadow-sm select-none">
+              Tử Vi Thần Toán
+            </span>
+          </div>
+        </Link>
 
-      {/* Mobile Navigation Panel */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-b border-[#E5DDD0]/50 bg-[#FDFCF7]/95 backdrop-blur-md px-4 pt-2 pb-6 space-y-3 shadow-lg">
+        {/* Desktop Nav */}
+        <nav className="hidden md:flex items-center gap-0.5">
           {navLinks.map(link => {
             const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded-xl text-base font-semibold uppercase tracking-wide ${
-                  active ? 'bg-[#C5A059]/10 text-[#C5A059]' : 'text-slate-600 hover:bg-[#E5DDD0]/20'
+                className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                  active 
+                    ? 'text-amber-700 bg-amber-50 font-semibold' 
+                    : 'text-stone-600 hover:text-amber-600 hover:bg-amber-50/70'
                 }`}
               >
                 {link.label}
               </Link>
             );
           })}
+        </nav>
+
+        {/* Right Nav (Admin/Mobile Button) */}
+        <div className="flex items-center gap-2">
           {isAdmin && (
             <Link
               href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-center px-3 py-2 border border-[#C5A059] rounded-xl text-[#C5A059] font-bold uppercase tracking-wider text-sm hover:bg-[#C5A059]/5 transition-colors"
+              className="hidden md:flex items-center gap-1.5 text-xs font-semibold text-stone-400 hover:text-amber-600 transition-colors border border-stone-200 hover:border-amber-300 hover:bg-amber-50 px-3 py-1.5 rounded-lg"
             >
-              Vào Bảng Quản Trị
+              <span className="text-base">⊛</span> Quản trị
             </Link>
           )}
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="Mở menu"
+            className="md:hidden flex flex-col items-center justify-center w-9 h-9 gap-1.5 rounded-lg hover:bg-amber-50 transition-colors"
+          >
+            <span className={`block w-5 h-0.5 bg-stone-600 rounded transition-all duration-300 ${mobileMenuOpen ? 'rotate-45 translate-y-2' : ''}`}></span>
+            <span className={`block w-5 h-0.5 bg-stone-600 rounded transition-all duration-300 ${mobileMenuOpen ? 'opacity-0' : ''}`}></span>
+            <span className={`block w-5 h-0.5 bg-stone-600 rounded transition-all duration-300 ${mobileMenuOpen ? '-rotate-45 -translate-y-2' : ''}`}></span>
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Menu Panel */}
+      {mobileMenuOpen && (
+        <div className="md:hidden overflow-hidden transition-all duration-300">
+          <div className="bg-white px-4 py-3 space-y-1 border-t border-slate-100 shadow-lg">
+            {navLinks.map(link => {
+              const active = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`flex items-center gap-2 px-3 py-2.5 text-sm font-medium rounded-xl transition-colors ${
+                    active 
+                      ? 'text-amber-700 bg-amber-50 font-semibold' 
+                      : 'text-stone-700 hover:text-amber-600 hover:bg-amber-50'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+            {isAdmin && (
+              <div className="pt-1 border-t border-stone-100 mt-1">
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-stone-400 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-colors"
+                >
+                  <span>⊛</span> Quản trị
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </header>

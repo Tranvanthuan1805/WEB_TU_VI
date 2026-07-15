@@ -178,6 +178,7 @@ namespace Web.Controllers
             post.Slug = model.Slug;
             post.Content = model.Content;
             post.Published = model.Published;
+            post.CoverImage = model.CoverImage;
             post.DateUpdated = DateTime.UtcNow;
 
             await context.SaveChangesAsync();
