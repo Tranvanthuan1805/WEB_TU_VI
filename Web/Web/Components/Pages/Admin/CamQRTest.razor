@@ -209,10 +209,16 @@
                                 <td class="py-3 px-4 font-semibold text-stone-600">@prof.Hour</td>
                                 <td class="py-3 px-4 text-xs text-muted line-clamp-1 truncate max-w-[200px]" title="@prof.Notes">@prof.Notes</td>
                                 <td class="py-3 px-4 text-center">
-                                    <button @onclick="() => GenerateProfileQR(prof)" 
-                                            class="px-3 py-1 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 mx-auto border border-amber-500/20">
-                                        <span class="material-symbols-outlined text-sm">qr_code</span> Mã QR
-                                    </button>
+                                    <div class="flex items-center justify-center gap-2">
+                                        <button @onclick="() => GenerateProfileQR(prof)" 
+                                                class="px-2.5 py-1 bg-amber-500/10 text-amber-600 hover:bg-amber-500 hover:text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 border border-amber-500/20" title="Xem Mã QR">
+                                            <span class="material-symbols-outlined text-xs">qr_code</span> Mã QR
+                                        </button>
+                                        <button @onclick="() => SimulateScan(prof)" 
+                                                class="px-2.5 py-1 bg-primary/15 text-primary hover:bg-primary hover:text-white rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 border border-primary/20" title="Giả lập Quét mã và Luận giải ngay">
+                                            <span class="material-symbols-outlined text-xs">interactive_space</span> Quét Thử
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -626,6 +632,13 @@
         {
             Log($"[Camera] Phát hiện mã QR lạ: {scannedText}");
         }
+    }
+
+    private async Task SimulateScan(ExcelProfile profile)
+    {
+        var qrText = $"PROFILE:{profile.Index}|{profile.FullName}|{profile.Gender}|{profile.Day}|{profile.Month}|{profile.Year}|{profile.Hour}|{profile.Notes}";
+        ActiveTab = 1;
+        await OnWebcamQRScanned(qrText);
     }
 
     private void ClearScannedResult()
