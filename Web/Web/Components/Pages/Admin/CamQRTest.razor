@@ -98,6 +98,16 @@
                     <span class="material-symbols-outlined text-primary text-md">info</span>
                     <p class="text-xs text-on-surface-variant font-medium"><strong>Trạng thái:</strong> @WebcamStatus</p>
                 </div>
+
+                @if (!string.IsNullOrEmpty(LastScannedText))
+                {
+                    <div class="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl space-y-1 text-left">
+                        <p class="text-[10px] font-bold text-amber-600 uppercase tracking-wider flex items-center gap-1">
+                            <span class="material-symbols-outlined text-xs">qr_code_2</span> Mã QR Đọc Được Gần Nhất
+                        </p>
+                        <p class="text-xs font-mono break-all text-on-surface select-all">@LastScannedText</p>
+                    </div>
+                }
             </div>
 
             <!-- Calculated Interpretations Panel -->
@@ -416,6 +426,7 @@
     private string ScannedProfileName = "";
     private string ScannedProfileInfo = "";
     private TuViResult? ScannedProfileResult = null;
+    private string LastScannedText = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -570,6 +581,7 @@
         await JSRuntime.InvokeVoidAsync("camQrObj.stopScanner", "#admin-scanner-video");
         _isWebcamScanning = false;
         WebcamStatus = "Webcam đang tắt.";
+        LastScannedText = string.Empty;
         StateHasChanged();
     }
 
@@ -578,6 +590,14 @@
     public async Task OnWebcamQRScanned(string scannedText)
     {
         if (string.IsNullOrEmpty(scannedText)) return;
+
+        // Check if we are scanning the exact same content to prevent repeated calculations
+        if (scannedText == LastScannedText && ScannedProfileResult != null)
+        {
+            return;
+        }
+
+        LastScannedText = scannedText;
 
         // Unified format: PROFILE:index|name|gender|day|month|year|hour|notes
         if (scannedText.StartsWith("PROFILE:"))
@@ -616,9 +636,6 @@
 
                     Log($"[Camera] Quét thành công hồ sơ: {name} | Đang hiển thị kết quả từ Excel.");
                     ToastService.ShowSuccess($"Đã quét thành công và luận giải cho {name}!");
-
-                    // Stop scanner upon successful scanning to avoid CPU drain
-                    await StopWebcamScanner();
                 }
             }
             catch (Exception ex)
@@ -631,6 +648,7 @@
         else
         {
             Log($"[Camera] Phát hiện mã QR lạ: {scannedText}");
+            await InvokeAsync(StateHasChanged);
         }
     }
 
@@ -646,6 +664,7 @@
         ScannedProfileResult = null;
         ScannedProfileName = string.Empty;
         ScannedProfileInfo = string.Empty;
+        LastScannedText = string.Empty;
         StateHasChanged();
     }
 
