@@ -10,6 +10,16 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html')
+      },
+      output: {
+        entryFileNames: 'app.js',
+        chunkFileNames: 'js/[name].js',
+        assetFileNames: (assetInfo) => {
+          if (assetInfo.name && assetInfo.name.endsWith('.css')) {
+            return 'app.css';
+          }
+          return 'assets/[name][extname]';
+        }
       }
     }
   },

@@ -1,0 +1,324 @@
+@page "/camqr-b"
+@using SkiaSharp
+@using System.IO
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<div class="container py-4">
+    <div class="row">
+        <!-- Left Panel: Webcam scanner for CamQR_A's screen -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-secondary text-white font-weight-bold d-flex justify-content-between align-items-center">
+                    <span>Quét mã QR từ CamQR_A</span>
+                    <div>
+                        <button class="btn btn-sm btn-light me-2" @onclick="StartScanner" disabled="@_isScanning">Bật Cam</button>
+                        <button class="btn btn-sm btn-danger" @onclick="StopScanner" disabled="@(!_isScanning)">Tắt Cam</button>
+                    </div>
+                </div>
+                <div class="card-body p-0 position-relative bg-black" style="min-height: 350px;">
+                    <video id="scanner-video-b" class="w-100 h-100" style="object-fit: cover; display: @(_isScanning ? "block" : "none");"></video>
+                    
+                    @if (!_isScanning)
+                    {
+                        <div class="position-absolute top-50 start-50 translate-middle text-center text-secondary">
+                            <span class="material-symbols-outlined display-3 mb-2">videocam_off</span>
+                            <p>Camera chưa được kích hoạt</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="position-absolute top-50 start-50 translate-middle border border-warning rounded-3" 
+                             style="width: 200px; height: 200px; pointer-events: none; border-width: 3px !important; background: rgba(255,193,7,0.1);">
+                        </div>
+                    }
+                </div>
+                <div class="card-footer bg-light">
+                    <p class="mb-0 text-muted small">
+                        <strong>Trạng thái quét:</strong> @StatusMessage
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Excel Processing & Display -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-header bg-primary text-white font-weight-bold">
+                    <span>Màn hình hiển thị kết quả (CamQR_B)</span>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center p-4 bg-light">
+                    @if (string.IsNullOrEmpty(ScannedRoomId))
+                    {
+                        <div class="text-center py-5">
+                            <span class="material-symbols-outlined display-1 text-secondary mb-3">camera_roll</span>
+                            <h5 class="text-secondary">Hãy quét mã QR từ CamQR_A để bắt đầu tính toán</h5>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="w-100 text-center mb-3">
+                            <h5 class="text-success font-weight-bold mb-1">Xử lý thành công!</h5>
+                            <p class="text-muted small mb-3">Room ID: @ScannedRoomId</p>
+                            
+                            <!-- Toggle layout cases -->
+                            <div class="btn-group btn-group-sm mb-4" role="group">
+                                <button type="button" class="btn @(CurrentCase == 1 ? "btn-dark" : "btn-outline-dark")" @onclick="() => SetCase(1)">
+                                    Trường hợp 1 (Nhét vừa QR)
+                                </button>
+                                <button type="button" class="btn @(CurrentCase == 2 ? "btn-dark" : "btn-outline-dark")" @onclick="() => SetCase(2)">
+                                    Trường hợp 2 (Màn hình ghép)
+                                </button>
+                            </div>
+                        </div>
+
+                        @if (CurrentCase == 1)
+                        {
+                            <!-- Case 1: roomId + base64 packed in 1 QR -->
+                            <div class="text-center">
+                                <p class="small text-muted mb-2">Ảnh Excel được mã hóa trực tiếp vào mã QR dưới đây</p>
+                                <div class="bg-white p-3 rounded shadow-sm d-inline-block">
+                                    <div id="qr-result-container-1"></div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- Case 2: Split screen (QR on left, Excel Image on right) -->
+                            <div class="w-100 border rounded bg-white p-3 shadow-sm d-flex flex-row align-items-center justify-content-between" style="min-height: 280px;">
+                                <!-- Left side: QR code of Room ID (35% width) -->
+                                <div style="width: 35%;" class="text-center border-end pe-2">
+                                    <p class="small text-muted mb-1" style="font-size: 10px;">Mã Room</p>
+                                    <div id="qr-result-container-2" class="d-inline-block"></div>
+                                </div>
+
+                                <!-- Right side: Generated Excel Image (65% width) -->
+                                <div style="width: 62%;" class="text-center ps-2">
+                                    <p class="small text-muted mb-1" style="font-size: 10px;">Ảnh kết quả Excel (SkiaSharp)</p>
+                                    <img src="@ExcelImageBase64" class="img-fluid border rounded shadow-sm" style="max-height: 250px; width: 100%; object-fit: contain;" />
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool _isScanning = false;
+    private string StatusMessage { get; set; } = "Đang chờ bật camera...";
+    private string ScannedRoomId { get; set; } = string.Empty;
+    private string ScannedRequestData { get; set; } = string.Empty;
+    private string ExcelImageBase64 { get; set; } = string.Empty;
+    private int CurrentCase { get; set; } = 2; // Default to split-screen (TH 2) as it is most robust for complex drawings
+    private DotNetObjectReference<CamQR_B>? _objRef;
+    private HashSet<string> ProcessedRoomIds = new();
+
+    protected override void OnInitialized()
+    {
+        _objRef = DotNetObjectReference.Create(this);
+    }
+
+    private async Task StartScanner()
+    {
+        _isScanning = true;
+        StatusMessage = "Đang khởi động camera...";
+        StateHasChanged();
+
+        bool started = await JSRuntime.InvokeAsync<bool>("camQrObj.startScanner", "#scanner-video-b", _objRef, nameof(OnRequestScanned));
+        if (started)
+        {
+            StatusMessage = "Quét camera đang hoạt động. Hãy hướng ống kính vào màn hình CamQR_A.";
+        }
+        else
+        {
+            _isScanning = false;
+            StatusMessage = "Không thể khởi động camera. Vui lòng cấp quyền!";
+        }
+        StateHasChanged();
+    }
+
+    private async Task StopScanner()
+    {
+        await JSRuntime.InvokeVoidAsync("camQrObj.stopScanner", "#scanner-video-b");
+        _isScanning = false;
+        StatusMessage = "Đã tắt camera.";
+        StateHasChanged();
+    }
+
+    // Callback when camera reads QR code from CamQR_A
+    [JSInvokable]
+    public async Task OnRequestScanned(string scannedText)
+    {
+        if (string.IsNullOrEmpty(scannedText)) return;
+
+        // Parse: ROOM:<roomId>|DATA:<requestData>
+        if (scannedText.StartsWith("ROOM:") && scannedText.Contains("|DATA:"))
+        {
+            try
+            {
+                var parts = scannedText.Split('|');
+                var roomId = parts[0].Replace("ROOM:", "").Trim();
+
+                if (ProcessedRoomIds.Contains(roomId))
+                {
+                    // Ignore already processed room requests
+                    return;
+                }
+                
+                ScannedRoomId = roomId;
+                ScannedRequestData = parts[1].Replace("DATA:", "").Trim();
+                
+                StatusMessage = $"Quét thành công Room ID: {ScannedRoomId}. Đang dựng hình...";
+                StateHasChanged();
+
+                // Stop scanning since we got the request
+                await StopScanner();
+
+                // Mark as processed
+                ProcessedRoomIds.Add(ScannedRoomId);
+
+                // Generate mock Excel sheet image using SkiaSharp
+                ExcelImageBase64 = DrawExcelImage(ScannedRequestData, ScannedRoomId);
+
+                // Update UI layout
+                await UpdateDisplay();
+            }
+            catch (Exception ex)
+            {
+                StatusMessage = $"Lỗi xử lý dữ liệu: {ex.Message}";
+            }
+        }
+    }
+
+    private async Task SetCase(int caseNum)
+    {
+        CurrentCase = caseNum;
+        await UpdateDisplay();
+    }
+
+    private async Task UpdateDisplay()
+    {
+        StateHasChanged();
+        await Task.Delay(100); // Wait for container elements to render
+
+        if (CurrentCase == 1)
+        {
+            // Case 1: Room ID + Base64 image packed inside a single QR code.
+            // Note: Since Base64 can be large, we use a compact QR code format (ROOM:xxx|BASE64:yyy).
+            // (If the image size is too large, the QR writer might fail due to data capacity limits.)
+            string combinedData = $"ROOM:{ScannedRoomId}|BASE64:{ExcelImageBase64}";
+            await JSRuntime.InvokeVoidAsync("camQrObj.generateQR", "#qr-result-container-1", combinedData);
+        }
+        else
+        {
+            // Case 2: Display QR of roomId on the left, and Excel image on the right.
+            string qrRoomData = $"ROOM:{ScannedRoomId}";
+            await JSRuntime.InvokeVoidAsync("camQrObj.generateQR", "#qr-result-container-2", qrRoomData);
+        }
+    }
+
+    // Draws an Excel sheet using SkiaSharp and returns it as a Base64 PNG string
+    private string DrawExcelImage(string requestData, string roomId)
+    {
+        int width = 500;
+        int height = 350;
+        using var bitmap = new SKBitmap(width, height);
+        using var canvas = new SKCanvas(bitmap);
+
+        canvas.Clear(SKColors.White);
+
+        // Draw grid lines
+        using var paintGrid = new SKPaint
+        {
+            Color = SKColors.LightGray,
+            StrokeWidth = 1,
+            Style = SKPaintStyle.Stroke
+        };
+        
+        int cols = 5;
+        int rows = 8;
+        int colWidth = width / cols;
+        int rowHeight = height / rows;
+        
+        for (int i = 0; i <= cols; i++)
+        {
+            canvas.DrawLine(i * colWidth, 0, i * colWidth, height, paintGrid);
+        }
+        for (int j = 0; j <= rows; j++)
+        {
+            canvas.DrawLine(0, j * rowHeight, width, j * rowHeight, paintGrid);
+        }
+
+        // Draw Header background
+        using var paintHeader = new SKPaint
+        {
+            Color = SKColors.Navy,
+            Style = SKPaintStyle.Fill
+        };
+        canvas.DrawRect(new SKRect(0, 0, width, rowHeight), paintHeader);
+
+        // Draw Header Title Text
+        using var paintText = new SKPaint
+        {
+            Color = SKColors.White,
+            TextSize = 16,
+            IsAntialias = true,
+            TextAlign = SKTextAlign.Center
+        };
+        canvas.DrawText("BẢNG KẾT QUẢ TỬ VI & PHONG THỦY", width / 2, rowHeight / 2 + 6, paintText);
+
+        // Draw Cell text
+        paintText.Color = SKColors.Black;
+        paintText.TextSize = 12;
+        paintText.TextAlign = SKTextAlign.Left;
+
+        // Content
+        canvas.DrawText($"Phòng (Room): {roomId}", 15, rowHeight * 1 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText($"Yêu cầu: {requestData}", 15, rowHeight * 2 + rowHeight / 2 + 4, paintText);
+
+        // Mock columns
+        canvas.DrawText("Cung số", 15, rowHeight * 3 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Mệnh Chủ", colWidth * 1 + 15, rowHeight * 3 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Thần Hộ", colWidth * 2 + 15, rowHeight * 3 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Cát Tinh", colWidth * 3 + 15, rowHeight * 3 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Đánh giá", colWidth * 4 + 15, rowHeight * 3 + rowHeight / 2 + 4, paintText);
+
+        canvas.DrawText("Mệnh (Thủy)", 15, rowHeight * 4 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Tử Vi", colWidth * 1 + 15, rowHeight * 4 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Thiên Phủ", colWidth * 2 + 15, rowHeight * 4 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Hóa Khoa", colWidth * 3 + 15, rowHeight * 4 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Rất Cát", colWidth * 4 + 15, rowHeight * 4 + rowHeight / 2 + 4, paintText);
+
+        canvas.DrawText("Phu Thê", 15, rowHeight * 5 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Thái Dương", colWidth * 1 + 15, rowHeight * 5 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Văn Xương", colWidth * 2 + 15, rowHeight * 5 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Hóa Lộc", colWidth * 3 + 15, rowHeight * 5 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Cát Lợi", colWidth * 4 + 15, rowHeight * 5 + rowHeight / 2 + 4, paintText);
+
+        canvas.DrawText("Tài Bạch", 15, rowHeight * 6 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Vũ Khúc", colWidth * 1 + 15, rowHeight * 6 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Tả Phù", colWidth * 2 + 15, rowHeight * 6 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Lộc Tồn", colWidth * 3 + 15, rowHeight * 6 + rowHeight / 2 + 4, paintText);
+        canvas.DrawText("Phú Quý", colWidth * 4 + 15, rowHeight * 6 + rowHeight / 2 + 4, paintText);
+
+        // Convert to base64 string
+        using var image = SKImage.FromBitmap(bitmap);
+        using var data = image.Encode(SKEncodedImageFormat.Png, 90);
+        using var ms = new MemoryStream();
+        data.SaveTo(ms);
+        byte[] bytes = ms.ToArray();
+        return "data:image/png;base64," + Convert.ToBase64String(bytes);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_isScanning)
+        {
+            await JSRuntime.InvokeVoidAsync("camQrObj.stopScanner", "#scanner-video-b");
+        }
+        _objRef?.Dispose();
+    }
+}

@@ -14,6 +14,7 @@ namespace Web.Data
         public DbSet<Order> Orders { get; set; }
         public DbSet<Contact> Contacts { get; set; }
         public DbSet<DailyUsageStats> DailyUsageStats { get; set; }
+        public DbSet<SystemLog> SystemLogs { get; set; }
 
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

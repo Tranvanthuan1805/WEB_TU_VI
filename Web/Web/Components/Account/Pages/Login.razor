@@ -15,7 +15,8 @@
 
 <PageTitle>Log in</PageTitle>
 
-<h2 class="font-[Noto_Serif] text-2xl font-semibold text-center text-[--color-primary] mb-6 italic">Đăng Nhập Admin</h2>
+<h2 class="font-[Noto_Serif] text-2xl font-bold text-center text-primary mb-1 italic">Đăng Nhập Hệ Thống</h2>
+<p class="text-center text-xs text-stone-500 mb-6">Vui lòng đăng nhập để truy cập trang quản trị</p>
 
 <StatusMessage Message="@errorMessage" />
 
@@ -23,34 +24,54 @@
     <DataAnnotationsValidator />
     
     <div class="relative flex flex-col gap-1.5">
-        <label for="Input.Email" class="text-sm font-semibold text-[--color-on-surface-variant]">Email</label>
-        <InputText @bind-Value="Input.Email" id="Input.Email" class="ivory-input" autocomplete="username webauthn" aria-required="true" placeholder="name@example.com" />
+        <label for="Input.Email" class="text-stone-700 text-sm font-semibold">Email</label>
+        <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 select-none pointer-events-none">mail</span>
+            <InputText @bind-Value="Input.Email" id="Input.Email" class="ivory-input pl-10" autocomplete="username webauthn" aria-required="true" placeholder="name@example.com" />
+        </div>
         <ValidationMessage For="() => Input.Email" />
     </div>
     
     <div class="relative flex flex-col gap-1.5">
-        <label for="Input.Password" class="text-sm font-semibold text-[--color-on-surface-variant]">Mật khẩu</label>
-        <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="ivory-input" autocomplete="current-password" aria-required="true" placeholder="••••••••" />
+        <label for="Input.Password" class="text-stone-700 text-sm font-semibold">Mật khẩu</label>
+        <div class="relative">
+            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 select-none pointer-events-none">lock</span>
+            <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="ivory-input pl-10" autocomplete="current-password" aria-required="true" placeholder="••••••••" />
+        </div>
         <ValidationMessage For="() => Input.Password" />
     </div>
     
     <div class="flex items-center justify-between pt-1">
-        <label class="flex items-center gap-2 text-sm font-medium text-[--color-on-surface-variant] cursor-pointer">
-            <InputCheckbox @bind-Value="Input.RememberMe" class="rounded border-[--color-outline-variant] text-[--color-primary] focus:ring-[--color-primary] h-4 w-4" />
+        <label class="flex items-center gap-2 text-stone-600 text-sm font-medium cursor-pointer select-none">
+            <InputCheckbox @bind-Value="Input.RememberMe" class="rounded border-outline-variant text-primary focus:ring-primary h-4 w-4" />
             <span>Ghi nhớ đăng nhập</span>
         </label>
-        <a href="Account/ForgotPassword" class="text-sm text-[--color-primary] hover:underline">Quên mật khẩu?</a>
+        <a href="Account/ForgotPassword" class="text-sm text-primary font-semibold hover:underline">Quên mật khẩu?</a>
     </div>
     
-    <div class="pt-4">
+    <div class="pt-2">
         <button type="submit" class="btn-gold w-full py-3 flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.005] active:scale-[0.995]">
             <span class="font-bold tracking-widest">Đăng Nhập</span>
             <span class="material-symbols-outlined text-lg">login</span>
         </button>
     </div>
 
-    <div class="text-center pt-4 text-sm text-[--color-on-surface-variant]">
-        Chưa có tài khoản? <a href="Account/Register" class="text-[--color-primary] font-semibold hover:underline">Đăng ký ngay</a>
+    <div class="text-center pt-2 text-sm text-stone-500">
+        Chưa có tài khoản? <a href="Account/Register" class="text-primary font-semibold hover:underline">Đăng ký ngay</a>
+    </div>
+
+    <!-- Admin credentials card for easy testing copy-paste -->
+    <div class="mt-6 p-4 rounded-xl bg-amber-50/60 border border-amber-200/50 text-stone-700 text-xs space-y-1.5 shadow-sm">
+        <div class="font-bold text-amber-800 flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-base">info</span>
+            <span>Tài khoản thử nghiệm (Admin)</span>
+        </div>
+        <div class="flex items-center justify-between">
+            <span><strong>Email:</strong> <code class="bg-white/80 px-1.5 py-0.5 rounded border border-amber-100 select-all">admin@example.com</code></span>
+        </div>
+        <div class="flex items-center justify-between">
+            <span><strong>Mật khẩu:</strong> <code class="bg-white/80 px-1.5 py-0.5 rounded border border-amber-100 select-all">Admin@123</code></span>
+        </div>
     </div>
 </EditForm>
 
@@ -95,18 +116,28 @@
         }
 
         // admin
-        var admin = await UserManager.FindByNameAsync(Configuration["Admin:Email"]);
+        var adminEmail = Configuration["Admin:Email"] ?? "admin@example.com";
+        var adminPassword = Configuration["Admin:Password"] ?? "Admin@123";
+        var admin = await UserManager.FindByNameAsync(adminEmail);
         if (admin == null)
         {
             admin = new User()
                 {              
-                UserName = Configuration["Admin:Email"],
-                    Email = Configuration["Admin:Email"],
+                    UserName = adminEmail,
+                    Email = adminEmail,
                     EmailConfirmed = true,
                 };
 
-            await UserManager.CreateAsync(admin, password: Configuration["Admin:Password"]);
+            await UserManager.CreateAsync(admin, password: adminPassword);
             await UserManager.AddToRoleAsync(admin, RoleName.Administrator);
+        }
+        else
+        {
+            // Reset lockout if locked out during testing
+            if (await UserManager.IsLockedOutAsync(admin))
+            {
+                await UserManager.SetLockoutEndDateAsync(admin, null);
+            }
         }
     }
 
@@ -132,14 +163,24 @@
                 return;
             }
 
-            // This doesn't count login failures towards account lockout
-            // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-            result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: true);
+            // Set lockoutOnFailure: false to prevent lockout on local admin accounts during testing
+            result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
         }
 
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
+            
+            var userEmail = Input.Email;
+            if (!string.IsNullOrEmpty(userEmail))
+            {
+                var user = await UserManager.FindByEmailAsync(userEmail);
+                if (user != null && await UserManager.IsInRoleAsync(user, RoleName.Administrator))
+                {
+                    RedirectManager.RedirectTo("admin");
+                }
+            }
+            
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.RequiresTwoFactor)

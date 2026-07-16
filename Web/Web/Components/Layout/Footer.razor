@@ -1,23 +1,37 @@
 
-<footer class="w-full mt-20 bg-surface-container-low border-t border-outline-variant/40">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-10 px-8 py-12 max-w-screen-2xl mx-auto">
-        <div class="space-y-4">
-            <div class="font-headline text-2xl font-bold italic text-primary">Lá Số Tử Vi</div>
-            <p class="font-body text-xs tracking-wide text-on-surface-variant leading-relaxed">© 2026 Lá Số Tử Vi. Khám phá vận mệnh – Thấu hiểu chính mình thông qua các thuật toán cổ truyền và trí tuệ hiện đại.</p>
+<footer class="mt-auto bg-slate-900 text-slate-400 py-8 px-4">
+    <div class="max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
+            <div>
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="text-2xl">☯</span>
+                    <span class="font-bold text-amber-400">TỬ VI THẦN TOÁN</span>
+                </div>
+                <p class="text-sm leading-relaxed">
+                    Tra cứu lịch âm dương, can chi, tiết khí và tứ trụ theo phương pháp truyền thống.
+                </p>
+            </div>
+            <div>
+                <h3 class="font-semibold text-white text-sm mb-3">Liên kết</h3>
+                <div class="space-y-1.5 text-sm">
+                    <NavLink href="" class="block hover:text-amber-400 transition-colors" Match="NavLinkMatch.All">Trang chủ</NavLink>
+                    <NavLink href="bai-viet" class="block hover:text-amber-400 transition-colors">Bài viết</NavLink>
+                    <NavLink href="lien-he" class="block hover:text-amber-400 transition-colors">Liên hệ</NavLink>
+                </div>
+            </div>
+            <div>
+                <h3 class="font-semibold text-white text-sm mb-3">Về chúng tôi</h3>
+                <p class="text-sm leading-relaxed">
+                    Hệ thống tính toán âm lịch và tứ trụ chính xác, phục vụ tra cứu mệnh lý.
+                </p>
+            </div>
         </div>
-        <div class="md:col-span-2 grid grid-cols-2 gap-6 md:justify-items-end">
-            <div class="flex flex-col gap-3">
-                <NavLink class="text-on-surface-variant hover:text-primary font-body text-xs font-semibold tracking-wide transition-colors" href="/lien-he">Liên hệ</NavLink>
-                <NavLink class="text-on-surface-variant hover:text-primary font-body text-xs font-semibold tracking-wide transition-colors" href="/chinh-sach-privacy">Chính sách bảo mật</NavLink>
-            </div>
-            <div class="flex flex-col gap-3">
-                <NavLink class="text-on-surface-variant hover:text-primary font-body text-xs font-semibold tracking-wide transition-colors" href="/dieu-khoan-su-dung">Điều khoản sử dụng</NavLink>
-                <NavLink class="text-on-surface-variant hover:text-primary font-body text-xs font-semibold tracking-wide transition-colors" href="/tu-choi-trach-nhiem">Từ chối trách nhiệm</NavLink>
-            </div>
+        <div class="pt-6 border-t border-slate-800 text-center text-xs">
+            <p>© @currentYear Tử Vi Thần Toán · Tất cả quyền được bảo lưu</p>
         </div>
     </div>
 </footer>
 
 @code {
-
+    private int currentYear = DateTime.Now.Year;
 }

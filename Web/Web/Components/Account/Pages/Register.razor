@@ -17,7 +17,7 @@
 
 <PageTitle>Register</PageTitle>
 
-<h2 class="font-[Noto_Serif] text-2xl font-semibold text-center text-[--color-primary] mb-6 italic">Đăng Ký Tài Khoản</h2>
+<h2 class="font-[Noto_Serif] text-2xl font-semibold text-center text-primary mb-6 italic">Đăng Ký Tài Khoản</h2>
 
 <StatusMessage Message="@Message" />
 
@@ -25,19 +25,19 @@
     <DataAnnotationsValidator />
     
     <div class="relative flex flex-col gap-1.5">
-        <label for="Input.Email" class="text-sm font-semibold text-[--color-on-surface-variant]">Email</label>
+        <label for="Input.Email" class="text-sm font-semibold text-on-surface-variant">Email</label>
         <InputText @bind-Value="Input.Email" id="Input.Email" class="ivory-input" autocomplete="username" aria-required="true" placeholder="name@example.com" />
         <ValidationMessage For="() => Input.Email" />
     </div>
     
     <div class="relative flex flex-col gap-1.5">
-        <label for="Input.Password" class="text-sm font-semibold text-[--color-on-surface-variant]">Mật khẩu</label>
+        <label for="Input.Password" class="text-sm font-semibold text-on-surface-variant">Mật khẩu</label>
         <InputText type="password" @bind-Value="Input.Password" id="Input.Password" class="ivory-input" autocomplete="new-password" aria-required="true" placeholder="••••••••" />
         <ValidationMessage For="() => Input.Password" />
     </div>
     
     <div class="relative flex flex-col gap-1.5">
-        <label for="Input.ConfirmPassword" class="text-sm font-semibold text-[--color-on-surface-variant]">Xác nhận mật khẩu</label>
+        <label for="Input.ConfirmPassword" class="text-sm font-semibold text-on-surface-variant">Xác nhận mật khẩu</label>
         <InputText type="password" @bind-Value="Input.ConfirmPassword" id="Input.ConfirmPassword" class="ivory-input" autocomplete="new-password" aria-required="true" placeholder="••••••••" />
         <ValidationMessage For="() => Input.ConfirmPassword" />
     </div>
@@ -49,8 +49,8 @@
         </button>
     </div>
 
-    <div class="text-center pt-4 text-sm text-[--color-on-surface-variant]">
-        Đã có tài khoản? <a href="Account/Login" class="text-[--color-primary] font-semibold hover:underline">Đăng nhập ngay</a>
+    <div class="text-center pt-4 text-sm text-on-surface-variant">
+        Đã có tài khoản? <a href="Account/Login" class="text-primary font-semibold hover:underline">Đăng nhập ngay</a>
     </div>
 </EditForm>
 

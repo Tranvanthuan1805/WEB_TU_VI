@@ -24,10 +24,24 @@ namespace Web.Services
             _logger = logger;
         }
 
+        public string GetExcelFilePath()
+        {
+            var p1 = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../BattuHL-Tubinh-Tuvi-Quedich-LTT/BattuHL-Tubinh-Tuvi-Quedich-LTT.xlsx"));
+            if (File.Exists(p1)) return p1;
+
+            var p2 = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "BattuHL-Tubinh-Tuvi-Quedich-LTT/BattuHL-Tubinh-Tuvi-Quedich-LTT.xlsx"));
+            if (File.Exists(p2)) return p2;
+
+            var p3 = @"c:\Users\PC\Desktop\RUN_WEB_LOCAL\BattuHL-Tubinh-Tuvi-Quedich-LTT\BattuHL-Tubinh-Tuvi-Quedich-LTT.xlsx";
+            if (File.Exists(p3)) return p3;
+
+            return Path.Combine(_env.WebRootPath, "free.xlsx");
+        }
+
         public async Task<TuViResult> CalculateTuViAsync(TuViInput input)
         {
             var result = new TuViResult();
-            var filePath = Path.Combine(_env.WebRootPath, "free.xlsx");
+            var filePath = GetExcelFilePath();
 
             if (!File.Exists(filePath))
             {
@@ -37,7 +51,8 @@ namespace Web.Services
 
             await Task.Run(() =>
             {
-                using var workbook = new XLWorkbook(filePath);
+                using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var workbook = new XLWorkbook(fileStream);
 
                 var nhapLieuSheet = workbook.Worksheet("Nhập liệu");
                 if (nhapLieuSheet != null)
@@ -92,19 +107,11 @@ namespace Web.Services
             sb.Append("<table class=\"excel-table\">");
             
             sb.Append("<colgroup>");
-            sb.Append("  <col style=\"width: 9%;\" />");
-            sb.Append("  <col style=\"width: 9%;\" />");
-            sb.Append("  <col style=\"width: 9%;\" />");
-            sb.Append("  <col style=\"width: 7.5%;\" />");
-            sb.Append("  <col style=\"width: 7.5%;\" />");
-            sb.Append("  <col style=\"width: 7.5%;\" />");
-            sb.Append("  <col style=\"width: 7.5%;\" />");
-            sb.Append("  <col style=\"width: 7.5%;\" />");
-            sb.Append("  <col style=\"width: 7.5%;\" />");
-            sb.Append("  <col style=\"width: 9%;\" />");
-            sb.Append("  <col style=\"width: 9%;\" />");
-            sb.Append("  <col style=\"width: 9%;\" />");
-            sb.Append("  <col style=\"width: 2%;\" />");
+            for (int i = 0; i < 12; i++)
+            {
+                sb.Append("  <col style=\"width: 8.3%;\" />");
+            }
+            sb.Append("  <col style=\"width: 0.4%;\" />");
             sb.Append("</colgroup>");
             sb.Append("<tbody>");
 
@@ -146,24 +153,16 @@ namespace Web.Services
                     var borderStyles = new List<string>();
                     
                     if (cell.Style.Border.TopBorder != XLBorderStyleValues.None)
-                        borderStyles.Add("border-top: 2px solid #0f172a;");
-                    else
-                        borderStyles.Add("border-top: 1px solid #cbd5e1;");
+                        borderStyles.Add("border-top: 2px solid #1e293b;");
 
                     if (cell.Style.Border.BottomBorder != XLBorderStyleValues.None)
-                        borderStyles.Add("border-bottom: 2px solid #0f172a;");
-                    else
-                        borderStyles.Add("border-bottom: 1px solid #cbd5e1;");
+                        borderStyles.Add("border-bottom: 2px solid #1e293b;");
 
                     if (cell.Style.Border.LeftBorder != XLBorderStyleValues.None)
-                        borderStyles.Add("border-left: 2px solid #0f172a;");
-                    else
-                        borderStyles.Add("border-left: 1px solid #cbd5e1;");
+                        borderStyles.Add("border-left: 2px solid #1e293b;");
 
                     if (cell.Style.Border.RightBorder != XLBorderStyleValues.None)
-                        borderStyles.Add("border-right: 2px solid #0f172a;");
-                    else
-                        borderStyles.Add("border-right: 1px solid #cbd5e1;");
+                        borderStyles.Add("border-right: 2px solid #1e293b;");
 
                     var borderCss = string.Join(" ", borderStyles);
 
@@ -559,7 +558,7 @@ namespace Web.Services
         public async Task<List<ExcelProfile>> GetProfilesFromExcelAsync()
         {
             var list = new List<ExcelProfile>();
-            var filePath = Path.Combine(_env.WebRootPath, "free.xlsx");
+            var filePath = GetExcelFilePath();
 
             if (!File.Exists(filePath))
             {
@@ -569,7 +568,8 @@ namespace Web.Services
 
             await Task.Run(() =>
             {
-                using var workbook = new XLWorkbook(filePath);
+                using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+                using var workbook = new XLWorkbook(fileStream);
                 var sheet = workbook.Worksheet("Nhập liệu");
                 if (sheet == null) return;
 
